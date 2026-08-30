@@ -1,14 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools"
-  android:id="@+id/header"
   android:layout_width="match_parent"
   android:layout_height="wrap_content"
-  android:paddingTop="8dp"
-  android:paddingBottom="8dp"
-  android:textAllCaps="false"
-  android:textColor="@color/gold"
-  android:textSize="13sp"
-  android:textStyle="bold"
-  android:letterSpacing="0.04"
-  tools:text="Today"/>
+  android:orientation="vertical"
+  android:paddingTop="10dp"
+  android:paddingBottom="8dp">
+
+  <TextView
+    android:id="@+id/header"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:letterSpacing="0.04"
+    android:textColor="@color/gold"
+    android:textSize="13sp"
+    android:textStyle="bold"
+    tools:text="Weekly"/>
+
+  <TextView
+    android:id="@+id/subtitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="2dp"
+    android:textColor="@color/text_muted"
+    android:textSize="12sp"
+    tools:text="Does not change — next of each weekly post."/>
+</LinearLayout>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:orientation="vertical"
+  android:padding="8dp">
+
+  <com.google.android.material.textfield.TextInputLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:hint="@string/custom_title">
+
+    <com.google.android.material.textfield.TextInputEditText
+      android:id="@+id/input_title"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:inputType="textCapSentences"
+      android:textColor="@color/cream"/>
+  </com.google.android.material.textfield.TextInputLayout>
+
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/btn_when"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:text="@string/pick_time"
+    android:textColor="@color/gold"/>
+
+  <RadioGroup
+    android:id="@+id/kind"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:orientation="vertical">
+
+    <RadioButton
+      android:id="@+id/kind_flexible"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:checked="true"
+      android:text="@string/kind_flexible"
+      android:textColor="@color/cream"/>
+
+    <RadioButton
+      android:id="@+id/kind_once"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/kind_once"
+      android:textColor="@color/cream"/>
+  </RadioGroup>
+</LinearLayout>

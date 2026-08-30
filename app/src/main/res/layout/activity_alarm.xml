@@ -65,6 +65,16 @@
     android:textColor="@color/cream"/>
 
   <com.google.android.material.button.MaterialButton
+    android:id="@+id/btn_snooze"
+    style="@style/Widget.Material3.Button.OutlinedButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/flyer_not_ready"
+    android:textColor="@color/gold"
+    app:strokeColor="@color/gold_dim"/>
+
+  <com.google.android.material.button.MaterialButton
     android:id="@+id/btn_later"
     style="@style/Widget.Material3.Button.TextButton"
     android:layout_width="match_parent"

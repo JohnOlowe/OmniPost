@@ -8,7 +8,15 @@ public final class TaskTypes {
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
   public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
+  public static final String FLEXIBLE = "FLEXIBLE";
+  public static final String ONE_OFF = "ONE_OFF";
   public static final String TEST = "TEST";
+
+  public static final String SECTION_NOW = "Needs you";
+  public static final String SECTION_WEEKLY = "Weekly";
+  public static final String SECTION_MONTHLY = "Monthly";
+  public static final String SECTION_FLEXIBLE = "Flexible";
+  public static final String SECTION_ONCE = "One-off";
 
   private TaskTypes() {}
 
@@ -31,6 +39,10 @@ public final class TaskTypes {
         return "Fasting today";
       case HAPPY_NEW_MONTH:
         return "Happy New Month";
+      case FLEXIBLE:
+        return "Flexible";
+      case ONE_OFF:
+        return "One-off";
       case TEST:
         return "Persistence test";
       default:
@@ -53,8 +65,40 @@ public final class TaskTypes {
         return "Monthly";
       case BIRTHDAY:
         return "Yearly";
+      case FLEXIBLE:
+        return "Flexible";
       default:
         return "Once";
     }
+  }
+
+  public static String section(String type) {
+    if (type == null) {
+      return SECTION_ONCE;
+    }
+    switch (type) {
+      case SUNDAY_SERVICE:
+      case WEDNESDAY_BIBLE_STUDY:
+      case FRIDAY_PRAYER:
+        return SECTION_WEEKLY;
+      case NEW_MONTH_FASTING:
+      case FASTING_DAY:
+      case HAPPY_NEW_MONTH:
+        return SECTION_MONTHLY;
+      case BIRTHDAY:
+      case FLEXIBLE:
+        return SECTION_FLEXIBLE;
+      default:
+        return SECTION_ONCE;
+    }
+  }
+
+  public static boolean isCustom(String type) {
+    return FLEXIBLE.equals(type) || ONE_OFF.equals(type) || TEST.equals(type);
+  }
+
+  public static boolean isSeries(String type) {
+    String section = section(type);
+    return SECTION_WEEKLY.equals(section) || SECTION_MONTHLY.equals(section);
   }
 }

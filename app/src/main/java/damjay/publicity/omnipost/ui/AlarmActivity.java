@@ -50,6 +50,18 @@ public class AlarmActivity extends AppCompatActivity {
         finish();
       });
     }));
+    binding.btnSnooze.setOnClickListener(v -> SnoozeChooser.show(this, until ->
+      AppExecutors.disk().execute(() -> {
+        ScheduleCoordinator.snooze(this, taskId, until);
+        AppExecutors.main(() -> {
+          Toast.makeText(
+            this,
+            getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+            Toast.LENGTH_LONG)
+            .show();
+          finish();
+        });
+      })));
     binding.btnLater.setOnClickListener(v -> finish());
     load();
     startSound();

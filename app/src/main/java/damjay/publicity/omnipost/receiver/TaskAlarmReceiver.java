@@ -46,9 +46,17 @@ public class TaskAlarmReceiver extends BroadcastReceiver {
       ScheduleCoordinator.resurrectNags(app);
       return;
     }
+    if (phase == AlarmScheduler.PHASE_SNOOZE) {
+      ScheduleCoordinator.onSnoozeWake(app, taskId);
+      return;
+    }
     Task task = AppDatabase.get(app).taskDao().getById(taskId);
     if (task == null || TaskStatus.POSTED.equals(task.status)) {
       AlarmScheduler.cancelTask(app, taskId);
+      return;
+    }
+    if (TaskStatus.SNOOZED.equals(task.status)
+      && task.snoozeUntilMillis > System.currentTimeMillis()) {
       return;
     }
     long now = System.currentTimeMillis();

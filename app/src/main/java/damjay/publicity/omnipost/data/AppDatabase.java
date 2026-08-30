@@ -1,9 +1,12 @@
 package damjay.publicity.omnipost.data;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import damjay.publicity.omnipost.data.dao.DraftDao;
 import damjay.publicity.omnipost.data.dao.MemberDao;
 import damjay.publicity.omnipost.data.dao.TaskDao;
@@ -13,7 +16,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 
 @Database(
   entities = {Task.class, Draft.class, Member.class},
-  version = 1,
+  version = 2,
   exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -22,6 +25,13 @@ public abstract class AppDatabase extends RoomDatabase {
   public abstract DraftDao draftDao();
 
   public abstract MemberDao memberDao();
+
+  static final Migration MIGRATION_1_2 = new Migration(1, 2) {
+    @Override
+    public void migrate(@NonNull SupportSQLiteDatabase db) {
+      db.execSQL("ALTER TABLE tasks ADD COLUMN snoozeUntilMillis INTEGER NOT NULL DEFAULT 0");
+    }
+  };
 
   private static volatile AppDatabase INSTANCE;
 
@@ -33,6 +43,7 @@ public abstract class AppDatabase extends RoomDatabase {
               context.getApplicationContext(),
               AppDatabase.class,
               "omnipost.db")
+            .addMigrations(MIGRATION_1_2)
             .fallbackToDestructiveMigration()
             .build();
         }

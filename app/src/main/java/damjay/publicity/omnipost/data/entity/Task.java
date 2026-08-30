@@ -38,4 +38,5 @@ public class Task {
   public long memberId;
   public long linkedDraftId;
   public long postedAtMillis;
+  public long snoozeUntilMillis;
 }

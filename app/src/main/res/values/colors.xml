@@ -14,6 +14,8 @@
   <color name="danger_bg">#33FF4D4D</color>
   <color name="warning">#FFFFB020</color>
   <color name="warning_bg">#33FFB020</color>
+  <color name="quiet">#FF7EB6FF</color>
+  <color name="quiet_bg">#337EB6FF</color>
   <color name="success">#FF3DDC97</color>
   <color name="success_bg">#223DDC97</color>
   <color name="whatsapp">#FF1DAA61</color>

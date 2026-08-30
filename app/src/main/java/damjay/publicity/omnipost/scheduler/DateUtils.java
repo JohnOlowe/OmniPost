@@ -130,6 +130,22 @@ public final class DateUtils {
     return formatStamp(millis);
   }
 
+  public static long hoursFromNow(int hours) {
+    return System.currentTimeMillis() + hours * 60L * 60L * 1000L;
+  }
+
+  public static long nextClock(int hour, int minute) {
+    Calendar c = Calendar.getInstance();
+    c.set(Calendar.HOUR_OF_DAY, hour);
+    c.set(Calendar.MINUTE, minute);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    if (!c.after(Calendar.getInstance())) {
+      c.add(Calendar.DAY_OF_MONTH, 1);
+    }
+    return c.getTimeInMillis();
+  }
+
   public static String monthDayLabel(int month1to12, int day) {
     Calendar c = Calendar.getInstance();
     c.set(Calendar.MONTH, month1to12 - 1);

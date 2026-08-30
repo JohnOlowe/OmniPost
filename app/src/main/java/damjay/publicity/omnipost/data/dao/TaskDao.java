@@ -41,8 +41,11 @@ public interface TaskDao {
   @Query("UPDATE tasks SET status = :status WHERE id = :id")
   int updateStatus(long id, String status);
 
-  @Query("UPDATE tasks SET status = 'POSTED', postedAtMillis = :when WHERE id = :id")
+  @Query("UPDATE tasks SET status = 'POSTED', postedAtMillis = :when, snoozeUntilMillis = 0 WHERE id = :id")
   int markPosted(long id, long when);
+
+  @Query("UPDATE tasks SET status = :status, snoozeUntilMillis = :until WHERE id = :id")
+  int setSnooze(long id, String status, long until);
 
   @Query("UPDATE tasks SET linkedDraftId = :draftId WHERE id = :id")
   int setLinkedDraft(long id, long draftId);

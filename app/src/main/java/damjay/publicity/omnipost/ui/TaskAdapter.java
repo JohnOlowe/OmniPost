@@ -11,6 +11,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemTaskBinding;
 import damjay.publicity.omnipost.scheduler.DateUtils;
+import damjay.publicity.omnipost.scheduler.TaskSections;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
 import java.util.ArrayList;
@@ -24,22 +25,29 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void onOpen(Task task);
 
     void onMarkPosted(Task task);
+
+    void onSnooze(Task task);
+
+    void onDelete(Task task);
   }
 
   static final class Row {
     final int kind;
     final String header;
+    final String subtitle;
     final Task task;
 
-    Row(String header) {
+    Row(String header, String subtitle) {
       this.kind = TYPE_HEADER;
       this.header = header;
+      this.subtitle = subtitle;
       this.task = null;
     }
 
     Row(Task task) {
       this.kind = TYPE_TASK;
       this.header = null;
+      this.subtitle = null;
       this.task = task;
     }
   }
@@ -51,16 +59,12 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     this.listener = listener;
   }
 
-  public void submit(List<Task> tasks) {
+  public void submit(List<Task> tasks, boolean postedMode) {
     rows.clear();
-    String lastKey = null;
-    if (tasks != null) {
-      for (Task task : tasks) {
-        String key = DateUtils.dayKey(task.postAtMillis);
-        if (!key.equals(lastKey)) {
-          rows.add(new Row(DateUtils.formatDayHeader(task.postAtMillis)));
-          lastKey = key;
-        }
+    List<TaskSections.Section> sections = TaskSections.group(tasks, postedMode);
+    for (TaskSections.Section section : sections) {
+      rows.add(new Row(section.title, section.subtitle));
+      for (Task task : section.tasks) {
         rows.add(new Row(task));
       }
     }
@@ -86,7 +90,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
   public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
     Row row = rows.get(position);
     if (holder instanceof HeaderHolder) {
-      ((HeaderHolder) holder).bind(row.header);
+      ((HeaderHolder) holder).bind(row.header, row.subtitle);
     } else if (holder instanceof TaskHolder) {
       ((TaskHolder) holder).bind(row.task, listener);
     }
@@ -105,8 +109,14 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       this.binding = binding;
     }
 
-    void bind(String header) {
+    void bind(String header, String subtitle) {
       binding.header.setText(header);
+      if (subtitle == null || subtitle.isEmpty()) {
+        binding.subtitle.setVisibility(View.GONE);
+      } else {
+        binding.subtitle.setVisibility(View.VISIBLE);
+        binding.subtitle.setText(subtitle);
+      }
     }
   }
 
@@ -121,15 +131,30 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void bind(Task task, Listener listener) {
       binding.title.setText(task.title);
       binding.description.setText(task.description);
-      binding.when.setText(DateUtils.relativeOrStamp(task.postAtMillis));
+      if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
+        binding.when.setText(
+          itemView.getContext().getString(
+            R.string.snoozed_until, DateUtils.formatStamp(task.snoozeUntilMillis)));
+      } else {
+        binding.when.setText(DateUtils.relativeOrStamp(task.postAtMillis));
+      }
       binding.status.setText(TaskStatus.label(task.status));
       binding.cadence.setText(TaskTypes.cadence(task.type));
       style(task);
-      binding.btnPosted.setVisibility(
-        TaskStatus.POSTED.equals(task.status) ? View.GONE : View.VISIBLE);
+      boolean posted = TaskStatus.POSTED.equals(task.status);
+      binding.btnPosted.setVisibility(posted ? View.GONE : View.VISIBLE);
+      binding.btnSnooze.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.getRoot().setOnClickListener(v -> listener.onOpen(task));
       binding.btnDraft.setOnClickListener(v -> listener.onOpen(task));
       binding.btnPosted.setOnClickListener(v -> listener.onMarkPosted(task));
+      binding.btnSnooze.setOnClickListener(v -> listener.onSnooze(task));
+      binding.getRoot().setOnLongClickListener(v -> {
+        if (TaskTypes.isCustom(task.type) && !posted) {
+          listener.onDelete(task);
+          return true;
+        }
+        return false;
+      });
     }
 
     private void style(Task task) {
@@ -147,6 +172,11 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         color = R.color.warning;
         accent = R.color.warning;
         stroke = R.color.warning;
+      } else if (TaskStatus.SNOOZED.equals(task.status)) {
+        bg = R.drawable.bg_chip_quiet;
+        color = R.color.quiet;
+        accent = R.color.quiet;
+        stroke = R.color.quiet;
       } else if (TaskStatus.DRAFTING.equals(task.status)) {
         bg = R.drawable.bg_chip_gold;
         color = R.color.gold;

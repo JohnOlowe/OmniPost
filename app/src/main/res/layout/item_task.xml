@@ -126,6 +126,16 @@
           android:text="@string/mark_posted"
           android:textColor="@color/cream"/>
       </LinearLayout>
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_snooze"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/flyer_not_ready"
+        android:textColor="@color/gold"
+        app:strokeColor="@color/navy_700"/>
     </LinearLayout>
   </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

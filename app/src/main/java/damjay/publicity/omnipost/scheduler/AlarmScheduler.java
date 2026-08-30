@@ -17,6 +17,7 @@ public final class AlarmScheduler {
   public static final int PHASE_NAG = 3;
   public static final int PHASE_PULSE = 4;
   public static final int PHASE_WATCHDOG = 5;
+  public static final int PHASE_SNOOZE = 6;
 
   private static final String TAG = "OmniPost";
   private static final int WATCHDOG_CODE = 0x0A11;
@@ -33,6 +34,11 @@ public final class AlarmScheduler {
       return;
     }
     long now = System.currentTimeMillis();
+    if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
+      cancelTask(ctx, task.id);
+      setAlarmClock(ctx, task.id, PHASE_SNOOZE, task.snoozeUntilMillis);
+      return;
+    }
     if (task.draftAtMillis > now) {
       setAlarmClock(ctx, task.id, PHASE_DRAFT, task.draftAtMillis);
     }
@@ -67,6 +73,7 @@ public final class AlarmScheduler {
     manager.cancel(broadcast(ctx, taskId, PHASE_WARNING));
     manager.cancel(broadcast(ctx, taskId, PHASE_NAG));
     manager.cancel(broadcast(ctx, taskId, PHASE_PULSE));
+    manager.cancel(broadcast(ctx, taskId, PHASE_SNOOZE));
   }
 
   private static void setAlarmClock(Context ctx, long taskId, int phase, long when) {

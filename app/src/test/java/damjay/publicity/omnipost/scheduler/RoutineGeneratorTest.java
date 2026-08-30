@@ -106,5 +106,16 @@ public class RoutineGeneratorTest {
   public void weeklyCadenceIsWeekly() {
     assertEquals("Weekly", TaskTypes.cadence(TaskTypes.FRIDAY_PRAYER));
     assertEquals("Once", TaskTypes.cadence(TaskTypes.TEST));
+    assertEquals("Flexible", TaskTypes.cadence(TaskTypes.FLEXIBLE));
+    assertEquals("Once", TaskTypes.cadence(TaskTypes.ONE_OFF));
+  }
+
+  @Test
+  public void sectionsMatchHowTheDeskWorks() {
+    assertEquals(TaskTypes.SECTION_WEEKLY, TaskTypes.section(TaskTypes.SUNDAY_SERVICE));
+    assertEquals(TaskTypes.SECTION_MONTHLY, TaskTypes.section(TaskTypes.FASTING_DAY));
+    assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.BIRTHDAY));
+    assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.FLEXIBLE));
+    assertEquals(TaskTypes.SECTION_ONCE, TaskTypes.section(TaskTypes.ONE_OFF));
   }
 }
