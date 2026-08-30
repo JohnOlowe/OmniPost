@@ -50,6 +50,20 @@ android {
 
   testOptions {
     unitTests.isReturnDefaultValues = true
+    unitTests.all {
+      it.testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+      }
+    }
+  }
+}
+
+tasks.withType<Test>().configureEach {
+  testLogging {
+    events("passed", "skipped", "failed")
+    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
   }
 }
 
