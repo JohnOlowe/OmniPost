@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/card"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_marginBottom="12dp"
+  android:clickable="true"
+  android:focusable="true"
+  android:foreground="?attr/selectableItemBackground"
+  app:cardBackgroundColor="@color/navy_800"
+  app:cardCornerRadius="16dp"
+  app:cardElevation="0dp"
+  app:strokeColor="@color/navy_700"
+  app:strokeWidth="1dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal">
+
+    <View
+      android:id="@+id/accent"
+      android:layout_width="4dp"
+      android:layout_height="match_parent"
+      android:background="@color/gold"/>
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="14dp">
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+          android:id="@+id/title"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:textColor="@color/cream"
+          android:textSize="16sp"
+          android:textStyle="bold"
+          tools:text="Sunday Service"/>
+
+        <TextView
+          android:id="@+id/status"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_gold"
+          android:paddingStart="8dp"
+          android:paddingTop="2dp"
+          android:paddingEnd="8dp"
+          android:paddingBottom="2dp"
+          android:textColor="@color/gold"
+          android:textSize="11sp"
+          tools:text="SCHEDULED"/>
+      </LinearLayout>
+
+      <TextView
+        android:id="@+id/when"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"
+        tools:text="Sat, 29 Aug · 10:00 AM"/>
+
+      <TextView
+        android:id="@+id/description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"
+        tools:text="Draft and post by Saturday 10:00 AM."/>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_draft"
+          style="@style/Widget.Material3.Button.TonalButton"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginEnd="8dp"
+          android:layout_weight="1"
+          android:text="@string/open_draft"/>
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_posted"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:backgroundTint="@color/whatsapp"
+          android:text="@string/mark_posted"
+          android:textColor="@color/cream"/>
+      </LinearLayout>
+    </LinearLayout>
+  </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

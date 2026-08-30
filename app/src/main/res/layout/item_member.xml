@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/card"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_marginBottom="12dp"
+  android:clickable="true"
+  android:focusable="true"
+  android:foreground="?attr/selectableItemBackground"
+  app:cardBackgroundColor="@color/navy_800"
+  app:cardCornerRadius="16dp"
+  app:cardElevation="0dp"
+  app:strokeColor="@color/navy_700"
+  app:strokeWidth="1dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="14dp">
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical">
+
+      <TextView
+        android:id="@+id/name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/cream"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        tools:text="Ada Okafor"/>
+
+      <TextView
+        android:id="@+id/when"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/gold"
+        android:textSize="13sp"
+        tools:text="31 August"/>
+    </LinearLayout>
+
+    <ImageButton
+      android:id="@+id/btn_delete"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/delete"
+      android:padding="8dp"
+      android:src="@drawable/ic_delete"
+      android:tint="@color/danger"/>
+  </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

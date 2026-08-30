@@ -13,8 +13,30 @@ android {
     targetSdk = 35
     versionCode = 1
     versionName = "1.0"
-
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+
+  signingConfigs {
+    create("omnipost") {
+      storeFile = rootProject.file(property("OMNIPOST_STORE_FILE").toString())
+      storePassword = property("OMNIPOST_STORE_PASSWORD").toString()
+      keyAlias = property("OMNIPOST_KEY_ALIAS").toString()
+      keyPassword = property("OMNIPOST_KEY_PASSWORD").toString()
+    }
+  }
+
+  buildTypes {
+    debug {
+      signingConfig = signingConfigs.getByName("omnipost")
+    }
+    release {
+      signingConfig = signingConfigs.getByName("omnipost")
+      isMinifyEnabled = false
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
+    }
   }
 
   buildFeatures {
@@ -25,6 +47,10 @@ android {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
+
+  testOptions {
+    unitTests.isReturnDefaultValues = true
+  }
 }
 
 dependencies {
@@ -32,4 +58,10 @@ dependencies {
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
   implementation(libs.androidx.constraintlayout)
+  implementation(libs.androidx.recyclerview)
+  implementation(libs.androidx.coordinatorlayout)
+  implementation(libs.androidx.lifecycle.livedata)
+  implementation(libs.androidx.room.runtime)
+  annotationProcessor(libs.androidx.room.compiler)
+  testImplementation(libs.junit)
 }

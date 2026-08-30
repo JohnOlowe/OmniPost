@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/bg_alarm"
+  android:gravity="center"
+  android:keepScreenOn="true"
+  android:orientation="vertical"
+  android:padding="24dp">
+
+  <TextView
+    android:id="@+id/phase"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:letterSpacing="0.12"
+    android:text="@string/post_now"
+    android:textColor="@color/gold"
+    android:textSize="14sp"
+    android:textStyle="bold"/>
+
+  <TextView
+    android:id="@+id/title"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:gravity="center"
+    android:textColor="@color/cream"
+    android:textSize="32sp"
+    android:textStyle="bold"/>
+
+  <TextView
+    android:id="@+id/when"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:gravity="center"
+    android:textColor="@color/text_muted"
+    android:textSize="16sp"/>
+
+  <TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:gravity="center"
+    android:text="@string/alarm_subtitle"
+    android:textColor="@color/text_muted"/>
+
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/btn_draft"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="36dp"
+    android:backgroundTint="@color/gold"
+    android:text="@string/open_draft"
+    android:textColor="@color/navy_950"/>
+
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/btn_posted"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:backgroundTint="@color/whatsapp"
+    android:text="@string/i_posted_it"
+    android:textColor="@color/cream"/>
+
+  <com.google.android.material.button.MaterialButton
+    android:id="@+id/btn_later"
+    style="@style/Widget.Material3.Button.TextButton"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/keep_nagging"
+    android:textColor="@color/text_muted"
+    app:rippleColor="@color/gold_soft"/>
+</LinearLayout>

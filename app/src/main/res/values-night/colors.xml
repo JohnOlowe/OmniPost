@@ -1,2 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+  <color name="navy_950">#FF0B1018</color>
+  <color name="navy_900">#FF101828</color>
+  <color name="navy_800">#FF182233</color>
+  <color name="navy_700">#FF243044</color>
+  <color name="gold">#FFE8C36A</color>
+  <color name="gold_dim">#FFB8953E</color>
+  <color name="gold_soft">#33E8C36A</color>
+  <color name="cream">#FFF4EDE0</color>
+  <color name="text_primary">#FFF7F3EA</color>
+  <color name="text_muted">#FF9AA3B5</color>
+  <color name="danger">#FFFF4D4D</color>
+  <color name="danger_bg">#33FF4D4D</color>
+  <color name="warning">#FFFFB020</color>
+  <color name="warning_bg">#33FFB020</color>
+  <color name="success">#FF3DDC97</color>
+  <color name="success_bg">#223DDC97</color>
+  <color name="whatsapp">#FF1DAA61</color>
+  <color name="whatsapp_dark">#FF128C4A</color>
+  <color name="ic_launcher_bg">#FF101828</color>
+  <color name="alarm_start">#FF2A1014</color>
+</resources>

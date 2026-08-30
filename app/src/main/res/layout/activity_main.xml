@@ -1,16 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:app="http://schemas.android.com/apk/res-auto"
   android:layout_width="match_parent"
-  android:layout_height="match_parent">
+  android:layout_height="match_parent"
+  android:background="@color/navy_950"
+  android:orientation="vertical">
 
-  <TextView
-    android:layout_width="wrap_content"
+  <LinearLayout
+    android:id="@+id/header"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:text="Hello user!"
-    app:layout_constraintBottom_toBottomOf="parent"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent" />
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="20dp"
+    android:paddingTop="18dp"
+    android:paddingEnd="20dp"
+    android:paddingBottom="12dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <ImageView
+      android:id="@+id/logo"
+      android:layout_width="40dp"
+      android:layout_height="40dp"
+      android:contentDescription="@string/app_name"
+      android:src="@mipmap/ic_launcher_round"/>
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="12dp"
+      android:layout_weight="1"
+      android:orientation="vertical">
+
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:letterSpacing="0.02"
+        android:text="@string/app_name"
+        android:textColor="@color/cream"
+        android:textSize="22sp"
+        android:textStyle="bold"/>
+
+      <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_tagline"
+        android:textColor="@color/gold"
+        android:textSize="12sp"/>
+    </LinearLayout>
+  </LinearLayout>
+
+  <View
+    android:layout_width="match_parent"
+    android:layout_height="1dp"
+    android:background="@color/navy_700"/>
+
+  <FrameLayout
+    android:id="@+id/fragment_container"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"/>
+
+  <com.google.android.material.bottomnavigation.BottomNavigationView
+    android:id="@+id/bottom_nav"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/navy_900"
+    app:elevation="0dp"
+    app:itemIconTint="@color/bottom_nav_color"
+    app:itemRippleColor="@color/gold_soft"
+    app:itemTextColor="@color/bottom_nav_color"
+    app:labelVisibilityMode="labeled"
+    app:menu="@menu/bottom_nav"/>
+</LinearLayout>

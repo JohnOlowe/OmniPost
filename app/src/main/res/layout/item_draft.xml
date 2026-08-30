@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:id="@+id/card"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_marginBottom="12dp"
+  android:clickable="true"
+  android:focusable="true"
+  android:foreground="?attr/selectableItemBackground"
+  app:cardBackgroundColor="@color/navy_800"
+  app:cardCornerRadius="16dp"
+  app:cardElevation="0dp"
+  app:strokeColor="@color/navy_700"
+  app:strokeWidth="1dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+      android:id="@+id/title"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textColor="@color/cream"
+      android:textSize="16sp"
+      android:textStyle="bold"
+      tools:text="Sunday Service"/>
+
+    <TextView
+      android:id="@+id/preview"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="6dp"
+      android:ellipsize="end"
+      android:maxLines="3"
+      android:textColor="@color/text_muted"
+      android:textSize="13sp"
+      tools:text="Join us for Sunday Service tomorrow..."/>
+
+    <TextView
+      android:id="@+id/updated"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:textColor="@color/gold_dim"
+      android:textSize="12sp"
+      tools:text="Sat, 29 Aug · 9:12 AM"/>
+  </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

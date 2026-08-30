@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <item
+    android:id="@+id/nav_tasks"
+    android:icon="@drawable/ic_nav_tasks"
+    android:title="@string/nav_tasks"/>
+  <item
+    android:id="@+id/nav_drafts"
+    android:icon="@drawable/ic_nav_drafts"
+    android:title="@string/nav_drafts"/>
+  <item
+    android:id="@+id/nav_birthdays"
+    android:icon="@drawable/ic_nav_birthdays"
+    android:title="@string/nav_birthdays"/>
+  <item
+    android:id="@+id/nav_survive"
+    android:icon="@drawable/ic_nav_survive"
+    android:title="@string/nav_survive"/>
+</menu>

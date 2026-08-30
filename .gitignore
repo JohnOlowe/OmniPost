@@ -11,3 +11,8 @@ out/
 
 .externalNativeBuild
 .cxx/
+
+local.properties
+.idea/
+*.iml
+.DS_Store
