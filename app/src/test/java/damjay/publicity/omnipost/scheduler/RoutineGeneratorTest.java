@@ -33,14 +33,15 @@ public class RoutineGeneratorTest {
         Calendar draft = Calendar.getInstance(utc);
         draft.setTimeInMillis(task.draftAtMillis);
         assertEquals(28, draft.get(Calendar.DAY_OF_MONTH));
-        assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
+        assertEquals(10, draft.get(Calendar.HOUR_OF_DAY));
+        assertEquals(ScheduleTimes.WARNING_LEAD_MS, 30 * 60_000L);
       }
     }
     assertTrue(found);
   }
 
   @Test
-  public void generatesBirthdayForMember() {
+  public void generatesBirthdayForMemberTheEveningBefore() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);
     now.clear();
@@ -59,19 +60,21 @@ public class RoutineGeneratorTest {
       if ("BIRTHDAY|7|2026-08-31".equals(task.occurrenceKey)) {
         found = true;
         assertEquals("Ada's Birthday", task.title);
+        assertEquals("Yearly", TaskTypes.cadence(task.type));
         Calendar post = Calendar.getInstance(utc);
         post.setTimeInMillis(task.postAtMillis);
         assertEquals(7, post.get(Calendar.HOUR_OF_DAY));
         Calendar draft = Calendar.getInstance(utc);
         draft.setTimeInMillis(task.draftAtMillis);
-        assertEquals(6, draft.get(Calendar.HOUR_OF_DAY));
+        assertEquals(30, draft.get(Calendar.DAY_OF_MONTH));
+        assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
       }
     }
     assertTrue(found);
   }
 
   @Test
-  public void generatesNewMonthFastingOnMonthEnd() {
+  public void generatesFastingTomorrowAndAgainOnTheDay() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);
     now.clear();
@@ -79,17 +82,29 @@ public class RoutineGeneratorTest {
     now.set(2026, Calendar.AUGUST, 30, 12, 0, 0);
     now.set(Calendar.MILLISECOND, 0);
     List<Task> tasks = RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.emptyList());
-    boolean fasting = false;
+    boolean fastingEve = false;
+    boolean fastingDay = false;
     boolean happy = false;
     for (Task task : tasks) {
       if ((TaskTypes.NEW_MONTH_FASTING + "|2026-08-31").equals(task.occurrenceKey)) {
-        fasting = true;
+        fastingEve = true;
+        assertEquals("Monthly", TaskTypes.cadence(task.type));
+      }
+      if ((TaskTypes.FASTING_DAY + "|2026-09-01").equals(task.occurrenceKey)) {
+        fastingDay = true;
       }
       if ((TaskTypes.HAPPY_NEW_MONTH + "|2026-09-01").equals(task.occurrenceKey)) {
         happy = true;
       }
     }
-    assertTrue(fasting);
+    assertTrue(fastingEve);
+    assertTrue(fastingDay);
     assertTrue(happy);
+  }
+
+  @Test
+  public void weeklyCadenceIsWeekly() {
+    assertEquals("Weekly", TaskTypes.cadence(TaskTypes.FRIDAY_PRAYER));
+    assertEquals("Once", TaskTypes.cadence(TaskTypes.TEST));
   }
 }

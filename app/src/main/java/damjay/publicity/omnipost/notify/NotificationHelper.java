@@ -49,7 +49,7 @@ public final class NotificationHelper {
 
     NotificationChannel alarmChannel = new NotificationChannel(
       CHANNEL_ALARM, "Posting alarms", NotificationManager.IMPORTANCE_HIGH);
-    alarmChannel.setDescription("1-minute warning and 5-minute nag");
+    alarmChannel.setDescription("30-minute caption-ready warning and 5-minute nag");
     alarmChannel.enableVibration(true);
     alarmChannel.setSound(alarm, alarmAttrs);
     alarmChannel.setBypassDnd(true);
@@ -109,7 +109,7 @@ public final class NotificationHelper {
 
   public static void showWarning(Context ctx, Task task) {
     showAlarm(ctx, task, AlarmScheduler.PHASE_WARNING,
-      ctx.getString(R.string.one_minute),
+      ctx.getString(R.string.thirty_minutes),
       ctx.getString(R.string.warning_notif_text));
   }
 

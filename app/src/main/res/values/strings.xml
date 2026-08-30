@@ -8,7 +8,8 @@
   <string name="nav_survive">Survive</string>
   <string name="filter_pending">Pending</string>
   <string name="filter_posted">Posted</string>
-  <string name="empty_tasks">Nothing pending. The routine will arm the next Sunday, Wednesday, and Friday posts on its own.</string>
+  <string name="empty_tasks">Nothing pending. Weekly, monthly, and birthday posts will appear under the day they are due.</string>
+  <string name="how_it_works">Draft a day early. Caption must be ready 30 minutes before the post. If you postpone, OmniPost nags every 5 minutes until you mark it Posted.</string>
   <string name="empty_posted">No completed posts yet.</string>
   <string name="empty_drafts">No drafts yet. Open a task or start a blank caption.</string>
   <string name="empty_birthdays">Add fellowship members and OmniPost will nag you at 7:00 AM on the day.</string>
@@ -28,6 +29,7 @@
   <string name="keep_nagging">Not yet — keep nagging</string>
   <string name="post_now">POST NOW</string>
   <string name="one_minute">1-MINUTE WARNING</string>
+  <string name="thirty_minutes">30 MINUTES — CAPTION READY</string>
   <string name="add">Add</string>
   <string name="add_member">Add member</string>
   <string name="edit_member">Edit member</string>
@@ -55,7 +57,7 @@
   <string name="need_caption">Write a caption first.</string>
   <string name="saved">Draft saved</string>
   <string name="posted_toast">Marked posted. Nagging stopped.</string>
-  <string name="test_armed">Draft in 5s, 1-minute warning, then the nag. Swipe OmniPost away to prove it.</string>
+  <string name="test_armed">Draft in 5s, then the nag. Swipe OmniPost away to prove it.</string>
   <string name="rearmed">Routine regenerated and alarms re-armed.</string>
   <string name="overdue">OVERDUE</string>
   <string name="chars">%1$d chars</string>
@@ -67,14 +69,16 @@
   <string name="nag_ongoing_title">Waiting on a post</string>
   <string name="nag_ongoing_text">%1$d task(s) still not marked Posted. OmniPost will not go quiet.</string>
   <string name="draft_notif_title">Time to draft</string>
-  <string name="warning_notif_text">One minute to posting time.</string>
+  <string name="warning_notif_text">30 minutes to posting time. The caption should already be ready.</string>
   <string name="nag_notif_text">This still is not posted.</string>
   <string name="mark_anyway">Mark posted anyway</string>
   <string name="back">Back</string>
   <string name="birthday_of">%1$s\'s Birthday</string>
   <string name="birthday_desc">Draft and post the birthday greeting by 7:00 AM.</string>
-  <string name="fasting_title">New Month Fasting</string>
-  <string name="fasting_desc">Post the New Month Fasting flyer early this morning.</string>
+  <string name="fasting_title">Fasting tomorrow</string>
+  <string name="fasting_desc">Post that New Month Fasting starts tomorrow.</string>
+  <string name="fasting_day_title">Fasting today</string>
+  <string name="fasting_day_desc">Post the fasting reminder again on the day itself.</string>
   <string name="happy_month_title">Happy New Month</string>
   <string name="happy_month_desc">Draft and post the Happy New Month caption for the 1st.</string>
 

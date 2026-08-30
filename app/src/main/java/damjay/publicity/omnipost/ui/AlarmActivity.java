@@ -36,7 +36,7 @@ public class AlarmActivity extends AppCompatActivity {
     taskId = getIntent().getLongExtra(ExtraKeys.TASK_ID, 0L);
     int phase = getIntent().getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
     binding.phase.setText(
-      phase == AlarmScheduler.PHASE_WARNING ? R.string.one_minute : R.string.post_now);
+      phase == AlarmScheduler.PHASE_WARNING ? R.string.thirty_minutes : R.string.post_now);
     binding.btnDraft.setOnClickListener(v -> {
       Intent intent = new Intent(this, DraftActivity.class);
       intent.putExtra(ExtraKeys.TASK_ID, taskId);

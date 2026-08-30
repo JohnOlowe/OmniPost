@@ -59,17 +59,39 @@
           android:paddingBottom="2dp"
           android:textColor="@color/gold"
           android:textSize="11sp"
-          tools:text="SCHEDULED"/>
+          tools:text="Write caption"/>
       </LinearLayout>
 
-      <TextView
-        android:id="@+id/when"
+      <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:textColor="@color/text_muted"
-        android:textSize="13sp"
-        tools:text="Sat, 29 Aug · 10:00 AM"/>
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+          android:id="@+id/cadence"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:background="@drawable/bg_chip_muted"
+          android:paddingStart="8dp"
+          android:paddingTop="2dp"
+          android:paddingEnd="8dp"
+          android:paddingBottom="2dp"
+          android:textColor="@color/text_muted"
+          android:textSize="11sp"
+          tools:text="Weekly"/>
+
+        <TextView
+          android:id="@+id/when"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginStart="8dp"
+          android:layout_weight="1"
+          android:textColor="@color/text_muted"
+          android:textSize="13sp"
+          tools:text="Sat, 29 Aug · 10:00 AM"/>
+      </LinearLayout>
 
       <TextView
         android:id="@+id/description"
@@ -78,7 +100,7 @@
         android:layout_marginTop="6dp"
         android:textColor="@color/text_muted"
         android:textSize="13sp"
-        tools:text="Draft and post by Saturday 10:00 AM."/>
+        tools:text="Write the caption a day early. Ready by 9:30 AM."/>
 
       <LinearLayout
         android:layout_width="match_parent"

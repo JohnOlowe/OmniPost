@@ -6,6 +6,7 @@ public final class TaskTypes {
   public static final String FRIDAY_PRAYER = "FRIDAY_PRAYER";
   public static final String BIRTHDAY = "BIRTHDAY";
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
+  public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
   public static final String TEST = "TEST";
 
@@ -25,13 +26,35 @@ public final class TaskTypes {
       case BIRTHDAY:
         return "Birthday";
       case NEW_MONTH_FASTING:
-        return "New Month Fasting";
+        return "Fasting tomorrow";
+      case FASTING_DAY:
+        return "Fasting today";
       case HAPPY_NEW_MONTH:
         return "Happy New Month";
       case TEST:
         return "Persistence test";
       default:
         return type;
+    }
+  }
+
+  public static String cadence(String type) {
+    if (type == null) {
+      return "Once";
+    }
+    switch (type) {
+      case SUNDAY_SERVICE:
+      case WEDNESDAY_BIBLE_STUDY:
+      case FRIDAY_PRAYER:
+        return "Weekly";
+      case NEW_MONTH_FASTING:
+      case FASTING_DAY:
+      case HAPPY_NEW_MONTH:
+        return "Monthly";
+      case BIRTHDAY:
+        return "Yearly";
+      default:
+        return "Once";
     }
   }
 }

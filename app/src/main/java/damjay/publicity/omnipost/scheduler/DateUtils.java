@@ -92,6 +92,32 @@ public final class DateUtils {
       c.get(Calendar.DAY_OF_MONTH));
   }
 
+  public static String dayKey(long millis) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(millis);
+    return dayKey(c);
+  }
+
+  public static String formatDayHeader(long millis) {
+    Calendar today = Calendar.getInstance();
+    String todayKey = dayKey(today);
+    String targetKey = dayKey(millis);
+    if (todayKey.equals(targetKey)) {
+      return "Today";
+    }
+    Calendar neighbor = (Calendar) today.clone();
+    neighbor.add(Calendar.DAY_OF_MONTH, 1);
+    if (dayKey(neighbor).equals(targetKey)) {
+      return "Tomorrow";
+    }
+    neighbor = (Calendar) today.clone();
+    neighbor.add(Calendar.DAY_OF_MONTH, -1);
+    if (dayKey(neighbor).equals(targetKey)) {
+      return "Yesterday";
+    }
+    return new SimpleDateFormat("EEEE, d MMM", Locale.getDefault()).format(new Date(millis));
+  }
+
   public static String formatStamp(long millis) {
     SimpleDateFormat fmt = new SimpleDateFormat("EEE, d MMM · h:mm a", Locale.getDefault());
     return fmt.format(new Date(millis));

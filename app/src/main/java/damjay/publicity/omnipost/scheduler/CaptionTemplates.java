@@ -22,7 +22,9 @@ public final class CaptionTemplates {
           + name
           + "!\nWe celebrate you and pray God's blessings over your new year.";
       case TaskTypes.NEW_MONTH_FASTING:
-        return "New Month Fasting starts now.\nJoin us as we seek the Lord for the month ahead.";
+        return "New Month Fasting starts tomorrow.\nJoin us as we seek the Lord for the month ahead.";
+      case TaskTypes.FASTING_DAY:
+        return "New Month Fasting holds today.\nStay in the place of prayer.";
       case TaskTypes.HAPPY_NEW_MONTH:
         return "Happy New Month!\nMay this month overflow with grace, favour, and testimonies.";
       default:

@@ -21,22 +21,23 @@ public final class RoutineGenerator {
       Calendar.SATURDAY,
       TaskTypes.SUNDAY_SERVICE,
       "Sunday Service",
-      "Draft and post Sunday Service publicity by Saturday 10:00 AM.");
+      "Write the caption tomorrow-minus-one. Have it ready by 9:30 AM Saturday. Post at 10:00 AM.");
     addWeeklies(
       out,
       now,
       Calendar.WEDNESDAY,
       TaskTypes.WEDNESDAY_BIBLE_STUDY,
       "Wednesday Bible Study",
-      "Draft and post Bible Study publicity by Wednesday 10:00 AM.");
+      "Write the caption a day early. Have it ready by 9:30 AM Wednesday. Post at 10:00 AM.");
     addWeeklies(
       out,
       now,
       Calendar.FRIDAY,
       TaskTypes.FRIDAY_PRAYER,
       "Friday Prayer Meeting",
-      "Draft and post Prayer Meeting publicity by Friday 10:00 AM.");
-    addMonthEnd(out, now);
+      "Write the caption a day early. Have it ready by 9:30 AM Friday. Post at 10:00 AM.");
+    addFastingEve(out, now);
+    addFastingDay(out, now);
     addHappyNewMonth(out, now);
     if (members != null) {
       for (Member member : members) {
@@ -64,14 +65,14 @@ public final class RoutineGenerator {
     }
   }
 
-  private static void addMonthEnd(List<Task> out, Calendar now) {
+  private static void addFastingEve(List<Task> out, Calendar now) {
     Calendar post = DateUtils.nextMonthEndAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
     for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
-      Calendar draft = DateUtils.sameDayAt(post, ScheduleTimes.MONTH_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
       out.add(build(
         TaskTypes.NEW_MONTH_FASTING,
-        "New Month Fasting",
-        "Post the New Month Fasting flyer early this morning.",
+        "Fasting tomorrow",
+        "Post that New Month Fasting starts tomorrow. Caption ready by 6:30 AM.",
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
         TaskTypes.NEW_MONTH_FASTING + "|" + DateUtils.dayKey(post),
@@ -83,15 +84,33 @@ public final class RoutineGenerator {
     }
   }
 
+  private static void addFastingDay(List<Task> out, Calendar now) {
+    Calendar post = DateUtils.nextMonthStartAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
+    for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
+      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      out.add(build(
+        TaskTypes.FASTING_DAY,
+        "Fasting today",
+        "Post the fasting reminder again on the day itself. Caption ready by 6:30 AM.",
+        draft.getTimeInMillis(),
+        post.getTimeInMillis(),
+        TaskTypes.FASTING_DAY + "|" + DateUtils.dayKey(post),
+        0L));
+      post.add(Calendar.MONTH, 1);
+      post.set(Calendar.DAY_OF_MONTH, 1);
+      post.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
+      post.set(Calendar.MINUTE, 0);
+    }
+  }
+
   private static void addHappyNewMonth(List<Task> out, Calendar now) {
     Calendar post = DateUtils.nextMonthStartAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
     for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
-      Calendar draft = DateUtils.dayBeforeAt(
-        post, ScheduleTimes.HAPPY_MONTH_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
       out.add(build(
         TaskTypes.HAPPY_NEW_MONTH,
         "Happy New Month",
-        "Draft and post the Happy New Month caption for the 1st.",
+        "Draft last night. Caption ready by 6:30 AM on the 1st. Post at 7:00 AM.",
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
         TaskTypes.HAPPY_NEW_MONTH + "|" + DateUtils.dayKey(post),
@@ -113,12 +132,12 @@ public final class RoutineGenerator {
       member.birthDay,
       ScheduleTimes.BIRTHDAY_POST_HOUR,
       0);
-    Calendar draft = DateUtils.sameDayAt(post, ScheduleTimes.BIRTHDAY_DRAFT_HOUR, 0);
+    Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
     String title = member.name + "'s Birthday";
     out.add(build(
       TaskTypes.BIRTHDAY,
       title,
-      "Draft and post the birthday greeting by 7:00 AM.",
+      "Write the greeting the evening before. Caption ready by 6:30 AM. Post at 7:00 AM.",
       draft.getTimeInMillis(),
       post.getTimeInMillis(),
       TaskTypes.BIRTHDAY + "|" + member.id + "|" + DateUtils.dayKey(post),

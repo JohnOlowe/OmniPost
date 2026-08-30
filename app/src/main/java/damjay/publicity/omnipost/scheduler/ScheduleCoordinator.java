@@ -29,10 +29,19 @@ public final class ScheduleCoordinator {
     List<Member> members = db.memberDao().getAllSync();
     List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members);
     for (Task candidate : generated) {
-      long id = db.taskDao().insert(candidate);
-      if (id != -1L) {
-        candidate.id = id;
+      Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
+      if (existing == null) {
+        db.taskDao().insert(candidate);
+        continue;
       }
+      if (TaskStatus.POSTED.equals(existing.status)) {
+        continue;
+      }
+      existing.title = candidate.title;
+      existing.description = candidate.description;
+      existing.draftAtMillis = candidate.draftAtMillis;
+      existing.postAtMillis = candidate.postAtMillis;
+      db.taskDao().update(existing);
     }
 
     boolean anyNag = false;
