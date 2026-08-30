@@ -72,7 +72,8 @@ public class TaskSectionsTest {
       TaskStatus.WARNING,
       TaskStatus.dueStatus(now - 10, now + ScheduleTimes.WARNING_LEAD_MS / 2, now));
     assertEquals(TaskStatus.DRAFTING, TaskStatus.dueStatus(now - 1, now + 60_000L * 60L, now));
-    assertEquals(TaskStatus.SCHEDULED, TaskStatus.dueStatus(now + 10, now + 20, now));
+    long later = now + 3L * 60L * 60L * 1000L;
+    assertEquals(TaskStatus.SCHEDULED, TaskStatus.dueStatus(later - 60_000L, later, now));
   }
 
   private static Task task(long id, String type, String status, long postAt) {
