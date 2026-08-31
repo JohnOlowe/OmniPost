@@ -16,6 +16,7 @@ public final class Prefs {
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
+  private static final String LAST_NAG = "last_nag_burst";
 
   private Prefs() {}
 
@@ -91,5 +92,13 @@ public final class Prefs {
 
   public static long burstMs() {
     return ScheduleTimes.BURST_MS;
+  }
+
+  public static long lastNagBurstAt(Context ctx) {
+    return sp(ctx).getLong(LAST_NAG, 0L);
+  }
+
+  public static void setLastNagBurstAt(Context ctx, long when) {
+    sp(ctx).edit().putLong(LAST_NAG, when).apply();
   }
 }

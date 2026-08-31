@@ -17,7 +17,6 @@ public final class ScheduleCoordinator {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
     long now = System.currentTimeMillis();
-    long warningLead = Prefs.warningLeadMs(app);
 
     List<Task> stale = db.taskDao().staleTests(now - 24L * 60L * 60L * 1000L);
     if (stale != null) {
@@ -48,12 +47,52 @@ public final class ScheduleCoordinator {
       db.taskDao().update(existing);
     }
 
+    applyDueAndSchedule(app);
+    AlarmScheduler.scheduleWatchdog(app);
+    AlarmScheduler.scheduleHeartbeat(app);
+    NagForegroundService.refresh(app);
+  }
+
+  /** Heartbeat / pulse: catch missed phases and re-arm clocks. Does not start FGS. */
+  public static void tick(Context context) {
+    Context app = context.getApplicationContext();
+    applyDueAndSchedule(app);
+    AlarmScheduler.scheduleHeartbeat(app);
+  }
+
+  public static void onAlarm(Context context, int phase, long taskId) {
+    Context app = context.getApplicationContext();
+    if (phase == AlarmScheduler.PHASE_WATCHDOG) {
+      bootstrap(app);
+      return;
+    }
+    if (phase == AlarmScheduler.PHASE_PULSE && taskId == 0L) {
+      tick(app);
+      return;
+    }
+    if (phase == AlarmScheduler.PHASE_SNOOZE) {
+      onSnoozeWake(app, taskId);
+      tick(app);
+      return;
+    }
+    handleTaskPhase(app, phase, taskId);
+    tick(app);
+  }
+
+  private static void applyDueAndSchedule(Context app) {
+    AppDatabase db = AppDatabase.get(app);
+    long now = System.currentTimeMillis();
+    long warningLead = Prefs.warningLeadMs(app);
     List<Task> active = db.taskDao().getActiveSync();
+    if (active == null) {
+      return;
+    }
     for (Task task : active) {
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
         AlarmScheduler.scheduleTask(app, task);
         continue;
       }
+      String previous = task.status;
       String due = TaskStatus.dueStatus(
         task.draftAtMillis, task.postAtMillis, now, warningLead);
       if (!due.equals(task.status) || task.snoozeUntilMillis != 0L) {
@@ -61,31 +100,60 @@ public final class ScheduleCoordinator {
         task.status = due;
         task.snoozeUntilMillis = 0L;
       }
+      if (!due.equals(previous)) {
+        fireTransition(app, task, due);
+      }
       AlarmScheduler.scheduleTask(app, task);
     }
+  }
 
-    NagForegroundService.refresh(app);
-    AlarmScheduler.scheduleWatchdog(app);
+  private static void fireTransition(Context app, Task task, String due) {
+    if (TaskStatus.DRAFTING.equals(due)) {
+      NotificationHelper.showDraft(app, task);
+    } else if (TaskStatus.WARNING.equals(due)) {
+      NotificationHelper.showWarning(app, task);
+    } else if (TaskStatus.NAGGING.equals(due)) {
+      NotificationHelper.showNagBurst(app, task);
+    }
+  }
+
+  private static void handleTaskPhase(Context app, int phase, long taskId) {
+    Task task = AppDatabase.get(app).taskDao().getById(taskId);
+    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+      AlarmScheduler.cancelTask(app, taskId);
+      return;
+    }
+    if (TaskStatus.SNOOZED.equals(task.status)
+      && task.snoozeUntilMillis > System.currentTimeMillis()) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    switch (phase) {
+      case AlarmScheduler.PHASE_DRAFT:
+        AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.DRAFTING);
+        task.status = TaskStatus.DRAFTING;
+        NotificationHelper.showDraft(app, task);
+        break;
+      case AlarmScheduler.PHASE_WARNING:
+        AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.WARNING);
+        task.status = TaskStatus.WARNING;
+        NotificationHelper.showWarning(app, task);
+        break;
+      case AlarmScheduler.PHASE_NAG:
+      case AlarmScheduler.PHASE_PULSE:
+        if (task.postAtMillis <= now || phase == AlarmScheduler.PHASE_NAG) {
+          AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.NAGGING);
+          task.status = TaskStatus.NAGGING;
+          NotificationHelper.showNagBurst(app, task);
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   public static void resurrectNags(Context context) {
-    Context app = context.getApplicationContext();
-    long now = System.currentTimeMillis();
-    AppDatabase db = AppDatabase.get(app);
-    List<Task> active = db.taskDao().getActiveSync();
-    for (Task task : active) {
-      if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
-        continue;
-      }
-      if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis <= now) {
-        onSnoozeWake(app, task.id);
-        continue;
-      }
-      if (task.postAtMillis <= now && !TaskStatus.POSTED.equals(task.status)) {
-        db.taskDao().setSnooze(task.id, TaskStatus.NAGGING, 0L);
-      }
-    }
-    NagForegroundService.refresh(app);
+    tick(context);
   }
 
   public static void markPosted(Context context, long taskId) {
@@ -94,6 +162,7 @@ public final class ScheduleCoordinator {
     db.taskDao().markPosted(taskId, System.currentTimeMillis());
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 
@@ -112,6 +181,8 @@ public final class ScheduleCoordinator {
     task.snoozeUntilMillis = 0L;
     db.taskDao().update(task);
     AlarmScheduler.scheduleTask(app, task);
+    fireTransition(app, task, due);
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 
@@ -136,6 +207,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 
@@ -152,6 +224,7 @@ public final class ScheduleCoordinator {
     task.snoozeUntilMillis = when;
     NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 
@@ -169,15 +242,7 @@ public final class ScheduleCoordinator {
     task.status = due;
     task.snoozeUntilMillis = 0L;
     AlarmScheduler.scheduleTask(app, task);
-    if (TaskStatus.NAGGING.equals(due)) {
-      NagForegroundService.start(app, taskId);
-    } else if (TaskStatus.WARNING.equals(due)) {
-      NotificationHelper.showWarning(app, task);
-    } else if (TaskStatus.DRAFTING.equals(due)) {
-      NotificationHelper.showDraft(app, task);
-    } else {
-      NagForegroundService.refresh(app);
-    }
+    fireTransition(app, task, due);
   }
 
   public static void addCustom(Context context, String title, long postAt, boolean flexible) {
@@ -203,6 +268,8 @@ public final class ScheduleCoordinator {
     if (id > 0L) {
       task.id = id;
       AlarmScheduler.scheduleTask(app, task);
+      fireTransition(app, task, task.status);
+      AlarmScheduler.scheduleHeartbeat(app);
       NagForegroundService.refresh(app);
     }
   }
@@ -212,6 +279,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
     AppDatabase.get(app).taskDao().deleteById(taskId);
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 
@@ -232,6 +300,7 @@ public final class ScheduleCoordinator {
       NotificationHelper.cancelForTask(app, task.id);
       db.taskDao().deleteById(task.id);
     }
+    AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
 }

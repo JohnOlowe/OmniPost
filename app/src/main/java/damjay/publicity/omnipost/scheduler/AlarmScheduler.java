@@ -35,8 +35,8 @@ public final class AlarmScheduler {
       return;
     }
     long now = System.currentTimeMillis();
+    cancelTask(ctx, task.id);
     if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
-      cancelTask(ctx, task.id);
       setAlarmClock(ctx, task.id, PHASE_SNOOZE, task.snoozeUntilMillis);
       return;
     }
@@ -45,15 +45,24 @@ public final class AlarmScheduler {
     }
     long warningAt = task.postAtMillis - Prefs.warningLeadMs(ctx);
     if (warningAt > now) {
-      setExact(ctx, task.id, PHASE_WARNING, warningAt);
+      setAlarmClock(ctx, task.id, PHASE_WARNING, warningAt);
     }
     if (task.postAtMillis > now) {
       setAlarmClock(ctx, task.id, PHASE_NAG, task.postAtMillis);
     }
   }
 
-  public static void schedulePulse(Context ctx, long taskId, long whenMillis) {
-    setExact(ctx, taskId, PHASE_PULSE, whenMillis);
+  public static void scheduleHeartbeat(Context ctx) {
+    scheduleHeartbeat(ctx, System.currentTimeMillis() + ScheduleTimes.HEARTBEAT_MS);
+  }
+
+  public static void scheduleHeartbeat(Context ctx, long whenMillis) {
+    long when = Math.max(whenMillis, System.currentTimeMillis() + 3_000L);
+    setAlarmClock(ctx, 0L, PHASE_PULSE, when);
+  }
+
+  public static void scheduleKick(Context ctx) {
+    setAlarmClock(ctx, 0L, PHASE_PULSE, System.currentTimeMillis() + ScheduleTimes.KICK_MS);
   }
 
   public static void scheduleWatchdog(Context ctx) {
@@ -65,7 +74,7 @@ public final class AlarmScheduler {
     if (c.getTimeInMillis() <= System.currentTimeMillis()) {
       c.add(java.util.Calendar.DAY_OF_MONTH, 1);
     }
-    setExact(ctx, 0, PHASE_WATCHDOG, c.getTimeInMillis());
+    setAlarmClock(ctx, 0L, PHASE_WATCHDOG, c.getTimeInMillis());
   }
 
   public static void cancelTask(Context ctx, long taskId) {
@@ -91,13 +100,12 @@ public final class AlarmScheduler {
       manager.setAlarmClock(new AlarmManager.AlarmClockInfo(when, show), pi);
     } catch (SecurityException e) {
       Log.w(TAG, "setAlarmClock denied, falling back", e);
-      setExact(ctx, taskId, phase, when);
+      setExact(ctx, pi, when);
     }
   }
 
-  private static void setExact(Context ctx, long taskId, int phase, long when) {
+  private static void setExact(Context ctx, PendingIntent pi, long when) {
     AlarmManager manager = am(ctx);
-    PendingIntent pi = broadcast(ctx, taskId, phase);
     try {
       if (Build.VERSION.SDK_INT >= 31 && !manager.canScheduleExactAlarms()) {
         manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
@@ -112,7 +120,9 @@ public final class AlarmScheduler {
 
   private static PendingIntent broadcast(Context ctx, long taskId, int phase) {
     Intent intent = new Intent(ctx, TaskAlarmReceiver.class);
+    intent.setClass(ctx, TaskAlarmReceiver.class);
     intent.setAction("damjay.publicity.omnipost.ALARM." + phase + "." + taskId);
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
     intent.putExtra(ExtraKeys.TASK_ID, taskId);
     intent.putExtra(ExtraKeys.PHASE, phase);
     return PendingIntent.getBroadcast(

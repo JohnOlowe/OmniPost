@@ -22,6 +22,7 @@ import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.Prefs;
 import damjay.publicity.omnipost.util.SurvivalHelper;
@@ -259,6 +260,8 @@ public class SettingsFragment extends Fragment {
       task.occurrenceKey = "TEST|" + now;
       task.id = AppDatabase.get(app).taskDao().insert(task);
       AlarmScheduler.scheduleTask(app, task);
+      AlarmScheduler.scheduleHeartbeat(app);
+      NagForegroundService.refresh(app);
       AppExecutors.main(() -> {
         if (!isAdded()) {
           return;

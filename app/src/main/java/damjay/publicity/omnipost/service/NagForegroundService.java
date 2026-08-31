@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import damjay.publicity.omnipost.data.AppDatabase;
@@ -21,6 +22,8 @@ import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.notify.Alerts;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
+import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -28,7 +31,7 @@ import damjay.publicity.omnipost.util.Prefs;
 import java.util.List;
 
 public class NagForegroundService extends Service {
-  private static final long DESK_REFRESH_MS = 15L * 60L * 1000L;
+  private static final String TAG = "OmniPost";
 
   private final Handler handler = new Handler(Looper.getMainLooper());
   private final Runnable pulse = this::onPulse;
@@ -41,11 +44,29 @@ public class NagForegroundService extends Service {
   public static void start(Context context, long taskId) {
     Intent intent = new Intent(context, NagForegroundService.class);
     intent.putExtra(ExtraKeys.TASK_ID, taskId);
-    ContextCompat.startForegroundService(context.getApplicationContext(), intent);
+    launch(context, intent);
   }
 
   public static void refresh(Context context) {
     start(context, 0L);
+  }
+
+  public static void deliverAlarm(Context context, Intent alarm) {
+    Intent intent = new Intent(context, NagForegroundService.class);
+    if (alarm != null && alarm.getExtras() != null) {
+      intent.putExtras(alarm.getExtras());
+    }
+    launch(context, intent);
+  }
+
+  private static void launch(Context context, Intent intent) {
+    Context app = context.getApplicationContext();
+    try {
+      ContextCompat.startForegroundService(app, intent);
+    } catch (Exception e) {
+      Log.e(TAG, "startForegroundService failed", e);
+      AlarmScheduler.scheduleKick(app);
+    }
   }
 
   public static void stop(Context context) {
@@ -64,13 +85,26 @@ public class NagForegroundService extends Service {
   public int onStartCommand(Intent intent, int flags, int startId) {
     NotificationHelper.ensureChannels(this);
     promoteForeground(0, null);
+    final int phase = intent == null ? 0 : intent.getIntExtra(ExtraKeys.PHASE, 0);
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
     AppExecutors.disk().execute(() -> {
+      try {
+        if (phase != 0) {
+          ScheduleCoordinator.onAlarm(this, phase, focusedId);
+        } else {
+          ScheduleCoordinator.tick(this);
+        }
+      } catch (Exception e) {
+        Log.e(TAG, "desk tick failed", e);
+      }
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
       Task next = AppDatabase.get(this).taskDao().nextActive();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk;
+      if (keepAlive) {
+        AlarmScheduler.scheduleHeartbeat(this);
+      }
       AppExecutors.main(() -> {
         if (destroyed) {
           return;
@@ -82,27 +116,50 @@ public class NagForegroundService extends Service {
         }
         promoteForeground(hasNagging ? nagging.size() : 0, next);
         handler.removeCallbacks(pulse);
-        if (hasNagging) {
+        boolean explicitNag = focusedId > 0L
+          && (phase == AlarmScheduler.PHASE_NAG || phase == AlarmScheduler.PHASE_PULSE);
+        if (hasNagging && shouldBurst(explicitNag || phase == AlarmScheduler.PHASE_NAG)) {
           fireBurst(nagging, focusedId);
-          long interval = Prefs.nagIntervalMs(this);
-          handler.postDelayed(pulse, interval);
-          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + interval);
-        } else {
-          handler.postDelayed(pulse, DESK_REFRESH_MS);
-          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + DESK_REFRESH_MS);
         }
+        handler.postDelayed(pulse, ScheduleTimes.HEARTBEAT_MS);
       });
     });
     return START_STICKY;
   }
 
+  private boolean shouldBurst(boolean explicit) {
+    if (explicit) {
+      Prefs.setLastNagBurstAt(this, System.currentTimeMillis());
+      return true;
+    }
+    long now = System.currentTimeMillis();
+    long last = Prefs.lastNagBurstAt(this);
+    long interval = Prefs.nagIntervalMs(this);
+    if (now - last >= interval) {
+      Prefs.setLastNagBurstAt(this, now);
+      return true;
+    }
+    return false;
+  }
+
   private void onPulse() {
+    if (destroyed) {
+      return;
+    }
     AppExecutors.disk().execute(() -> {
+      try {
+        ScheduleCoordinator.tick(this);
+      } catch (Exception e) {
+        Log.e(TAG, "pulse tick failed", e);
+      }
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
       Task next = AppDatabase.get(this).taskDao().nextActive();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk;
+      if (keepAlive) {
+        AlarmScheduler.scheduleHeartbeat(this);
+      }
       AppExecutors.main(() -> {
         if (destroyed) {
           return;
@@ -114,15 +171,10 @@ public class NagForegroundService extends Service {
         }
         promoteForeground(hasNagging ? nagging.size() : 0, next);
         handler.removeCallbacks(pulse);
-        if (hasNagging) {
+        if (hasNagging && shouldBurst(false)) {
           fireBurst(nagging, 0L);
-          long interval = Prefs.nagIntervalMs(this);
-          handler.postDelayed(pulse, interval);
-          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + interval);
-        } else {
-          handler.postDelayed(pulse, DESK_REFRESH_MS);
-          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + DESK_REFRESH_MS);
         }
+        handler.postDelayed(pulse, ScheduleTimes.HEARTBEAT_MS);
       });
     });
   }
@@ -151,14 +203,17 @@ public class NagForegroundService extends Service {
 
   private void promoteForeground(int count, Task next) {
     Notification notification = NotificationHelper.buildDesk(this, count, next);
-    if (Build.VERSION.SDK_INT >= 34) {
-      startForeground(
-        NotificationHelper.FGS_ID,
-        notification,
-        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-          | ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
-    } else {
-      startForeground(NotificationHelper.FGS_ID, notification);
+    try {
+      if (Build.VERSION.SDK_INT >= 34) {
+        startForeground(
+          NotificationHelper.FGS_ID,
+          notification,
+          ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+      } else {
+        startForeground(NotificationHelper.FGS_ID, notification);
+      }
+    } catch (Exception e) {
+      Log.e(TAG, "startForeground failed", e);
     }
   }
 
@@ -216,8 +271,9 @@ public class NagForegroundService extends Service {
 
   @Override
   public void onTaskRemoved(Intent rootIntent) {
-    if (keepAlive || Prefs.deskOngoing(this)) {
-      AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + 10_000L);
+    if (keepAlive || Prefs.deskOngoing(this) || hasNagging) {
+      AlarmScheduler.scheduleKick(this);
+      AlarmScheduler.scheduleHeartbeat(this);
       try {
         ContextCompat.startForegroundService(this, new Intent(this, NagForegroundService.class));
       } catch (Exception ignored) {
@@ -228,6 +284,7 @@ public class NagForegroundService extends Service {
 
   @Override
   public void onDestroy() {
+    boolean revive = keepAlive || Prefs.deskOngoing(this) || hasNagging;
     destroyed = true;
     handler.removeCallbacksAndMessages(null);
     stopAlarmSound();
@@ -237,8 +294,9 @@ public class NagForegroundService extends Service {
       } catch (Exception ignored) {
       }
     }
-    if (keepAlive || Prefs.deskOngoing(this)) {
-      AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + 15_000L);
+    if (revive) {
+      AlarmScheduler.scheduleKick(this);
+      AlarmScheduler.scheduleHeartbeat(this);
     }
     super.onDestroy();
   }

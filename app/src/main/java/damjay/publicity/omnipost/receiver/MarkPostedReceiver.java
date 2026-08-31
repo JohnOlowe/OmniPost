@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 
@@ -20,8 +21,12 @@ public class MarkPostedReceiver extends BroadcastReceiver {
     if (taskId == 0L) {
       return;
     }
-    final PendingResult pending = goAsync();
     final Context app = context.getApplicationContext();
+    try {
+      NagForegroundService.refresh(app);
+    } catch (Exception ignored) {
+    }
+    final PendingResult pending = goAsync();
     AppExecutors.disk().execute(() -> {
       try {
         ScheduleCoordinator.markPosted(app, taskId);
