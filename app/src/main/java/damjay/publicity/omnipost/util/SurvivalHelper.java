@@ -1,7 +1,6 @@
 package damjay.publicity.omnipost.util;
 
 import android.Manifest;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.content.ComponentName;
@@ -12,11 +11,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
-import android.view.accessibility.AccessibilityManager;
 import androidx.core.content.ContextCompat;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.DeskKeepAliveService;
-import java.util.List;
 
 public final class SurvivalHelper {
   public static final int REQ_POST_NOTIFICATIONS = 4401;
@@ -53,29 +50,13 @@ public final class SurvivalHelper {
   }
 
   public static boolean keepAliveEnabled(Context context) {
-    AccessibilityManager manager =
-      (AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
-    if (manager == null) {
-      return false;
-    }
-    List<AccessibilityServiceInfo> enabled =
-      manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
-    if (enabled == null) {
-      return false;
-    }
-    String mine = new ComponentName(context, DeskKeepAliveService.class).flattenToString();
-    String shortMine = new ComponentName(context, DeskKeepAliveService.class).flattenToShortString();
-    for (AccessibilityServiceInfo info : enabled) {
-      if (info == null || info.getId() == null) {
-        continue;
-      }
-      if (mine.equals(info.getId()) || shortMine.equals(info.getId()) || info.getId().contains(DeskKeepAliveService.class.getName())) {
-        return true;
-      }
-    }
+    ComponentName mine = new ComponentName(context, DeskKeepAliveService.class);
     String raw = Settings.Secure.getString(
       context.getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-    return raw != null && (raw.contains(mine) || raw.contains(shortMine));
+    if (raw == null || raw.isEmpty()) {
+      return false;
+    }
+    return raw.contains(mine.flattenToString()) || raw.contains(mine.flattenToShortString());
   }
 
   public static boolean allClear(Context context) {
@@ -146,9 +127,8 @@ public final class SurvivalHelper {
   public static void openAccessibilitySettings(Activity activity) {
     ComponentName component = new ComponentName(activity, DeskKeepAliveService.class);
     try {
-      Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_DETAILS_SETTINGS);
-      intent.setData(Uri.parse("package:" + activity.getPackageName()));
-      intent.putExtra(Intent.EXTRA_COMPONENT_NAME, component);
+      Intent intent = new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS");
+      intent.putExtra("android.intent.extra.COMPONENT_NAME", component);
       activity.startActivity(intent);
       return;
     } catch (Exception ignored) {
