@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "series")
+@Entity(tableName = "post_series")
 public class Series {
   public static final String KIND_COUNTDOWN = "COUNTDOWN";
   public static final String KIND_MONTHLY = "MONTHLY";

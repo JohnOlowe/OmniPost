@@ -49,7 +49,7 @@ public abstract class AppDatabase extends RoomDatabase {
     public void migrate(@NonNull SupportSQLiteDatabase db) {
       db.execSQL("ALTER TABLE tasks ADD COLUMN seriesId INTEGER NOT NULL DEFAULT 0");
       db.execSQL(
-        "CREATE TABLE IF NOT EXISTS series ("
+        "CREATE TABLE IF NOT EXISTS post_series ("
           + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
           + "title TEXT NOT NULL, "
           + "kind TEXT NOT NULL, "

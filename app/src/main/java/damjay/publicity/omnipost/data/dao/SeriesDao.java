@@ -16,24 +16,24 @@ public interface SeriesDao {
   @Update
   int update(Series series);
 
-  @Query("SELECT * FROM series WHERE id = :id LIMIT 1")
+  @Query("SELECT * FROM post_series WHERE id = :id LIMIT 1")
   Series getById(long id);
 
-  @Query("SELECT * FROM series WHERE seedKey = :seedKey LIMIT 1")
+  @Query("SELECT * FROM post_series WHERE seedKey = :seedKey LIMIT 1")
   Series findBySeed(String seedKey);
 
-  @Query("SELECT * FROM series WHERE enabled = 1 ORDER BY id ASC")
+  @Query("SELECT * FROM post_series WHERE enabled = 1 ORDER BY id ASC")
   List<Series> getEnabledSync();
 
-  @Query("SELECT * FROM series ORDER BY id ASC")
+  @Query("SELECT * FROM post_series ORDER BY id ASC")
   LiveData<List<Series>> observeAll();
 
-  @Query("SELECT * FROM series ORDER BY id ASC")
+  @Query("SELECT * FROM post_series ORDER BY id ASC")
   List<Series> getAllSync();
 
-  @Query("SELECT COUNT(*) FROM series")
+  @Query("SELECT COUNT(*) FROM post_series")
   int count();
 
-  @Query("DELETE FROM series WHERE id = :id")
+  @Query("DELETE FROM post_series WHERE id = :id")
   int deleteById(long id);
 }
