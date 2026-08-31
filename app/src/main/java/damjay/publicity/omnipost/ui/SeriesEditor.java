@@ -82,10 +82,10 @@ public final class SeriesEditor {
     kindGroup.setOnCheckedChangeListener((group, checkedId) -> {
       paintKind(kindMonthly, blockCountdown, blockMonthly);
       String current = caption.getText() == null ? "" : caption.getText().toString();
-      if (checkedId == R.id.kind_monthly
+      if (checkedId == R.id.radio_monthly
           && (current.isEmpty() || current.equals(SeriesDefaults.blankCountdownCaption()))) {
         caption.setText(SeriesDefaults.blankNoticeCaption());
-      } else if (checkedId == R.id.kind_countdown
+      } else if (checkedId == R.id.radio_countdown
           && (current.isEmpty() || current.equals(SeriesDefaults.blankNoticeCaption()))) {
         caption.setText(SeriesDefaults.blankCountdownCaption());
       }
