@@ -89,11 +89,14 @@
   <string name="delete">Delete</string>
   <string name="new_draft">New draft</string>
   <string name="survival_title">Stay alive on this phone</string>
-  <string name="survival_body">OmniPost only works if the OEM lets exact alarms, notifications, and unrestricted battery through. Grant every row. Then run the 70-second test and swipe the app away.</string>
+  <string name="survival_body">OmniPost must appear under Special app access → Alarms &amp; reminders. Grant every row. Keep-alive is optional: it does not read your screen; it only stops this phone from burying the desk. Then run the 70-second test and swipe the app away.</string>
   <string name="perm_notifications">Notifications</string>
-  <string name="perm_exact">Exact alarms</string>
+  <string name="perm_exact">Alarms &amp; reminders</string>
   <string name="perm_battery">Unrestricted battery</string>
   <string name="perm_fullscreen">Full-screen alarms</string>
+  <string name="perm_overlay">Display over other apps</string>
+  <string name="perm_accessibility">Keep-alive (Accessibility)</string>
+  <string name="a11y_description">OmniPost uses this only to stay running so posting alarms still fire after you leave. It does not read your screen, passwords, or other apps, and it does not tap anything.</string>
   <string name="grant">Grant</string>
   <string name="ok_status">Armed</string>
   <string name="missing_status">Blocked</string>

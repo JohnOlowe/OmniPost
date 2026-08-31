@@ -217,6 +217,16 @@ public class SettingsFragment extends Fragment {
       R.string.perm_fullscreen,
       SurvivalHelper.fullScreenAllowed(requireContext()),
       v -> SurvivalHelper.openFullScreenSettings(requireActivity()));
+    bindRow(
+      binding.rowOverlay,
+      R.string.perm_overlay,
+      SurvivalHelper.overlayAllowed(requireContext()),
+      v -> SurvivalHelper.openOverlaySettings(requireActivity()));
+    bindRow(
+      binding.rowAccessibility,
+      R.string.perm_accessibility,
+      SurvivalHelper.keepAliveEnabled(requireContext()),
+      v -> SurvivalHelper.openAccessibilitySettings(requireActivity()));
   }
 
   private void bindRow(
