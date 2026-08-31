@@ -28,8 +28,8 @@ public class Series {
   public int postMinute = 0;
 
   public boolean lastOfPrevMonth = true;
-  public boolean day10 = true;
-  public boolean day20 = true;
+  public boolean tenth = true;
+  public boolean twentieth = true;
   public boolean enabled = true;
 
   @NonNull

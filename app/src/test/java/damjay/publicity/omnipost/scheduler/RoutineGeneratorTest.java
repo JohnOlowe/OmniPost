@@ -262,8 +262,8 @@ public class RoutineGeneratorTest {
     notice.enabled = true;
     notice.postHour = 7;
     notice.lastOfPrevMonth = true;
-    notice.day10 = true;
-    notice.day20 = false;
+    notice.tenth = true;
+    notice.twentieth = false;
 
     List<Task> tasks = RoutineGenerator.generate(
       now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Arrays.asList(camp, notice));

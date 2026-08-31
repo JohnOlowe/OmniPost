@@ -36,8 +36,8 @@ public final class SeriesEditor {
     series.kind = Series.KIND_MONTHLY;
     series.caption = SeriesDefaults.blankNoticeCaption();
     series.lastOfPrevMonth = true;
-    series.day10 = true;
-    series.day20 = true;
+    series.tenth = true;
+    series.twentieth = true;
     show(context, series);
   }
 
@@ -75,8 +75,8 @@ public final class SeriesEditor {
     kindMonthly.setChecked(monthly);
     kindCountdown.setChecked(!monthly);
     optEve.setChecked(source.lastOfPrevMonth);
-    opt10.setChecked(source.day10);
-    opt20.setChecked(source.day20);
+    opt10.setChecked(source.tenth);
+    opt20.setChecked(source.twentieth);
     paintEvent(context, eventBtn, eventAt.get());
     paintKind(kindMonthly, blockCountdown, blockMonthly);
     kindGroup.setOnCheckedChangeListener((group, checkedId) -> {
@@ -147,13 +147,13 @@ public final class SeriesEditor {
     series.caption = caption.getText() == null ? "" : caption.getText().toString();
     series.eventAtMillis = eventAt;
     series.lastOfPrevMonth = lastOfPrev;
-    series.day10 = day10;
-    series.day20 = day20;
+    series.tenth = day10;
+    series.twentieth = day20;
     series.enabled = true;
     if (Series.KIND_MONTHLY.equals(series.kind)
         && !series.lastOfPrevMonth
-        && !series.day10
-        && !series.day20) {
+        && !series.tenth
+        && !series.twentieth) {
       Toast.makeText(context, R.string.need_month_slot, Toast.LENGTH_SHORT).show();
       return;
     }

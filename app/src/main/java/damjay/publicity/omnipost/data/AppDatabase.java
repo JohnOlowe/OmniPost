@@ -58,8 +58,8 @@ public abstract class AppDatabase extends RoomDatabase {
           + "postHour INTEGER NOT NULL, "
           + "postMinute INTEGER NOT NULL, "
           + "lastOfPrevMonth INTEGER NOT NULL, "
-          + "day10 INTEGER NOT NULL, "
-          + "day20 INTEGER NOT NULL, "
+          + "tenth INTEGER NOT NULL, "
+          + "twentieth INTEGER NOT NULL, "
           + "enabled INTEGER NOT NULL, "
           + "seedKey TEXT NOT NULL)");
     }

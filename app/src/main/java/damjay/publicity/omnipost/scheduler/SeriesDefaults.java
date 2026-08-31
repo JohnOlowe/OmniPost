@@ -49,8 +49,8 @@ public final class SeriesDefaults {
     series.caption = noticeCaption();
     series.postHour = ScheduleTimes.MONTH_POST_HOUR;
     series.lastOfPrevMonth = true;
-    series.day10 = true;
-    series.day20 = true;
+    series.tenth = true;
+    series.twentieth = true;
     series.seedKey = SEED_NOTICE;
     series.enabled = true;
     return series;

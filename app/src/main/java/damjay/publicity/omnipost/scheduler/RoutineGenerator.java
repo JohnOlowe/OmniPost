@@ -205,10 +205,10 @@ public final class RoutineGenerator {
         eve.set(Calendar.MILLISECOND, 0);
         addNoticeIfDue(out, series, todayKey, monthKey, monthName, "EVE", eve);
       }
-      if (series.day10) {
+      if (series.tenth) {
         addFixedDay(out, series, todayKey, target, monthKey, monthName, "D10", 10, max, hour);
       }
-      if (series.day20) {
+      if (series.twentieth) {
         addFixedDay(out, series, todayKey, target, monthKey, monthName, "D20", 20, max, hour);
       }
     }
@@ -263,13 +263,13 @@ public final class RoutineGenerator {
     if (series.lastOfPrevMonth) {
       out.append("Last day of the previous month");
     }
-    if (series.day10) {
+    if (series.tenth) {
       if (out.length() > 0) {
         out.append(", ");
       }
       out.append("the 10th");
     }
-    if (series.day20) {
+    if (series.twentieth) {
       if (out.length() > 0) {
         out.append(", ");
       }
