@@ -86,6 +86,39 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void snoozedOrderAndDeskFollowTheAlarmNotTheOriginalPost() {
+    long now = 1_700_000_000_000L;
+    Task birthday = task(1, TaskTypes.BIRTHDAY_NOTICE, TaskStatus.SNOOZED, now - 9L * 3_600_000L);
+    birthday.snoozeUntilMillis = now + 3L * 3_600_000L;
+    birthday.title = "Birthday notice · September";
+    Task fasting = task(2, TaskTypes.NEW_MONTH_FASTING, TaskStatus.SNOOZED, now - 9L * 3_600_000L);
+    fasting.snoozeUntilMillis = now + 3_600_000L;
+    fasting.title = "Fasting tomorrow";
+
+    List<TaskSections.Section> sections =
+      TaskSections.group(Arrays.asList(birthday, fasting), false, now);
+    assertEquals(TaskTypes.SECTION_NOW, sections.get(0).title);
+    assertEquals(2, sections.get(0).tasks.size());
+    assertEquals(fasting.id, sections.get(0).tasks.get(0).id);
+    assertEquals(birthday.id, sections.get(0).tasks.get(1).id);
+
+    Task next = TaskStatus.nextToRing(
+      Arrays.asList(birthday, fasting), now, ScheduleTimes.WARNING_LEAD_MS);
+    assertEquals(fasting.id, next.id);
+    assertEquals(fasting.snoozeUntilMillis, TaskStatus.nextRingMillis(next, now, ScheduleTimes.WARNING_LEAD_MS));
+  }
+
+  @Test
+  public void overdueNagRingsBeforeALaterSnooze() {
+    long now = 1_700_000_000_000L;
+    Task nag = task(1, TaskTypes.COUNTDOWN, TaskStatus.NAGGING, now - 3_600_000L);
+    Task snoozed = task(2, TaskTypes.FRIDAY_PRAYER, TaskStatus.SNOOZED, now - 3_600_000L);
+    snoozed.snoozeUntilMillis = now + 3_600_000L;
+    Task next = TaskStatus.nextToRing(Arrays.asList(snoozed, nag), now, ScheduleTimes.WARNING_LEAD_MS);
+    assertEquals(nag.id, next.id);
+  }
+
+  @Test
   public void postedDoesNotCollapseAndSkipsNeedsYou() {
     Task postedSunday = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 100);
     Task postedSunday2 = task(2, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 200);

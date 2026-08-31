@@ -24,6 +24,7 @@ import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
+import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -98,7 +99,7 @@ public class NagForegroundService extends Service {
         Log.e(TAG, "desk tick failed", e);
       }
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
-      Task next = AppDatabase.get(this).taskDao().nextActive();
+      Task next = nextToRing();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk;
@@ -153,7 +154,7 @@ public class NagForegroundService extends Service {
         Log.e(TAG, "pulse tick failed", e);
       }
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
-      Task next = AppDatabase.get(this).taskDao().nextActive();
+      Task next = nextToRing();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk;
@@ -199,6 +200,11 @@ public class NagForegroundService extends Service {
       } catch (Exception ignored) {
       }
     }
+  }
+
+  private Task nextToRing() {
+    List<Task> active = AppDatabase.get(this).taskDao().getActiveSync();
+    return TaskStatus.nextToRing(active, System.currentTimeMillis(), Prefs.warningLeadMs(this));
   }
 
   private void promoteForeground(int count, Task next) {

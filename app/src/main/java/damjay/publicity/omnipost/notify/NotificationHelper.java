@@ -77,13 +77,18 @@ public final class NotificationHelper {
       ctx, 7, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     String title;
     String text;
-    if (nagCount > 0) {
+    if (next != null) {
+      title = ctx.getString(R.string.next_up_title);
+      long now = System.currentTimeMillis();
+      long when = TaskStatus.nextRingMillis(next, now, Prefs.warningLeadMs(ctx));
+      if (when <= now) {
+        text = next.title + " · " + ctx.getString(R.string.post_now);
+      } else {
+        text = next.title + " · " + DateUtils.formatStamp(when) + " · " + DateUtils.formatUntil(when, now);
+      }
+    } else if (nagCount > 0) {
       title = ctx.getString(R.string.nag_ongoing_title);
       text = ctx.getString(R.string.nag_ongoing_text, nagCount);
-    } else if (next != null) {
-      title = ctx.getString(R.string.next_up_title);
-      long when = nextWhen(next);
-      text = next.title + " · " + DateUtils.formatStamp(when) + " · " + DateUtils.formatUntil(when);
     } else {
       title = ctx.getString(R.string.desk_armed_title);
       text = ctx.getString(R.string.desk_armed_text);
@@ -101,17 +106,6 @@ public final class NotificationHelper {
       .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
       .setColor(0xFFE8C36A)
       .build();
-  }
-
-  private static long nextWhen(Task next) {
-    if (TaskStatus.SNOOZED.equals(next.status) && next.snoozeUntilMillis > 0L) {
-      return next.snoozeUntilMillis;
-    }
-    long now = System.currentTimeMillis();
-    if (next.draftAtMillis > now) {
-      return next.draftAtMillis;
-    }
-    return next.postAtMillis;
   }
 
   public static void showDraft(Context ctx, Task task) {

@@ -1,5 +1,8 @@
 package damjay.publicity.omnipost.scheduler;
 
+import damjay.publicity.omnipost.data.entity.Task;
+import java.util.List;
+
 public final class TaskStatus {
   public static final String SCHEDULED = "SCHEDULED";
   public static final String DRAFTING = "DRAFTING";
@@ -56,5 +59,57 @@ public final class TaskStatus {
       return DRAFTING;
     }
     return SCHEDULED;
+  }
+
+  /**
+   * When this task's next AlarmClock actually fires. Snooze wins while quiet;
+   * otherwise the earliest of draft / caption-ready / post still in the future.
+   * Overdue tasks return their post time so they sort first.
+   */
+  public static long nextRingMillis(Task task, long now, long warningLeadMs) {
+    if (task == null || POSTED.equals(task.status)) {
+      return Long.MAX_VALUE;
+    }
+    if (SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
+      return task.snoozeUntilMillis;
+    }
+    long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
+    long warningAt = task.postAtMillis - lead;
+    long next = Long.MAX_VALUE;
+    if (task.draftAtMillis > now) {
+      next = Math.min(next, task.draftAtMillis);
+    }
+    if (warningAt > now) {
+      next = Math.min(next, warningAt);
+    }
+    if (task.postAtMillis > now) {
+      next = Math.min(next, task.postAtMillis);
+    }
+    if (next != Long.MAX_VALUE) {
+      return next;
+    }
+    return task.postAtMillis;
+  }
+
+  public static Task nextToRing(List<Task> tasks, long now, long warningLeadMs) {
+    Task best = null;
+    long bestAt = Long.MAX_VALUE;
+    if (tasks == null) {
+      return null;
+    }
+    for (Task task : tasks) {
+      if (task == null || POSTED.equals(task.status)) {
+        continue;
+      }
+      long at = nextRingMillis(task, now, warningLeadMs);
+      if (best == null
+          || at < bestAt
+          || (at == bestAt && task.postAtMillis < best.postAtMillis)
+          || (at == bestAt && task.postAtMillis == best.postAtMillis && task.id < best.id)) {
+        best = task;
+        bestAt = at;
+      }
+    }
+    return best;
   }
 }

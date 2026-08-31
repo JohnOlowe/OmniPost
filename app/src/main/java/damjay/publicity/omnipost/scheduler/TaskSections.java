@@ -38,6 +38,10 @@ public final class TaskSections {
   }
 
   public static List<Section> group(List<Task> source, boolean postedMode, long now) {
+    return group(source, postedMode, now, ScheduleTimes.WARNING_LEAD_MS);
+  }
+
+  public static List<Section> group(List<Task> source, boolean postedMode, long now, long warningLeadMs) {
     List<Section> out = new ArrayList<>();
     if (source == null || source.isEmpty()) {
       return out;
@@ -64,14 +68,14 @@ public final class TaskSections {
     }
     keepOneCard(nowList, soon, rest, TaskTypes.COUNTDOWN);
     keepOneCard(nowList, soon, rest, TaskTypes.BIRTHDAY_NOTICE);
-    sortByPost(nowList);
+    sortByRing(nowList, now, warningLeadMs);
     add(out, TaskTypes.SECTION_NOW, SUB_NOW, nowList);
-    add(out, TaskTypes.SECTION_NEXT, SUB_NEXT, collapseUpcoming(soon));
-    add(out, TaskTypes.SECTION_WEEKLY, SUB_WEEKLY, nextOfEach(rest, TaskTypes.SECTION_WEEKLY));
-    add(out, TaskTypes.SECTION_MONTHLY, SUB_MONTHLY, nextOfEach(rest, TaskTypes.SECTION_MONTHLY));
-    add(out, TaskTypes.SECTION_CAMPAIGN, SUB_CAMPAIGN, nextOfEach(rest, TaskTypes.SECTION_CAMPAIGN));
-    add(out, TaskTypes.SECTION_FLEXIBLE, SUB_FLEXIBLE, filterSection(rest, TaskTypes.SECTION_FLEXIBLE));
-    add(out, TaskTypes.SECTION_ONCE, SUB_ONCE, filterSection(rest, TaskTypes.SECTION_ONCE));
+    add(out, TaskTypes.SECTION_NEXT, SUB_NEXT, collapseUpcoming(soon, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_WEEKLY, SUB_WEEKLY, nextOfEach(rest, TaskTypes.SECTION_WEEKLY, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_MONTHLY, SUB_MONTHLY, nextOfEach(rest, TaskTypes.SECTION_MONTHLY, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_CAMPAIGN, SUB_CAMPAIGN, nextOfEach(rest, TaskTypes.SECTION_CAMPAIGN, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_FLEXIBLE, SUB_FLEXIBLE, filterSection(rest, TaskTypes.SECTION_FLEXIBLE, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_ONCE, SUB_ONCE, filterSection(rest, TaskTypes.SECTION_ONCE, now, warningLeadMs));
     return out;
   }
 
@@ -137,7 +141,7 @@ public final class TaskSections {
     }
   }
 
-  private static List<Task> collapseUpcoming(List<Task> source) {
+  private static List<Task> collapseUpcoming(List<Task> source, long now, long warningLeadMs) {
     Map<String, Task> series = new LinkedHashMap<>();
     List<Task> other = new ArrayList<>();
     for (Task task : source) {
@@ -152,7 +156,7 @@ public final class TaskSections {
     }
     List<Task> out = new ArrayList<>(series.values());
     out.addAll(other);
-    sortByPost(out);
+    sortByRing(out, now, warningLeadMs);
     return out;
   }
 
@@ -164,17 +168,27 @@ public final class TaskSections {
   }
 
   private static List<Task> filterSection(List<Task> source, String section) {
+    return filterSection(source, section, 0L, 0L);
+  }
+
+  private static List<Task> filterSection(
+    List<Task> source, String section, long now, long warningLeadMs) {
     List<Task> out = new ArrayList<>();
     for (Task task : source) {
       if (section.equals(TaskTypes.section(task.type))) {
         out.add(task);
       }
     }
-    sortByPost(out);
+    if (warningLeadMs > 0L) {
+      sortByRing(out, now, warningLeadMs);
+    } else {
+      sortByPost(out);
+    }
     return out;
   }
 
-  private static List<Task> nextOfEach(List<Task> source, String section) {
+  private static List<Task> nextOfEach(
+    List<Task> source, String section, long now, long warningLeadMs) {
     Map<String, Task> earliest = new LinkedHashMap<>();
     for (Task task : source) {
       if (!section.equals(TaskTypes.section(task.type))) {
@@ -186,11 +200,25 @@ public final class TaskSections {
       }
     }
     List<Task> out = new ArrayList<>(earliest.values());
-    sortByPost(out);
+    sortByRing(out, now, warningLeadMs);
     return out;
   }
 
   private static void sortByPost(List<Task> tasks) {
     Collections.sort(tasks, Comparator.comparingLong(task -> task.postAtMillis));
+  }
+
+  private static void sortByRing(List<Task> tasks, long now, long warningLeadMs) {
+    Collections.sort(tasks, (a, b) -> {
+      long ra = TaskStatus.nextRingMillis(a, now, warningLeadMs);
+      long rb = TaskStatus.nextRingMillis(b, now, warningLeadMs);
+      if (ra != rb) {
+        return Long.compare(ra, rb);
+      }
+      if (a.postAtMillis != b.postAtMillis) {
+        return Long.compare(a.postAtMillis, b.postAtMillis);
+      }
+      return Long.compare(a.id, b.id);
+    });
   }
 }
