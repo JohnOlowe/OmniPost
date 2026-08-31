@@ -16,11 +16,13 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityAlarmBinding;
+import damjay.publicity.omnipost.notify.Alerts;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 
 public class AlarmActivity extends AppCompatActivity {
   private ActivityAlarmBinding binding;
@@ -35,8 +37,16 @@ public class AlarmActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
     taskId = getIntent().getLongExtra(ExtraKeys.TASK_ID, 0L);
     int phase = getIntent().getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
-    binding.phase.setText(
-      phase == AlarmScheduler.PHASE_WARNING ? R.string.thirty_minutes : R.string.post_now);
+    if (phase == AlarmScheduler.PHASE_DRAFT) {
+      binding.phase.setText(R.string.write_caption_now);
+      binding.subtitle.setText(R.string.alarm_subtitle_draft);
+    } else if (phase == AlarmScheduler.PHASE_WARNING) {
+      binding.phase.setText(getString(R.string.caption_ready_phase, Prefs.warningMinutes(this)));
+      binding.subtitle.setText(R.string.alarm_subtitle);
+    } else {
+      binding.phase.setText(R.string.post_now);
+      binding.subtitle.setText(R.string.alarm_subtitle);
+    }
     binding.btnDraft.setOnClickListener(v -> {
       Intent intent = new Intent(this, DraftActivity.class);
       intent.putExtra(ExtraKeys.TASK_ID, taskId);
@@ -65,6 +75,7 @@ public class AlarmActivity extends AppCompatActivity {
     binding.btnLater.setOnClickListener(v -> finish());
     load();
     startSound();
+    Alerts.vibrate(this);
   }
 
   @Override
@@ -88,7 +99,8 @@ public class AlarmActivity extends AppCompatActivity {
           return;
         }
         binding.title.setText(task.title);
-        binding.when.setText(DateUtils.formatStamp(task.postAtMillis));
+        binding.when.setText(
+          DateUtils.formatStamp(task.postAtMillis) + " · " + DateUtils.formatUntil(task.postAtMillis));
       });
     });
   }
@@ -111,6 +123,9 @@ public class AlarmActivity extends AppCompatActivity {
   }
 
   private void startSound() {
+    if (!Prefs.sound(this)) {
+      return;
+    }
     try {
       Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
       ringtone = RingtoneManager.getRingtone(this, uri);

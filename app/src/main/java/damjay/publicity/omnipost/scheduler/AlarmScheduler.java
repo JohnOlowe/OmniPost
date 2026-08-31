@@ -10,6 +10,7 @@ import damjay.publicity.omnipost.MainActivity;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.receiver.TaskAlarmReceiver;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 
 public final class AlarmScheduler {
   public static final int PHASE_DRAFT = 1;
@@ -42,7 +43,7 @@ public final class AlarmScheduler {
     if (task.draftAtMillis > now) {
       setAlarmClock(ctx, task.id, PHASE_DRAFT, task.draftAtMillis);
     }
-    long warningAt = task.postAtMillis - ScheduleTimes.WARNING_LEAD_MS;
+    long warningAt = task.postAtMillis - Prefs.warningLeadMs(ctx);
     if (warningAt > now) {
       setExact(ctx, task.id, PHASE_WARNING, warningAt);
     }

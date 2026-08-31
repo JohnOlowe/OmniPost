@@ -28,6 +28,10 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     void onSnooze(Task task);
 
+    void onShift(Task task);
+
+    void onReopen(Task task);
+
     void onDelete(Task task);
   }
 
@@ -143,11 +147,14 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       style(task);
       boolean posted = TaskStatus.POSTED.equals(task.status);
       binding.btnPosted.setVisibility(posted ? View.GONE : View.VISIBLE);
+      binding.btnReopen.setVisibility(posted ? View.VISIBLE : View.GONE);
       binding.btnSnooze.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.getRoot().setOnClickListener(v -> listener.onOpen(task));
       binding.btnDraft.setOnClickListener(v -> listener.onOpen(task));
       binding.btnPosted.setOnClickListener(v -> listener.onMarkPosted(task));
+      binding.btnReopen.setOnClickListener(v -> listener.onReopen(task));
       binding.btnSnooze.setOnClickListener(v -> listener.onSnooze(task));
+      binding.btnShift.setOnClickListener(v -> listener.onShift(task));
       binding.getRoot().setOnLongClickListener(v -> {
         if (TaskTypes.isCustom(task.type) && !posted) {
           listener.onDelete(task);

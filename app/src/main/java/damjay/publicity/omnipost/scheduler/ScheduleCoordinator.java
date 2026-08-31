@@ -6,6 +6,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -16,6 +17,7 @@ public final class ScheduleCoordinator {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
     long now = System.currentTimeMillis();
+    long warningLead = Prefs.warningLeadMs(app);
 
     List<Task> stale = db.taskDao().staleTests(now - 24L * 60L * 60L * 1000L);
     if (stale != null) {
@@ -39,40 +41,30 @@ public final class ScheduleCoordinator {
       }
       existing.title = candidate.title;
       existing.description = candidate.description;
-      existing.draftAtMillis = candidate.draftAtMillis;
-      existing.postAtMillis = candidate.postAtMillis;
+      if (!existing.timesLocked) {
+        existing.draftAtMillis = candidate.draftAtMillis;
+        existing.postAtMillis = candidate.postAtMillis;
+      }
       db.taskDao().update(existing);
     }
 
-    boolean anyNag = false;
     List<Task> active = db.taskDao().getActiveSync();
     for (Task task : active) {
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
         AlarmScheduler.scheduleTask(app, task);
         continue;
       }
-      String due = TaskStatus.dueStatus(task.draftAtMillis, task.postAtMillis, now);
+      String due = TaskStatus.dueStatus(
+        task.draftAtMillis, task.postAtMillis, now, warningLead);
       if (!due.equals(task.status) || task.snoozeUntilMillis != 0L) {
         db.taskDao().setSnooze(task.id, due, 0L);
         task.status = due;
         task.snoozeUntilMillis = 0L;
       }
-      if (TaskStatus.NAGGING.equals(task.status)) {
-        anyNag = true;
-      }
       AlarmScheduler.scheduleTask(app, task);
     }
 
-    if (anyNag) {
-      NagForegroundService.start(app, 0L);
-    } else {
-      List<Task> nagging = db.taskDao().getNaggingSync();
-      if (nagging == null || nagging.isEmpty()) {
-        NagForegroundService.stop(app);
-      } else {
-        NagForegroundService.start(app, 0L);
-      }
-    }
+    NagForegroundService.refresh(app);
     AlarmScheduler.scheduleWatchdog(app);
   }
 
@@ -80,7 +72,6 @@ public final class ScheduleCoordinator {
     Context app = context.getApplicationContext();
     long now = System.currentTimeMillis();
     AppDatabase db = AppDatabase.get(app);
-    boolean any = false;
     List<Task> active = db.taskDao().getActiveSync();
     for (Task task : active) {
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
@@ -92,15 +83,9 @@ public final class ScheduleCoordinator {
       }
       if (task.postAtMillis <= now && !TaskStatus.POSTED.equals(task.status)) {
         db.taskDao().setSnooze(task.id, TaskStatus.NAGGING, 0L);
-        any = true;
       }
     }
-    List<Task> nagging = db.taskDao().getNaggingSync();
-    if (any || (nagging != null && !nagging.isEmpty())) {
-      NagForegroundService.start(app, 0L);
-    } else {
-      NagForegroundService.stop(app);
-    }
+    NagForegroundService.refresh(app);
   }
 
   public static void markPosted(Context context, long taskId) {
@@ -109,7 +94,49 @@ public final class ScheduleCoordinator {
     db.taskDao().markPosted(taskId, System.currentTimeMillis());
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
-    stopOrRefreshNag(app);
+    NagForegroundService.refresh(app);
+  }
+
+  public static void reopen(Context context, long taskId) {
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Task task = db.taskDao().getById(taskId);
+    if (task == null) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    String due = TaskStatus.dueStatus(
+      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    task.status = due;
+    task.postedAtMillis = 0L;
+    task.snoozeUntilMillis = 0L;
+    db.taskDao().update(task);
+    AlarmScheduler.scheduleTask(app, task);
+    NagForegroundService.refresh(app);
+  }
+
+  public static void shift(Context context, long taskId, long newPostAt) {
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Task task = db.taskDao().getById(taskId);
+    if (task == null) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    long postAt = Math.max(newPostAt, now + 60_000L);
+    task.postAtMillis = postAt;
+    long draft = postAt - 24L * 60L * 60L * 1000L;
+    task.draftAtMillis = Math.max(now, draft);
+    task.timesLocked = true;
+    task.postedAtMillis = 0L;
+    task.snoozeUntilMillis = 0L;
+    task.status = TaskStatus.dueStatus(
+      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    db.taskDao().update(task);
+    AlarmScheduler.cancelTask(app, taskId);
+    NotificationHelper.cancelForTask(app, taskId);
+    AlarmScheduler.scheduleTask(app, task);
+    NagForegroundService.refresh(app);
   }
 
   public static void snooze(Context context, long taskId, long untilMillis) {
@@ -125,7 +152,7 @@ public final class ScheduleCoordinator {
     task.snoozeUntilMillis = when;
     NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
-    stopOrRefreshNag(app);
+    NagForegroundService.refresh(app);
   }
 
   public static void onSnoozeWake(Context context, long taskId) {
@@ -136,7 +163,8 @@ public final class ScheduleCoordinator {
       return;
     }
     long now = System.currentTimeMillis();
-    String due = TaskStatus.dueStatus(task.draftAtMillis, task.postAtMillis, now);
+    String due = TaskStatus.dueStatus(
+      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
     db.taskDao().setSnooze(taskId, due, 0L);
     task.status = due;
     task.snoozeUntilMillis = 0L;
@@ -147,27 +175,35 @@ public final class ScheduleCoordinator {
       NotificationHelper.showWarning(app, task);
     } else if (TaskStatus.DRAFTING.equals(due)) {
       NotificationHelper.showDraft(app, task);
+    } else {
+      NagForegroundService.refresh(app);
     }
   }
 
   public static void addCustom(Context context, String title, long postAt, boolean flexible) {
     Context app = context.getApplicationContext();
     long now = System.currentTimeMillis();
+    int warn = Prefs.warningMinutes(app);
     Task task = new Task();
     task.type = flexible ? TaskTypes.FLEXIBLE : TaskTypes.ONE_OFF;
     task.title = title;
     task.description = flexible
-      ? "Flexible — you pick the next time. Caption ready 30 minutes before."
-      : "One-off. Caption ready 30 minutes before.";
+      ? "Flexible — you pick the next time. Write the caption. Ready "
+        + warn
+        + " minutes before."
+      : "One-off. Write the caption. Ready " + warn + " minutes before.";
     task.postAtMillis = postAt;
     long draft = postAt - 24L * 60L * 60L * 1000L;
     task.draftAtMillis = Math.max(now, draft);
-    task.status = TaskStatus.dueStatus(task.draftAtMillis, task.postAtMillis, now);
+    task.timesLocked = true;
+    task.status = TaskStatus.dueStatus(
+      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
     task.occurrenceKey = task.type + "|" + postAt + "|" + title.hashCode();
     long id = AppDatabase.get(app).taskDao().insert(task);
     if (id > 0L) {
       task.id = id;
       AlarmScheduler.scheduleTask(app, task);
+      NagForegroundService.refresh(app);
     }
   }
 
@@ -176,7 +212,12 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
     AppDatabase.get(app).taskDao().deleteById(taskId);
-    stopOrRefreshNag(app);
+    NagForegroundService.refresh(app);
+  }
+
+  public static void deleteDraft(Context context, long draftId) {
+    Context app = context.getApplicationContext();
+    AppDatabase.get(app).draftDao().deleteById(draftId);
   }
 
   public static void cancelMemberTasks(Context context, long memberId) {
@@ -191,14 +232,6 @@ public final class ScheduleCoordinator {
       NotificationHelper.cancelForTask(app, task.id);
       db.taskDao().deleteById(task.id);
     }
-  }
-
-  private static void stopOrRefreshNag(Context app) {
-    List<Task> nagging = AppDatabase.get(app).taskDao().getNaggingSync();
-    if (nagging == null || nagging.isEmpty()) {
-      NagForegroundService.stop(app);
-    } else {
-      NagForegroundService.refresh(app);
-    }
+    NagForegroundService.refresh(app);
   }
 }

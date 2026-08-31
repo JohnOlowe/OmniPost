@@ -1,11 +1,16 @@
 package damjay.publicity.omnipost.scheduler;
 
+import android.content.Context;
 import damjay.publicity.omnipost.data.entity.Task;
+import damjay.publicity.omnipost.util.Prefs;
 
 public final class CaptionTemplates {
   private CaptionTemplates() {}
 
-  public static String forTask(Task task) {
+  public static String forTask(Context context, Task task) {
+    if (context != null && !Prefs.seedCaptions(context)) {
+      return "";
+    }
     if (task == null || task.type == null) {
       return "";
     }

@@ -32,6 +32,9 @@ public interface TaskDao {
   @Query("SELECT * FROM tasks WHERE status != 'POSTED' ORDER BY postAtMillis ASC")
   List<Task> getActiveSync();
 
+  @Query("SELECT * FROM tasks WHERE status != 'POSTED' ORDER BY postAtMillis ASC LIMIT 1")
+  Task nextActive();
+
   @Query("SELECT * FROM tasks WHERE status = 'NAGGING'")
   List<Task> getNaggingSync();
 

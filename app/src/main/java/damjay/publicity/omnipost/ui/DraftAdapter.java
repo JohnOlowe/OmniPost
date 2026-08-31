@@ -13,6 +13,8 @@ import java.util.List;
 public class DraftAdapter extends RecyclerView.Adapter<DraftAdapter.Holder> {
   public interface Listener {
     void onOpen(Draft draft);
+
+    void onDelete(Draft draft);
   }
 
   private final Listener listener;
@@ -60,6 +62,7 @@ public class DraftAdapter extends RecyclerView.Adapter<DraftAdapter.Holder> {
       binding.preview.setText(preview);
       binding.updated.setText(DateUtils.formatStamp(draft.updatedAt));
       binding.getRoot().setOnClickListener(v -> listener.onOpen(draft));
+      binding.btnDelete.setOnClickListener(v -> listener.onDelete(draft));
     }
 
     private static String firstNonEmpty(String... values) {

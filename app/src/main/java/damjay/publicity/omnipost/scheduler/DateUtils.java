@@ -130,6 +130,49 @@ public final class DateUtils {
     return formatStamp(millis);
   }
 
+  public static String formatUntil(long targetMillis) {
+    return formatUntil(targetMillis, System.currentTimeMillis());
+  }
+
+  public static String formatUntil(long targetMillis, long nowMillis) {
+    long delta = targetMillis - nowMillis;
+    if (delta <= 0L) {
+      return "that time has passed";
+    }
+    long minutes = (delta + 30_000L) / 60_000L;
+    if (minutes < 1L) {
+      return "in less than a minute";
+    }
+    long days = minutes / (60L * 24L);
+    minutes -= days * 60L * 24L;
+    long hours = minutes / 60L;
+    minutes -= hours * 60L;
+    StringBuilder out = new StringBuilder("in ");
+    boolean any = false;
+    if (days > 0L) {
+      out.append(days).append(days == 1L ? " day" : " days");
+      any = true;
+    }
+    if (hours > 0L && days < 7L) {
+      if (any) {
+        out.append(" ");
+      }
+      out.append(hours).append(hours == 1L ? " hour" : " hours");
+      any = true;
+    }
+    if (days == 0L && minutes > 0L) {
+      if (any) {
+        out.append(" ");
+      }
+      out.append(minutes).append(minutes == 1L ? " minute" : " minutes");
+      any = true;
+    }
+    if (!any) {
+      return "in less than a minute";
+    }
+    return out.toString();
+  }
+
   public static long hoursFromNow(int hours) {
     return System.currentTimeMillis() + hours * 60L * 60L * 1000L;
   }

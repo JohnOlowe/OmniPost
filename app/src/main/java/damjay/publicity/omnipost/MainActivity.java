@@ -12,7 +12,7 @@ import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.ui.BirthdaysFragment;
 import damjay.publicity.omnipost.ui.DraftActivity;
 import damjay.publicity.omnipost.ui.DraftsFragment;
-import damjay.publicity.omnipost.ui.SurviveFragment;
+import damjay.publicity.omnipost.ui.SettingsFragment;
 import damjay.publicity.omnipost.ui.TasksFragment;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -47,8 +47,8 @@ public class MainActivity extends AppCompatActivity {
         show(new BirthdaysFragment());
         return true;
       }
-      if (id == R.id.nav_survive) {
-        show(new SurviveFragment());
+      if (id == R.id.nav_settings) {
+        show(new SettingsFragment());
         return true;
       }
       return false;
@@ -66,9 +66,9 @@ public class MainActivity extends AppCompatActivity {
   protected void onResume() {
     super.onResume();
     if (SurvivalHelper.allClear(this)) {
-      binding.bottomNav.removeBadge(R.id.nav_survive);
+      binding.bottomNav.removeBadge(R.id.nav_settings);
     } else {
-      BadgeDrawable badge = binding.bottomNav.getOrCreateBadge(R.id.nav_survive);
+      BadgeDrawable badge = binding.bottomNav.getOrCreateBadge(R.id.nav_settings);
       badge.setVisible(true);
       badge.setBackgroundColor(getColor(R.color.danger));
     }

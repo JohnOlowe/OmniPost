@@ -65,7 +65,7 @@ public final class SnoozeChooser {
             day.set(Calendar.MINUTE, minute);
             day.set(Calendar.SECOND, 0);
             day.set(Calendar.MILLISECOND, 0);
-            callback.onChosen(day.getTimeInMillis());
+            confirm(context, day.getTimeInMillis(), callback);
           },
           start.get(Calendar.HOUR_OF_DAY),
           start.get(Calendar.MINUTE),
@@ -75,6 +75,16 @@ public final class SnoozeChooser {
       start.get(Calendar.YEAR),
       start.get(Calendar.MONTH),
       start.get(Calendar.DAY_OF_MONTH))
+      .show();
+  }
+
+  public static void confirm(Context context, long millis, Callback callback) {
+    String message = DateUtils.formatStamp(millis) + "\n" + DateUtils.formatUntil(millis);
+    new MaterialAlertDialogBuilder(context)
+      .setTitle(R.string.confirm_time)
+      .setMessage(message)
+      .setPositiveButton(R.string.use_this_time, (d, w) -> callback.onChosen(millis))
+      .setNegativeButton(android.R.string.cancel, null)
       .show();
   }
 }

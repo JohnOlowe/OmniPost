@@ -68,7 +68,7 @@ public class DraftActivity extends AppCompatActivity {
           found = new Draft();
           found.taskId = taskId;
           found.title = linked == null ? "Caption" : linked.title;
-          found.variantA = CaptionTemplates.forTask(linked);
+          found.variantA = CaptionTemplates.forTask(this, linked);
           found.finalizedText = found.variantA;
           found.updatedAt = System.currentTimeMillis();
           found.id = db.draftDao().insert(found);

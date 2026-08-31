@@ -14,6 +14,7 @@ import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 
 public class TaskAlarmReceiver extends BroadcastReceiver {
   @Override
@@ -65,6 +66,7 @@ public class TaskAlarmReceiver extends BroadcastReceiver {
         AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.DRAFTING);
         task.status = TaskStatus.DRAFTING;
         NotificationHelper.showDraft(app, task);
+        launchAlarmScreen(app, task, phase);
         break;
       case AlarmScheduler.PHASE_WARNING:
         AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.WARNING);
@@ -86,6 +88,9 @@ public class TaskAlarmReceiver extends BroadcastReceiver {
   }
 
   private static void launchAlarmScreen(Context app, Task task, int phase) {
+    if (!Prefs.fullScreen(app)) {
+      return;
+    }
     Intent activity = new Intent(app, AlarmActivity.class);
     activity.addFlags(
       Intent.FLAG_ACTIVITY_NEW_TASK

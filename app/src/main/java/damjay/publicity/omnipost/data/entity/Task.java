@@ -39,4 +39,5 @@ public class Task {
   public long linkedDraftId;
   public long postedAtMillis;
   public long snoozeUntilMillis;
+  public boolean timesLocked;
 }

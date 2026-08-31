@@ -20,7 +20,7 @@ public final class TaskStatus {
       case DRAFTING:
         return "Write caption";
       case WARNING:
-        return "30 min";
+        return "Caption ready";
       case NAGGING:
         return "Post now";
       case SNOOZED:
@@ -37,10 +37,16 @@ public final class TaskStatus {
   }
 
   public static String dueStatus(long draftAtMillis, long postAtMillis, long now) {
+    return dueStatus(draftAtMillis, postAtMillis, now, ScheduleTimes.WARNING_LEAD_MS);
+  }
+
+  public static String dueStatus(
+    long draftAtMillis, long postAtMillis, long now, long warningLeadMs) {
     if (postAtMillis <= now) {
       return NAGGING;
     }
-    if (postAtMillis - ScheduleTimes.WARNING_LEAD_MS <= now) {
+    long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
+    if (postAtMillis - lead <= now) {
       return WARNING;
     }
     if (draftAtMillis <= now) {

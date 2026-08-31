@@ -14,25 +14,26 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
-import android.os.VibratorManager;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
+import damjay.publicity.omnipost.notify.Alerts;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
-import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.List;
 
 public class NagForegroundService extends Service {
+  private static final long DESK_REFRESH_MS = 15L * 60L * 1000L;
+
   private final Handler handler = new Handler(Looper.getMainLooper());
   private final Runnable pulse = this::onPulse;
   private MediaPlayer player;
+  private volatile boolean keepAlive;
   private volatile boolean hasNagging;
   private volatile boolean destroyed;
   private PowerManager.WakeLock wakeLock;
@@ -56,32 +57,40 @@ public class NagForegroundService extends Service {
     super.onCreate();
     destroyed = false;
     NotificationHelper.ensureChannels(this);
-    promoteForeground(1);
+    promoteForeground(0, null);
   }
 
   @Override
   public int onStartCommand(Intent intent, int flags, int startId) {
     NotificationHelper.ensureChannels(this);
-    promoteForeground(1);
+    promoteForeground(0, null);
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
     AppExecutors.disk().execute(() -> {
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
+      Task next = AppDatabase.get(this).taskDao().nextActive();
       hasNagging = nagging != null && !nagging.isEmpty();
+      boolean desk = Prefs.deskOngoing(this);
+      keepAlive = hasNagging || desk;
       AppExecutors.main(() -> {
         if (destroyed) {
           return;
         }
-        if (!hasNagging) {
+        if (!keepAlive) {
           stopForeground(STOP_FOREGROUND_REMOVE);
           stopSelf();
           return;
         }
-        promoteForeground(nagging.size());
-        fireBurst(nagging, focusedId);
+        promoteForeground(hasNagging ? nagging.size() : 0, next);
         handler.removeCallbacks(pulse);
-        handler.postDelayed(pulse, ScheduleTimes.NAG_INTERVAL_MS);
-        AlarmScheduler.schedulePulse(
-          this, 0L, System.currentTimeMillis() + ScheduleTimes.NAG_INTERVAL_MS);
+        if (hasNagging) {
+          fireBurst(nagging, focusedId);
+          long interval = Prefs.nagIntervalMs(this);
+          handler.postDelayed(pulse, interval);
+          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + interval);
+        } else {
+          handler.postDelayed(pulse, DESK_REFRESH_MS);
+          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + DESK_REFRESH_MS);
+        }
       });
     });
     return START_STICKY;
@@ -90,22 +99,30 @@ public class NagForegroundService extends Service {
   private void onPulse() {
     AppExecutors.disk().execute(() -> {
       List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
+      Task next = AppDatabase.get(this).taskDao().nextActive();
       hasNagging = nagging != null && !nagging.isEmpty();
+      boolean desk = Prefs.deskOngoing(this);
+      keepAlive = hasNagging || desk;
       AppExecutors.main(() -> {
         if (destroyed) {
           return;
         }
-        if (!hasNagging) {
+        if (!keepAlive) {
           stopForeground(STOP_FOREGROUND_REMOVE);
           stopSelf();
           return;
         }
-        promoteForeground(nagging.size());
-        fireBurst(nagging, 0L);
+        promoteForeground(hasNagging ? nagging.size() : 0, next);
         handler.removeCallbacks(pulse);
-        handler.postDelayed(pulse, ScheduleTimes.NAG_INTERVAL_MS);
-        AlarmScheduler.schedulePulse(
-          this, 0L, System.currentTimeMillis() + ScheduleTimes.NAG_INTERVAL_MS);
+        if (hasNagging) {
+          fireBurst(nagging, 0L);
+          long interval = Prefs.nagIntervalMs(this);
+          handler.postDelayed(pulse, interval);
+          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + interval);
+        } else {
+          handler.postDelayed(pulse, DESK_REFRESH_MS);
+          AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + DESK_REFRESH_MS);
+        }
       });
     });
   }
@@ -113,7 +130,7 @@ public class NagForegroundService extends Service {
   private void fireBurst(List<Task> nagging, long focusedId) {
     acquireBurstLock();
     playAlarmSound();
-    vibrate();
+    Alerts.vibrate(this);
     Task focus = null;
     for (Task task : nagging) {
       NotificationHelper.showNagBurst(this, task);
@@ -121,7 +138,7 @@ public class NagForegroundService extends Service {
         focus = task;
       }
     }
-    if (focus != null) {
+    if (focus != null && Prefs.fullScreen(this)) {
       try {
         Intent alarm = new Intent(this, AlarmActivity.class);
         alarm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -132,8 +149,8 @@ public class NagForegroundService extends Service {
     }
   }
 
-  private void promoteForeground(int count) {
-    Notification notification = NotificationHelper.buildOngoing(this, count);
+  private void promoteForeground(int count, Task next) {
+    Notification notification = NotificationHelper.buildDesk(this, count, next);
     if (Build.VERSION.SDK_INT >= 34) {
       startForeground(
         NotificationHelper.FGS_ID,
@@ -147,6 +164,9 @@ public class NagForegroundService extends Service {
 
   private void playAlarmSound() {
     stopAlarmSound();
+    if (!Prefs.sound(this)) {
+      return;
+    }
     try {
       Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
       player = new MediaPlayer();
@@ -159,7 +179,7 @@ public class NagForegroundService extends Service {
       player.setLooping(true);
       player.prepare();
       player.start();
-      handler.postDelayed(this::stopAlarmSound, ScheduleTimes.BURST_MS);
+      handler.postDelayed(this::stopAlarmSound, Prefs.burstMs());
     } catch (Exception ignored) {
     }
   }
@@ -178,25 +198,6 @@ public class NagForegroundService extends Service {
     }
   }
 
-  private void vibrate() {
-    long[] pattern = new long[] {0, 400, 200, 400, 200, 800};
-    try {
-      if (Build.VERSION.SDK_INT >= 31) {
-        VibratorManager vm = (VibratorManager) getSystemService(VIBRATOR_MANAGER_SERVICE);
-        if (vm != null) {
-          vm.getDefaultVibrator()
-            .vibrate(VibrationEffect.createWaveform(pattern, -1));
-        }
-      } else {
-        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        if (vibrator != null) {
-          vibrator.vibrate(VibrationEffect.createWaveform(pattern, -1));
-        }
-      }
-    } catch (Exception ignored) {
-    }
-  }
-
   private void acquireBurstLock() {
     try {
       if (wakeLock == null) {
@@ -207,7 +208,7 @@ public class NagForegroundService extends Service {
         }
       }
       if (wakeLock != null) {
-        wakeLock.acquire(ScheduleTimes.BURST_MS + 5_000L);
+        wakeLock.acquire(Prefs.burstMs() + 5_000L);
       }
     } catch (Exception ignored) {
     }
@@ -215,7 +216,7 @@ public class NagForegroundService extends Service {
 
   @Override
   public void onTaskRemoved(Intent rootIntent) {
-    if (hasNagging) {
+    if (keepAlive || Prefs.deskOngoing(this)) {
       AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + 10_000L);
       try {
         ContextCompat.startForegroundService(this, new Intent(this, NagForegroundService.class));
@@ -236,7 +237,7 @@ public class NagForegroundService extends Service {
       } catch (Exception ignored) {
       }
     }
-    if (hasNagging) {
+    if (keepAlive || Prefs.deskOngoing(this)) {
       AlarmScheduler.schedulePulse(this, 0L, System.currentTimeMillis() + 15_000L);
     }
     super.onDestroy();

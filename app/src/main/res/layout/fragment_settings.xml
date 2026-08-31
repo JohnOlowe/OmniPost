@@ -14,6 +14,48 @@
     <TextView
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:text="@string/settings_title"
+      android:textColor="@color/cream"
+      android:textSize="20sp"
+      android:textStyle="bold"/>
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="16dp"
+      android:text="@string/settings_body"
+      android:textColor="@color/text_muted"
+      android:textSize="14sp"/>
+
+    <include
+      android:id="@+id/row_alert"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_nag"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_warning"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_seed"
+      layout="@layout/item_switch_row"/>
+
+    <include
+      android:id="@+id/row_desk"
+      layout="@layout/item_switch_row"/>
+
+    <include
+      android:id="@+id/row_fullscreen_pref"
+      layout="@layout/item_switch_row"/>
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
       android:text="@string/survival_title"
       android:textColor="@color/cream"
       android:textSize="20sp"

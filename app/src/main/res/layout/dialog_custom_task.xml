@@ -27,6 +27,14 @@
     android:text="@string/pick_time"
     android:textColor="@color/gold"/>
 
+  <TextView
+    android:id="@+id/until"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:textColor="@color/gold"
+    android:textSize="13sp"/>
+
   <RadioGroup
     android:id="@+id/kind"
     android:layout_width="match_parent"

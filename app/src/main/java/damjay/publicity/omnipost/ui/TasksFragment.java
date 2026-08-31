@@ -65,20 +65,39 @@ public class TasksFragment extends Fragment {
 
       @Override
       public void onSnooze(Task task) {
-        SnoozeChooser.show(requireContext(), until -> {
+        SnoozeChooser.show(requireContext(), until -> applySnooze(task.id, until));
+      }
+
+      @Override
+      public void onShift(Task task) {
+        SnoozeChooser.pickDateTime(requireContext(), when -> {
           Context app = requireContext().getApplicationContext();
           AppExecutors.disk().execute(() -> {
-            ScheduleCoordinator.snooze(app, task.id, until);
+            ScheduleCoordinator.shift(app, task.id, when);
             AppExecutors.main(() -> {
               if (!isAdded()) {
                 return;
               }
               Toast.makeText(
                 requireContext(),
-                getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+                getString(R.string.shifted_to, DateUtils.formatStamp(when)),
                 Toast.LENGTH_LONG)
                 .show();
             });
+          });
+        });
+      }
+
+      @Override
+      public void onReopen(Task task) {
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> {
+          ScheduleCoordinator.reopen(app, task.id);
+          AppExecutors.main(() -> {
+            if (!isAdded()) {
+              return;
+            }
+            Toast.makeText(requireContext(), R.string.brought_back, Toast.LENGTH_LONG).show();
           });
         });
       }
@@ -129,16 +148,38 @@ public class TasksFragment extends Fragment {
     return binding.getRoot();
   }
 
+  private void applySnooze(long taskId, long until) {
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.snooze(app, taskId, until);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(
+          requireContext(),
+          getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+          Toast.LENGTH_LONG)
+          .show();
+      });
+    });
+  }
+
   private void showCustomEditor() {
     View view = getLayoutInflater().inflate(R.layout.dialog_custom_task, null, false);
     TextInputEditText title = view.findViewById(R.id.input_title);
     MaterialButton whenBtn = view.findViewById(R.id.btn_when);
+    android.widget.TextView until = view.findViewById(R.id.until);
     RadioButton flexible = view.findViewById(R.id.kind_flexible);
     AtomicLong when = new AtomicLong(DateUtils.nextClock(10, 0));
-    whenBtn.setText(DateUtils.formatStamp(when.get()));
+    Runnable paint = () -> {
+      whenBtn.setText(DateUtils.formatStamp(when.get()));
+      until.setText(DateUtils.formatUntil(when.get()));
+    };
+    paint.run();
     whenBtn.setOnClickListener(v -> SnoozeChooser.pickDateTime(requireContext(), millis -> {
       when.set(millis);
-      whenBtn.setText(DateUtils.formatStamp(millis));
+      paint.run();
     }));
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(R.string.add_custom)

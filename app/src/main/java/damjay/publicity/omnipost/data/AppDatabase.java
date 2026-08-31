@@ -16,7 +16,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 
 @Database(
   entities = {Task.class, Draft.class, Member.class},
-  version = 2,
+  version = 3,
   exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -33,6 +33,13 @@ public abstract class AppDatabase extends RoomDatabase {
     }
   };
 
+  static final Migration MIGRATION_2_3 = new Migration(2, 3) {
+    @Override
+    public void migrate(@NonNull SupportSQLiteDatabase db) {
+      db.execSQL("ALTER TABLE tasks ADD COLUMN timesLocked INTEGER NOT NULL DEFAULT 0");
+    }
+  };
+
   private static volatile AppDatabase INSTANCE;
 
   public static AppDatabase get(Context context) {
@@ -43,7 +50,7 @@ public abstract class AppDatabase extends RoomDatabase {
               context.getApplicationContext(),
               AppDatabase.class,
               "omnipost.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build();
         }

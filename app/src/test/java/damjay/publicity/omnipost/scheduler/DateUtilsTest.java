@@ -87,6 +87,16 @@ public class DateUtilsTest {
   }
 
   @Test
+  public void formatUntilUsesDaysHoursMinutes() {
+    long now = 1_000_000L;
+    assertEquals("that time has passed", DateUtils.formatUntil(now - 1, now));
+    assertEquals("in 1 minute", DateUtils.formatUntil(now + 60_000L, now));
+    assertEquals("in 35 minutes", DateUtils.formatUntil(now + 35L * 60_000L, now));
+    assertEquals("in 2 hours 10 minutes", DateUtils.formatUntil(now + 2L * 3_600_000L + 10L * 60_000L, now));
+    assertEquals("in 2 days 4 hours", DateUtils.formatUntil(now + 2L * 86_400_000L + 4L * 3_600_000L, now));
+  }
+
+  @Test
   public void dayBeforeIsPreviousEvening() {
     Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
     Calendar draft = DateUtils.dayBeforeAt(post, 20, 0);
