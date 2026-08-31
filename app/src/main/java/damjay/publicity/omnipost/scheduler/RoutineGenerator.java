@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,6 +13,11 @@ public final class RoutineGenerator {
   private RoutineGenerator() {}
 
   public static List<Task> generate(long nowMillis, TimeZone tz, List<Member> members) {
+    return generate(nowMillis, tz, members, SeriesDefaults.builtins());
+  }
+
+  public static List<Task> generate(
+    long nowMillis, TimeZone tz, List<Member> members, List<Series> seriesList) {
     Calendar now = Calendar.getInstance(tz);
     now.setTimeInMillis(nowMillis);
     List<Task> out = new ArrayList<>();
@@ -39,8 +45,11 @@ public final class RoutineGenerator {
     addFastingEve(out, now);
     addFastingDay(out, now);
     addHappyNewMonth(out, now);
-    addCountdown(out, now);
-    addBirthdayNotices(out, now);
+    if (seriesList != null) {
+      for (Series series : seriesList) {
+        addSeries(out, now, series);
+      }
+    }
     if (members != null) {
       for (Member member : members) {
         addBirthday(out, now, member);
@@ -62,7 +71,7 @@ public final class RoutineGenerator {
       Calendar draft = DateUtils.dayBeforeAt(
         post, ScheduleTimes.WEEKLY_DRAFT_HOUR, ScheduleTimes.WEEKLY_DRAFT_MINUTE);
       out.add(build(type, title, description, draft.getTimeInMillis(), post.getTimeInMillis(),
-        type + "|" + DateUtils.dayKey(post), 0L));
+        type + "|" + DateUtils.dayKey(post), 0L, 0L));
       post.add(Calendar.DAY_OF_MONTH, 7);
     }
   }
@@ -78,6 +87,7 @@ public final class RoutineGenerator {
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
         TaskTypes.NEW_MONTH_FASTING + "|" + DateUtils.dayKey(post),
+        0L,
         0L));
       post.add(Calendar.MONTH, 1);
       post.set(Calendar.DAY_OF_MONTH, post.getActualMaximum(Calendar.DAY_OF_MONTH));
@@ -97,6 +107,7 @@ public final class RoutineGenerator {
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
         TaskTypes.FASTING_DAY + "|" + DateUtils.dayKey(post),
+        0L,
         0L));
       post.add(Calendar.MONTH, 1);
       post.set(Calendar.DAY_OF_MONTH, 1);
@@ -116,6 +127,7 @@ public final class RoutineGenerator {
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
         TaskTypes.HAPPY_NEW_MONTH + "|" + DateUtils.dayKey(post),
+        0L,
         0L));
       post.add(Calendar.MONTH, 1);
       post.set(Calendar.DAY_OF_MONTH, 1);
@@ -124,13 +136,29 @@ public final class RoutineGenerator {
     }
   }
 
-  private static void addCountdown(List<Task> out, Calendar now) {
+  static void addSeries(List<Task> out, Calendar now, Series series) {
+    if (series == null || !series.enabled) {
+      return;
+    }
+    if (Series.KIND_COUNTDOWN.equals(series.kind)) {
+      addCountdown(out, now, series);
+      return;
+    }
+    if (Series.KIND_MONTHLY.equals(series.kind)) {
+      addMonthlyNotice(out, now, series);
+    }
+  }
+
+  private static void addCountdown(List<Task> out, Calendar now, Series series) {
     Calendar event = DateUtils.startOfDay(now);
-    event.set(Campaigns.BEYOND_LIMIT_YEAR, Campaigns.BEYOND_LIMIT_MONTH, Campaigns.BEYOND_LIMIT_DAY);
+    event.setTimeInMillis(series.eventAtMillis);
+    event = DateUtils.startOfDay(event);
     Calendar today = DateUtils.startOfDay(now);
     if (today.after(event)) {
       return;
     }
+    int hour = series.postHour;
+    String eventKey = DateUtils.dayKey(event);
     for (int i = 0; i < ScheduleTimes.GENERATE_COUNTDOWN_DAYS; i++) {
       Calendar postDay = (Calendar) today.clone();
       postDay.add(Calendar.DAY_OF_MONTH, i);
@@ -138,58 +166,78 @@ public final class RoutineGenerator {
         break;
       }
       int days = DateUtils.calendarDaysBetween(postDay, event);
-      Calendar post = DateUtils.sameDayAt(postDay, ScheduleTimes.MONTH_POST_HOUR, 0);
+      Calendar post = DateUtils.sameDayAt(postDay, hour, series.postMinute);
       Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
       out.add(build(
         TaskTypes.COUNTDOWN,
-        CaptionTemplates.countdownTitle(days),
-        "Daily until 9 Sept 2026. One card — the day count updates itself.",
+        CaptionTemplates.countdownTitle(series.title, days),
+        "Daily until "
+          + DateUtils.dayKey(event)
+          + ". One card — {days} / {Days} / {away} fill themselves.",
         draft.getTimeInMillis(),
         post.getTimeInMillis(),
-        TaskTypes.COUNTDOWN + "|" + DateUtils.dayKey(event) + "|" + DateUtils.dayKey(post),
-        0L));
+        countdownKey(series, eventKey, DateUtils.dayKey(post)),
+        0L,
+        series.id));
     }
   }
 
-  private static void addBirthdayNotices(List<Task> out, Calendar now) {
+  private static void addMonthlyNotice(List<Task> out, Calendar now, Series series) {
     Calendar monthStart = DateUtils.startOfDay(now);
     monthStart.set(Calendar.DAY_OF_MONTH, 1);
     String todayKey = DateUtils.dayKey(now);
+    int hour = series.postHour;
     for (int m = 0; m < ScheduleTimes.GENERATE_MONTH_COUNT; m++) {
       Calendar target = (Calendar) monthStart.clone();
       target.add(Calendar.MONTH, m);
       String monthKey = DateUtils.monthKey(target);
       String monthName = DateUtils.monthName(target);
       int max = target.getActualMaximum(Calendar.DAY_OF_MONTH);
-      int[] thirds = DateUtils.inMonthThirds(max);
 
-      Calendar eve = (Calendar) target.clone();
-      eve.set(Calendar.DAY_OF_MONTH, 1);
-      eve.add(Calendar.MONTH, -1);
-      eve.set(Calendar.DAY_OF_MONTH, eve.getActualMaximum(Calendar.DAY_OF_MONTH));
-      eve.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
-      eve.set(Calendar.MINUTE, 0);
-      eve.set(Calendar.SECOND, 0);
-      eve.set(Calendar.MILLISECOND, 0);
-
-      Calendar first = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
-      first.set(Calendar.DAY_OF_MONTH, thirds[0]);
-      first.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
-      first.set(Calendar.MINUTE, 0);
-
-      Calendar second = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
-      second.set(Calendar.DAY_OF_MONTH, thirds[1]);
-      second.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
-      second.set(Calendar.MINUTE, 0);
-
-      addNoticeIfDue(out, todayKey, monthKey, monthName, "EVE", eve);
-      addNoticeIfDue(out, todayKey, monthKey, monthName, "FIRST", first);
-      addNoticeIfDue(out, todayKey, monthKey, monthName, "SECOND", second);
+      if (series.lastOfPrevMonth) {
+        Calendar eve = (Calendar) target.clone();
+        eve.set(Calendar.DAY_OF_MONTH, 1);
+        eve.add(Calendar.MONTH, -1);
+        eve.set(Calendar.DAY_OF_MONTH, eve.getActualMaximum(Calendar.DAY_OF_MONTH));
+        eve.set(Calendar.HOUR_OF_DAY, hour);
+        eve.set(Calendar.MINUTE, series.postMinute);
+        eve.set(Calendar.SECOND, 0);
+        eve.set(Calendar.MILLISECOND, 0);
+        addNoticeIfDue(out, series, todayKey, monthKey, monthName, "EVE", eve);
+      }
+      if (series.day10) {
+        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D10", 10, max, hour);
+      }
+      if (series.day20) {
+        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D20", 20, max, hour);
+      }
     }
+  }
+
+  private static void addFixedDay(
+    List<Task> out,
+    Series series,
+    String todayKey,
+    Calendar target,
+    String monthKey,
+    String monthName,
+    String slot,
+    int day,
+    int max,
+    int hour) {
+    if (day > max) {
+      return;
+    }
+    Calendar post = DateUtils.sameDayAt(target, hour, series.postMinute);
+    post.set(Calendar.DAY_OF_MONTH, day);
+    post.set(Calendar.HOUR_OF_DAY, hour);
+    post.set(Calendar.MINUTE, series.postMinute);
+    addNoticeIfDue(out, series, todayKey, monthKey, monthName, slot, post);
   }
 
   private static void addNoticeIfDue(
     List<Task> out,
+    Series series,
     String todayKey,
     String monthKey,
     String monthName,
@@ -201,12 +249,57 @@ public final class RoutineGenerator {
     Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
     out.add(build(
       TaskTypes.BIRTHDAY_NOTICE,
-      "Birthday notice · " + monthName,
-      "Last day of the previous month, then twice in the month. Month name fills itself.",
+      CaptionTemplates.monthlyTitle(series.title, monthName),
+      monthlyDescription(series),
       draft.getTimeInMillis(),
       post.getTimeInMillis(),
-      TaskTypes.BIRTHDAY_NOTICE + "|" + monthKey + "|" + slot + "|" + DateUtils.dayKey(post),
-      0L));
+      monthlyKey(series, monthKey, slot, DateUtils.dayKey(post)),
+      0L,
+      series.id));
+  }
+
+  private static String monthlyDescription(Series series) {
+    StringBuilder out = new StringBuilder();
+    if (series.lastOfPrevMonth) {
+      out.append("Last day of the previous month");
+    }
+    if (series.day10) {
+      if (out.length() > 0) {
+        out.append(", ");
+      }
+      out.append("the 10th");
+    }
+    if (series.day20) {
+      if (out.length() > 0) {
+        out.append(", ");
+      }
+      out.append("the 20th");
+    }
+    if (out.length() == 0) {
+      return "{month} fills itself.";
+    }
+    out.append(". {month} fills itself.");
+    return out.toString();
+  }
+
+  private static String countdownKey(Series series, String eventKey, String postKey) {
+    if (series.id > 0L && (series.seedKey == null || series.seedKey.isEmpty())) {
+      return TaskTypes.COUNTDOWN + "|" + series.id + "|" + eventKey + "|" + postKey;
+    }
+    return TaskTypes.COUNTDOWN + "|" + eventKey + "|" + postKey;
+  }
+
+  private static String monthlyKey(Series series, String monthKey, String slot, String dayKey) {
+    if (series.id > 0L && (series.seedKey == null || series.seedKey.isEmpty())) {
+      return TaskTypes.BIRTHDAY_NOTICE + "|" + series.id + "|" + monthKey + "|" + slot + "|" + dayKey;
+    }
+    String legacySlot = slot;
+    if ("D10".equals(slot)) {
+      legacySlot = "FIRST";
+    } else if ("D20".equals(slot)) {
+      legacySlot = "SECOND";
+    }
+    return TaskTypes.BIRTHDAY_NOTICE + "|" + monthKey + "|" + legacySlot + "|" + dayKey;
   }
 
   private static void addBirthday(List<Task> out, Calendar now, Member member) {
@@ -228,7 +321,8 @@ public final class RoutineGenerator {
       draft.getTimeInMillis(),
       post.getTimeInMillis(),
       TaskTypes.BIRTHDAY + "|" + member.id + "|" + DateUtils.dayKey(post),
-      member.id));
+      member.id,
+      0L));
   }
 
   private static Task build(
@@ -238,7 +332,8 @@ public final class RoutineGenerator {
     long draftAt,
     long postAt,
     String key,
-    long memberId) {
+    long memberId,
+    long seriesId) {
     Task task = new Task();
     task.type = type;
     task.title = title;
@@ -248,6 +343,7 @@ public final class RoutineGenerator {
     task.status = TaskStatus.SCHEDULED;
     task.occurrenceKey = key;
     task.memberId = memberId;
+    task.seriesId = seriesId;
     return task;
   }
 

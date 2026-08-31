@@ -13,12 +13,14 @@ import androidx.fragment.app.Fragment;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.FragmentSettingsBinding;
 import damjay.publicity.omnipost.databinding.ItemSettingRowBinding;
 import damjay.publicity.omnipost.databinding.ItemSurviveRowBinding;
 import damjay.publicity.omnipost.databinding.ItemSwitchRowBinding;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
+import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
@@ -39,6 +41,12 @@ public class SettingsFragment extends Fragment {
     binding = FragmentSettingsBinding.inflate(inflater, container, false);
     binding.btnTest.setOnClickListener(v -> fireTest());
     binding.btnRearm.setOnClickListener(v -> rearm());
+    binding.btnAddCountdown.setOnClickListener(v -> SeriesEditor.createCountdown(requireContext()));
+    binding.btnAddNotice.setOnClickListener(v -> SeriesEditor.createMonthly(requireContext()));
+    AppDatabase.get(requireContext())
+      .seriesDao()
+      .observeAll()
+      .observe(getViewLifecycleOwner(), this::paintSeries);
     bindDesk();
     return binding.getRoot();
   }
@@ -85,6 +93,37 @@ public class SettingsFragment extends Fragment {
       R.string.setting_fullscreen_hint,
       Prefs.fullScreen(ctx),
       (b, on) -> Prefs.setFullScreen(ctx, on));
+  }
+
+  private void paintSeries(java.util.List<Series> series) {
+    if (binding == null) {
+      return;
+    }
+    binding.seriesList.removeAllViews();
+    if (series == null) {
+      return;
+    }
+    LayoutInflater inflater = getLayoutInflater();
+    for (Series item : series) {
+      ItemSettingRowBinding row =
+        ItemSettingRowBinding.inflate(inflater, binding.seriesList, false);
+      row.title.setText(item.title);
+      row.value.setText(seriesSummary(item));
+      row.getRoot().setOnClickListener(v -> SeriesEditor.show(requireContext(), item));
+      binding.seriesList.addView(row.getRoot());
+    }
+  }
+
+  private String seriesSummary(Series series) {
+    if (Series.KIND_MONTHLY.equals(series.kind)) {
+      return getString(R.string.kind_monthly);
+    }
+    if (series.eventAtMillis > 0L) {
+      return getString(R.string.kind_countdown)
+        + " · "
+        + DateUtils.formatDayHeader(series.eventAtMillis);
+    }
+    return getString(R.string.kind_countdown);
   }
 
   private void paintChoice(ItemSettingRowBinding row, int title, String value) {

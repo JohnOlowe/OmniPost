@@ -156,7 +156,14 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       binding.btnSnooze.setOnClickListener(v -> listener.onSnooze(task));
       binding.btnShift.setOnClickListener(v -> listener.onShift(task));
       binding.getRoot().setOnLongClickListener(v -> {
-        if (TaskTypes.isCustom(task.type) && !posted) {
+        if (posted) {
+          return false;
+        }
+        if (task.seriesId > 0L || TaskTypes.oneCard(task.type)) {
+          listener.onEditSeries(task);
+          return true;
+        }
+        if (TaskTypes.isCustom(task.type)) {
           listener.onDelete(task);
           return true;
         }

@@ -36,6 +36,7 @@ public class Task {
   public String occurrenceKey = "";
 
   public long memberId;
+  public long seriesId;
   public long linkedDraftId;
   public long postedAtMillis;
   public long snoozeUntilMillis;

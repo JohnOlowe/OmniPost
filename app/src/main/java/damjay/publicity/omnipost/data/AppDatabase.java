@@ -9,14 +9,16 @@ import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import damjay.publicity.omnipost.data.dao.DraftDao;
 import damjay.publicity.omnipost.data.dao.MemberDao;
+import damjay.publicity.omnipost.data.dao.SeriesDao;
 import damjay.publicity.omnipost.data.dao.TaskDao;
 import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 
 @Database(
-  entities = {Task.class, Draft.class, Member.class},
-  version = 3,
+  entities = {Task.class, Draft.class, Member.class, Series.class},
+  version = 4,
   exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -25,6 +27,8 @@ public abstract class AppDatabase extends RoomDatabase {
   public abstract DraftDao draftDao();
 
   public abstract MemberDao memberDao();
+
+  public abstract SeriesDao seriesDao();
 
   static final Migration MIGRATION_1_2 = new Migration(1, 2) {
     @Override
@@ -40,6 +44,27 @@ public abstract class AppDatabase extends RoomDatabase {
     }
   };
 
+  static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+    @Override
+    public void migrate(@NonNull SupportSQLiteDatabase db) {
+      db.execSQL("ALTER TABLE tasks ADD COLUMN seriesId INTEGER NOT NULL DEFAULT 0");
+      db.execSQL(
+        "CREATE TABLE IF NOT EXISTS series ("
+          + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+          + "title TEXT NOT NULL, "
+          + "kind TEXT NOT NULL, "
+          + "caption TEXT NOT NULL, "
+          + "eventAtMillis INTEGER NOT NULL, "
+          + "postHour INTEGER NOT NULL, "
+          + "postMinute INTEGER NOT NULL, "
+          + "lastOfPrevMonth INTEGER NOT NULL, "
+          + "day10 INTEGER NOT NULL, "
+          + "day20 INTEGER NOT NULL, "
+          + "enabled INTEGER NOT NULL, "
+          + "seedKey TEXT NOT NULL)");
+    }
+  };
+
   private static volatile AppDatabase INSTANCE;
 
   public static AppDatabase get(Context context) {
@@ -50,7 +75,7 @@ public abstract class AppDatabase extends RoomDatabase {
               context.getApplicationContext(),
               AppDatabase.class,
               "omnipost.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build();
         }

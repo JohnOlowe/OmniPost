@@ -26,6 +26,27 @@ public class CaptionTemplatesTest {
   }
 
   @Test
+  public void customTemplateFillsPlaceholdersAndFourPartCountdown() {
+    damjay.publicity.omnipost.data.entity.Series series =
+      new damjay.publicity.omnipost.data.entity.Series();
+    series.caption = "{Days} / {away} / {days} / {month}";
+    Task countdown = new Task();
+    countdown.type = TaskTypes.COUNTDOWN;
+    countdown.occurrenceKey = "COUNTDOWN|42|2026-09-09|2026-08-31";
+    assertEquals(9, CaptionTemplates.countdownDays(countdown));
+    assertEquals(
+      "9 DAYS TO GO / is 9 days away / 9 / this month",
+      CaptionTemplates.live(countdown, series));
+
+    Task notice = new Task();
+    notice.type = TaskTypes.BIRTHDAY_NOTICE;
+    notice.occurrenceKey = "BIRTHDAY_NOTICE|9|2026-09|D10|2026-09-10";
+    series.caption = "Month of {month}";
+    assertEquals(0, CaptionTemplates.countdownDays(notice));
+    assertEquals("Month of September", CaptionTemplates.live(notice, series));
+  }
+
+  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));

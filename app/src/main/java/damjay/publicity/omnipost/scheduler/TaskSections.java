@@ -66,8 +66,7 @@ public final class TaskSections {
         rest.add(task);
       }
     }
-    keepOneCard(nowList, soon, rest, TaskTypes.COUNTDOWN);
-    keepOneCard(nowList, soon, rest, TaskTypes.BIRTHDAY_NOTICE);
+    keepOneGroupEach(nowList, soon, rest);
     sortByRing(nowList, now, warningLeadMs);
     add(out, TaskTypes.SECTION_NOW, SUB_NOW, nowList);
     add(out, TaskTypes.SECTION_NEXT, SUB_NEXT, collapseUpcoming(soon, now, warningLeadMs));
@@ -86,30 +85,48 @@ public final class TaskSections {
   }
 
   /**
-   * Countdown and birthday NOTICE never cluster: keep the one that needs you
-   * (latest post, i.e. today's), otherwise the soonest upcoming.
+   * Countdown and monthly NOTICE never cluster: keep the one that needs you
+   * (latest post, i.e. today's), otherwise the soonest upcoming — per series.
    */
+  private static void keepOneGroupEach(List<Task> nowList, List<Task> soon, List<Task> rest) {
+    Map<String, Boolean> groups = new LinkedHashMap<>();
+    collectGroups(groups, nowList);
+    collectGroups(groups, soon);
+    collectGroups(groups, rest);
+    for (String group : groups.keySet()) {
+      keepOneCard(nowList, soon, rest, group);
+    }
+  }
+
+  private static void collectGroups(Map<String, Boolean> groups, List<Task> source) {
+    for (Task task : source) {
+      if (TaskTypes.oneCard(task.type)) {
+        groups.put(TaskTypes.seriesGroup(task), Boolean.TRUE);
+      }
+    }
+  }
+
   private static void keepOneCard(
-    List<Task> nowList, List<Task> soon, List<Task> rest, String type) {
-    Task pick = latest(nowList, type);
+    List<Task> nowList, List<Task> soon, List<Task> rest, String group) {
+    Task pick = latest(nowList, group);
     if (pick == null) {
-      pick = earliest(soon, type);
+      pick = earliest(soon, group);
     }
     if (pick == null) {
-      pick = earliest(rest, type);
+      pick = earliest(rest, group);
     }
     if (pick == null) {
       return;
     }
-    retainOnly(nowList, type, pick);
-    retainOnly(soon, type, pick);
-    retainOnly(rest, type, pick);
+    retainOnly(nowList, group, pick);
+    retainOnly(soon, group, pick);
+    retainOnly(rest, group, pick);
   }
 
-  private static Task latest(List<Task> source, String type) {
+  private static Task latest(List<Task> source, String group) {
     Task pick = null;
     for (Task task : source) {
-      if (!type.equals(task.type)) {
+      if (!group.equals(TaskTypes.seriesGroup(task))) {
         continue;
       }
       if (pick == null || task.postAtMillis >= pick.postAtMillis) {
@@ -119,10 +136,10 @@ public final class TaskSections {
     return pick;
   }
 
-  private static Task earliest(List<Task> source, String type) {
+  private static Task earliest(List<Task> source, String group) {
     Task pick = null;
     for (Task task : source) {
-      if (!type.equals(task.type)) {
+      if (!group.equals(TaskTypes.seriesGroup(task))) {
         continue;
       }
       if (pick == null || task.postAtMillis < pick.postAtMillis) {
@@ -132,10 +149,10 @@ public final class TaskSections {
     return pick;
   }
 
-  private static void retainOnly(List<Task> source, String type, Task keep) {
+  private static void retainOnly(List<Task> source, String group, Task keep) {
     for (int i = source.size() - 1; i >= 0; i--) {
       Task task = source.get(i);
-      if (type.equals(task.type) && task != keep && task.id != keep.id) {
+      if (group.equals(TaskTypes.seriesGroup(task)) && task != keep && task.id != keep.id) {
         source.remove(i);
       }
     }
@@ -146,9 +163,10 @@ public final class TaskSections {
     List<Task> other = new ArrayList<>();
     for (Task task : source) {
       if (TaskTypes.isSeries(task.type)) {
-        Task prev = series.get(task.type);
+        String key = TaskTypes.seriesGroup(task);
+        Task prev = series.get(key);
         if (prev == null || task.postAtMillis < prev.postAtMillis) {
-          series.put(task.type, task);
+          series.put(key, task);
         }
       } else {
         other.add(task);
@@ -194,9 +212,10 @@ public final class TaskSections {
       if (!section.equals(TaskTypes.section(task.type))) {
         continue;
       }
-      Task prev = earliest.get(task.type);
+      String key = TaskTypes.seriesGroup(task);
+      Task prev = earliest.get(key);
       if (prev == null || task.postAtMillis < prev.postAtMillis) {
-        earliest.put(task.type, task);
+        earliest.put(key, task);
       }
     }
     List<Task> out = new ArrayList<>(earliest.values());

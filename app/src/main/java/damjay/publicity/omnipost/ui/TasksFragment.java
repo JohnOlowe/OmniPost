@@ -17,10 +17,13 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.FragmentTasksBinding;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.SeriesDefaults;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import java.util.ArrayList;
@@ -114,6 +117,11 @@ public class TasksFragment extends Fragment {
           .setNegativeButton(android.R.string.cancel, null)
           .show();
       }
+
+      @Override
+      public void onEditSeries(Task task) {
+        openSeriesEditor(task);
+      }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
@@ -125,7 +133,7 @@ public class TasksFragment extends Fragment {
       showPosted = checkedId == R.id.chip_posted;
       render();
     });
-    binding.fab.setOnClickListener(v -> showCustomEditor());
+    binding.fab.setOnClickListener(v -> showAddChooser());
     AppDatabase db = AppDatabase.get(requireContext());
     db.taskDao().observeActive().observe(getViewLifecycleOwner(), list -> {
       active.clear();
@@ -161,6 +169,50 @@ public class TasksFragment extends Fragment {
           getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
           Toast.LENGTH_LONG)
           .show();
+      });
+    });
+  }
+
+  private void showAddChooser() {
+    CharSequence[] items = new CharSequence[] {
+      getString(R.string.add_custom),
+      getString(R.string.add_countdown),
+      getString(R.string.add_monthly)
+    };
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.add)
+      .setItems(items, (d, which) -> {
+        if (which == 0) {
+          showCustomEditor();
+        } else if (which == 1) {
+          SeriesEditor.createCountdown(requireContext());
+        } else {
+          SeriesEditor.createMonthly(requireContext());
+        }
+      })
+      .show();
+  }
+
+  private void openSeriesEditor(Task task) {
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      AppDatabase db = AppDatabase.get(app);
+      Series series = null;
+      if (task.seriesId > 0L) {
+        series = db.seriesDao().getById(task.seriesId);
+      }
+      if (series == null && TaskTypes.COUNTDOWN.equals(task.type)) {
+        series = db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN);
+      }
+      if (series == null && TaskTypes.BIRTHDAY_NOTICE.equals(task.type)) {
+        series = db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE);
+      }
+      Series found = series;
+      AppExecutors.main(() -> {
+        if (!isAdded() || found == null) {
+          return;
+        }
+        SeriesEditor.show(requireContext(), found);
       });
     });
   }

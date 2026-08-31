@@ -41,6 +41,9 @@ public interface TaskDao {
   @Query("SELECT * FROM tasks WHERE memberId = :memberId AND status != 'POSTED'")
   List<Task> getActiveForMember(long memberId);
 
+  @Query("SELECT * FROM tasks WHERE seriesId = :seriesId AND status != 'POSTED'")
+  List<Task> getActiveForSeries(long seriesId);
+
   @Query("UPDATE tasks SET status = :status WHERE id = :id")
   int updateStatus(long id, String status);
 

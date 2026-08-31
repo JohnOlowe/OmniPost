@@ -17,6 +17,7 @@ public final class Prefs {
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
   private static final String LAST_NAG = "last_nag_burst";
+  private static final String SERIES_SEEDED = "series_defaults_v1";
 
   private Prefs() {}
 
@@ -100,5 +101,13 @@ public final class Prefs {
 
   public static void setLastNagBurstAt(Context ctx, long when) {
     sp(ctx).edit().putLong(LAST_NAG, when).apply();
+  }
+
+  public static boolean seriesDefaultsInstalled(Context ctx) {
+    return sp(ctx).getBoolean(SERIES_SEEDED, false);
+  }
+
+  public static void setSeriesDefaultsInstalled(Context ctx, boolean on) {
+    sp(ctx).edit().putBoolean(SERIES_SEEDED, on).apply();
   }
 }

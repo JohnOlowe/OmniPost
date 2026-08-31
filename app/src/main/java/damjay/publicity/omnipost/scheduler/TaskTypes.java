@@ -1,5 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
+import damjay.publicity.omnipost.data.entity.Task;
+
 public final class TaskTypes {
   public static final String SUNDAY_SERVICE = "SUNDAY_SERVICE";
   public static final String WEDNESDAY_BIBLE_STUDY = "WEDNESDAY_BIBLE_STUDY";
@@ -121,5 +123,16 @@ public final class TaskTypes {
   /** Daily countdown and birthday NOTICE show as one card, not a cluster. */
   public static boolean oneCard(String type) {
     return COUNTDOWN.equals(type) || BIRTHDAY_NOTICE.equals(type);
+  }
+
+  /** Collapse each repeating series separately so two countdowns do not merge. */
+  public static String seriesGroup(Task task) {
+    if (task == null || task.type == null) {
+      return "";
+    }
+    if (oneCard(task.type) && task.seriesId > 0L) {
+      return task.type + "#" + task.seriesId;
+    }
+    return task.type;
   }
 }

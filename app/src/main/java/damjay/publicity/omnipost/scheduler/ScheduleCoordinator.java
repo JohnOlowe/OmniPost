@@ -3,6 +3,7 @@ package damjay.publicity.omnipost.scheduler;
 import android.content.Context;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
@@ -28,9 +29,11 @@ public final class ScheduleCoordinator {
     }
     db.taskDao().deleteStaleTests(now - 24L * 60L * 60L * 1000L);
     dropStaleCountdowns(app, db, now);
+    ensureSeriesDefaults(app, db);
 
     List<Member> members = db.memberDao().getAllSync();
-    List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members);
+    List<Series> series = db.seriesDao().getEnabledSync();
+    List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members, series);
     for (Task candidate : generated) {
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
@@ -42,6 +45,7 @@ public final class ScheduleCoordinator {
       }
       existing.title = candidate.title;
       existing.description = candidate.description;
+      existing.seriesId = candidate.seriesId;
       if (!existing.timesLocked) {
         existing.draftAtMillis = candidate.draftAtMillis;
         existing.postAtMillis = candidate.postAtMillis;
@@ -53,6 +57,19 @@ public final class ScheduleCoordinator {
     AlarmScheduler.scheduleWatchdog(app);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
+  }
+
+  private static void ensureSeriesDefaults(Context app, AppDatabase db) {
+    if (Prefs.seriesDefaultsInstalled(app)) {
+      return;
+    }
+    if (db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN) == null) {
+      db.seriesDao().insert(SeriesDefaults.beyondLimit());
+    }
+    if (db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE) == null) {
+      db.seriesDao().insert(SeriesDefaults.birthdayNotice());
+    }
+    Prefs.setSeriesDefaultsInstalled(app, true);
   }
 
   /** Missed countdown days drop off so the desk never stacks 9-days, 8-days, 7-days. */
@@ -311,6 +328,51 @@ public final class ScheduleCoordinator {
   public static void deleteDraft(Context context, long draftId) {
     Context app = context.getApplicationContext();
     AppDatabase.get(app).draftDao().deleteById(draftId);
+  }
+
+  public static void saveSeries(Context context, Series series) {
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    if (series.postHour <= 0) {
+      series.postHour = ScheduleTimes.MONTH_POST_HOUR;
+    }
+    boolean countdownSeed = SeriesDefaults.SEED_COUNTDOWN.equals(series.seedKey)
+      && Series.KIND_COUNTDOWN.equals(series.kind);
+    boolean noticeSeed = SeriesDefaults.SEED_NOTICE.equals(series.seedKey)
+      && Series.KIND_MONTHLY.equals(series.kind);
+    if (!countdownSeed && !noticeSeed) {
+      series.seedKey = "";
+    }
+    if (series.id > 0L) {
+      db.seriesDao().update(series);
+      cancelSeriesTasks(app, series.id);
+    } else {
+      series.id = db.seriesDao().insert(series);
+    }
+    bootstrap(app);
+  }
+
+  public static void deleteSeries(Context context, long seriesId) {
+    Context app = context.getApplicationContext();
+    cancelSeriesTasks(app, seriesId);
+    AppDatabase.get(app).seriesDao().deleteById(seriesId);
+    bootstrap(app);
+  }
+
+  private static void cancelSeriesTasks(Context app, long seriesId) {
+    if (seriesId <= 0L) {
+      return;
+    }
+    AppDatabase db = AppDatabase.get(app);
+    List<Task> tasks = db.taskDao().getActiveForSeries(seriesId);
+    if (tasks == null) {
+      return;
+    }
+    for (Task task : tasks) {
+      AlarmScheduler.cancelTask(app, task.id);
+      NotificationHelper.cancelForTask(app, task.id);
+      db.taskDao().deleteById(task.id);
+    }
   }
 
   public static void cancelMemberTasks(Context context, long memberId) {

@@ -119,6 +119,23 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void twoCountdownsStayAsSeparateCards() {
+    long now = 1_700_000_000_000L;
+    Task beyond = task(1, TaskTypes.COUNTDOWN, TaskStatus.SCHEDULED, now + 2_000L);
+    beyond.seriesId = 5L;
+    Task camp = task(2, TaskTypes.COUNTDOWN, TaskStatus.SCHEDULED, now + 3_000L);
+    camp.seriesId = 42L;
+    Task beyondLater = task(3, TaskTypes.COUNTDOWN, TaskStatus.SCHEDULED, now + 86_400_000L);
+    beyondLater.seriesId = 5L;
+    List<TaskSections.Section> sections =
+      TaskSections.group(java.util.Arrays.asList(beyond, camp, beyondLater), false, now);
+    assertEquals(TaskTypes.SECTION_NEXT, sections.get(0).title);
+    assertEquals(2, sections.get(0).tasks.size());
+    assertEquals(beyond.id, sections.get(0).tasks.get(0).id);
+    assertEquals(camp.id, sections.get(0).tasks.get(1).id);
+  }
+
+  @Test
   public void postedDoesNotCollapseAndSkipsNeedsYou() {
     Task postedSunday = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 100);
     Task postedSunday2 = task(2, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 200);

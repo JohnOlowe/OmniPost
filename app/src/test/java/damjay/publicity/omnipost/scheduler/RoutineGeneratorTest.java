@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import java.util.Calendar;
 import java.util.Collections;
@@ -199,5 +200,112 @@ public class RoutineGeneratorTest {
     assertTrue(eve);
     assertTrue(first);
     assertTrue(second);
+  }
+
+  @Test
+  public void seededSeriesWithDatabaseIdKeepsLegacyKeys() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Series countdown = SeriesDefaults.beyondLimit();
+    countdown.id = 5L;
+    Series notice = SeriesDefaults.birthdayNotice();
+    notice.id = 6L;
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.emptyList(), java.util.Arrays.asList(countdown, notice));
+    boolean countdownKey = false;
+    boolean noticeKey = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.COUNTDOWN + "|2026-09-09|2026-08-31").equals(task.occurrenceKey)) {
+        countdownKey = true;
+        assertEquals(5L, task.seriesId);
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|2026-09|FIRST|2026-09-10").equals(task.occurrenceKey)) {
+        noticeKey = true;
+        assertEquals(6L, task.seriesId);
+      }
+    }
+    assertTrue(countdownKey);
+    assertTrue(noticeKey);
+  }
+
+  @Test
+  public void customSeriesUseOwnKeysAndOptionalMonthSlots() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+
+    Series camp = new Series();
+    camp.id = 42L;
+    camp.title = "Youth camp";
+    camp.kind = Series.KIND_COUNTDOWN;
+    camp.enabled = true;
+    camp.postHour = 7;
+    Calendar event = Calendar.getInstance(utc);
+    event.clear();
+    event.setTimeZone(utc);
+    event.set(2026, Calendar.OCTOBER, 1, 0, 0, 0);
+    event.set(Calendar.MILLISECOND, 0);
+    camp.eventAtMillis = event.getTimeInMillis();
+
+    Series notice = new Series();
+    notice.id = 9L;
+    notice.title = "Workers' meeting";
+    notice.kind = Series.KIND_MONTHLY;
+    notice.enabled = true;
+    notice.postHour = 7;
+    notice.lastOfPrevMonth = true;
+    notice.day10 = true;
+    notice.day20 = false;
+
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.emptyList(), java.util.Arrays.asList(camp, notice));
+    boolean campToday = false;
+    boolean eve = false;
+    boolean tenth = false;
+    boolean twentieth = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.COUNTDOWN + "|42|2026-10-01|2026-08-31").equals(task.occurrenceKey)) {
+        campToday = true;
+        assertEquals("Youth camp · 31 days to go", task.title);
+        assertEquals(42L, task.seriesId);
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|9|2026-09|EVE|2026-08-31").equals(task.occurrenceKey)) {
+        eve = true;
+        assertEquals("Workers' meeting · September", task.title);
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|9|2026-09|D10|2026-09-10").equals(task.occurrenceKey)) {
+        tenth = true;
+      }
+      if (task.occurrenceKey != null && task.occurrenceKey.contains("|D20|")) {
+        twentieth = true;
+      }
+    }
+    assertTrue(campToday);
+    assertTrue(eve);
+    assertTrue(tenth);
+    assertFalse(twentieth);
+  }
+
+  @Test
+  public void emptySeriesListDoesNotInventCountdown() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.emptyList(), Collections.emptyList());
+    for (Task task : tasks) {
+      assertFalse(TaskTypes.COUNTDOWN.equals(task.type));
+      assertFalse(TaskTypes.BIRTHDAY_NOTICE.equals(task.type));
+    }
   }
 }
