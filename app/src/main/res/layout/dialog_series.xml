@@ -16,7 +16,7 @@
       android:hint="@string/series_title">
 
       <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/input_title"
+        android:id="@+id/series_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="textCapSentences"
@@ -24,14 +24,14 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <RadioGroup
-      android:id="@+id/kind"
+      android:id="@+id/series_kind"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="8dp"
       android:orientation="vertical">
 
       <RadioButton
-        android:id="@+id/kind_countdown"
+        android:id="@+id/radio_countdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checked="true"
@@ -39,7 +39,7 @@
         android:textColor="@color/cream"/>
 
       <RadioButton
-        android:id="@+id/kind_monthly"
+        android:id="@+id/radio_monthly"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/kind_monthly"
@@ -78,7 +78,7 @@
         android:textColor="@color/cream"/>
 
       <CheckBox
-        android:id="@+id/opt_10"
+        android:id="@+id/opt_tenth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checked="true"
@@ -86,7 +86,7 @@
         android:textColor="@color/cream"/>
 
       <CheckBox
-        android:id="@+id/opt_20"
+        android:id="@+id/opt_twentieth"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:checked="true"
@@ -101,7 +101,7 @@
       android:hint="@string/series_caption">
 
       <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/input_caption"
+        android:id="@+id/series_body"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="top"

@@ -42,19 +42,22 @@ public final class SeriesEditor {
   }
 
   public static void show(Context context, @Nullable Series existing) {
+    if (context == null) {
+      return;
+    }
     Series source = existing == null ? new Series() : existing;
     View view = LayoutInflater.from(context).inflate(R.layout.dialog_series, null, false);
-    TextInputEditText title = view.findViewById(R.id.input_title);
-    TextInputEditText caption = view.findViewById(R.id.input_caption);
-    RadioGroup kind = view.findViewById(R.id.kind);
-    RadioButton kindCountdown = view.findViewById(R.id.kind_countdown);
-    RadioButton kindMonthly = view.findViewById(R.id.kind_monthly);
+    TextInputEditText title = view.findViewById(R.id.series_name);
+    TextInputEditText caption = view.findViewById(R.id.series_body);
+    RadioGroup kindGroup = view.findViewById(R.id.series_kind);
+    RadioButton kindCountdown = view.findViewById(R.id.radio_countdown);
+    RadioButton kindMonthly = view.findViewById(R.id.radio_monthly);
     View blockCountdown = view.findViewById(R.id.block_countdown);
     View blockMonthly = view.findViewById(R.id.block_monthly);
     MaterialButton eventBtn = view.findViewById(R.id.btn_event);
     CheckBox optEve = view.findViewById(R.id.opt_eve);
-    CheckBox opt10 = view.findViewById(R.id.opt_10);
-    CheckBox opt20 = view.findViewById(R.id.opt_20);
+    CheckBox opt10 = view.findViewById(R.id.opt_tenth);
+    CheckBox opt20 = view.findViewById(R.id.opt_twentieth);
 
     AtomicLong eventAt = new AtomicLong(source.eventAtMillis);
     if (eventAt.get() <= 0L) {
@@ -74,69 +77,92 @@ public final class SeriesEditor {
     optEve.setChecked(source.lastOfPrevMonth);
     opt10.setChecked(source.day10);
     opt20.setChecked(source.day20);
-    Runnable paintEvent = () -> eventBtn.setText(
-      context.getString(R.string.dday_on, DateUtils.formatDayHeader(eventAt.get())));
-    paintEvent.run();
-    Runnable paintKind = () -> {
-      boolean isMonthly = kindMonthly.isChecked();
-      blockCountdown.setVisibility(isMonthly ? View.GONE : View.VISIBLE);
-      blockMonthly.setVisibility(isMonthly ? View.VISIBLE : View.GONE);
-    };
-    paintKind.run();
-    kind.setOnCheckedChangeListener((g, id) -> {
-      paintKind.run();
+    paintEvent(context, eventBtn, eventAt.get());
+    paintKind(kindMonthly, blockCountdown, blockMonthly);
+    kindGroup.setOnCheckedChangeListener((group, checkedId) -> {
+      paintKind(kindMonthly, blockCountdown, blockMonthly);
       String current = caption.getText() == null ? "" : caption.getText().toString();
-      if (id == R.id.kind_monthly
+      if (checkedId == R.id.kind_monthly
           && (current.isEmpty() || current.equals(SeriesDefaults.blankCountdownCaption()))) {
         caption.setText(SeriesDefaults.blankNoticeCaption());
-      } else if (id == R.id.kind_countdown
+      } else if (checkedId == R.id.kind_countdown
           && (current.isEmpty() || current.equals(SeriesDefaults.blankNoticeCaption()))) {
         caption.setText(SeriesDefaults.blankCountdownCaption());
       }
     });
-    eventBtn.setOnClickListener(v -> pickDay(context, eventAt.get(), millis -> {
-      eventAt.set(millis);
-      paintEvent.run();
+    eventBtn.setOnClickListener(v -> pickDay(context, eventAt.get(), chosen -> {
+      eventAt.set(chosen);
+      paintEvent(context, eventBtn, eventAt.get());
     }));
 
     boolean editing = source.id > 0L;
     MaterialAlertDialogBuilder builder = new MaterialAlertDialogBuilder(context)
       .setTitle(editing ? R.string.edit_series : R.string.add_series)
       .setView(view)
-      .setPositiveButton(R.string.save, (d, w) -> {
-        String name = title.getText() == null ? "" : title.getText().toString().trim();
-        if (name.isEmpty()) {
-          Toast.makeText(context, R.string.need_title, Toast.LENGTH_SHORT).show();
-          return;
-        }
-        Series series = existing == null ? new Series() : existing;
-        series.title = name;
-        series.kind = kindMonthly.isChecked() ? Series.KIND_MONTHLY : Series.KIND_COUNTDOWN;
-        series.caption = caption.getText() == null ? "" : caption.getText().toString();
-        series.eventAtMillis = eventAt.get();
-        series.lastOfPrevMonth = optEve.isChecked();
-        series.day10 = opt10.isChecked();
-        series.day20 = opt20.isChecked();
-        series.enabled = true;
-        if (Series.KIND_MONTHLY.equals(series.kind)
-            && !series.lastOfPrevMonth
-            && !series.day10
-            && !series.day20) {
-          Toast.makeText(context, R.string.need_month_slot, Toast.LENGTH_SHORT).show();
-          return;
-        }
-        Context app = context.getApplicationContext();
-        AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.saveSeries(app, series);
-          AppExecutors.main(() ->
-            Toast.makeText(context, R.string.series_saved, Toast.LENGTH_SHORT).show());
-        });
-      })
+      .setPositiveButton(R.string.save, (d, w) -> saveFromForm(
+        context,
+        existing,
+        title,
+        caption,
+        kindMonthly,
+        eventAt.get(),
+        optEve.isChecked(),
+        opt10.isChecked(),
+        opt20.isChecked()))
       .setNegativeButton(android.R.string.cancel, null);
     if (editing) {
       builder.setNeutralButton(R.string.delete, (d, w) -> confirmDelete(context, source));
     }
     builder.show();
+  }
+
+  private static void paintEvent(Context context, MaterialButton eventBtn, long millis) {
+    eventBtn.setText(context.getString(R.string.dday_on, DateUtils.formatDayHeader(millis)));
+  }
+
+  private static void paintKind(RadioButton kindMonthly, View blockCountdown, View blockMonthly) {
+    boolean isMonthly = kindMonthly.isChecked();
+    blockCountdown.setVisibility(isMonthly ? View.GONE : View.VISIBLE);
+    blockMonthly.setVisibility(isMonthly ? View.VISIBLE : View.GONE);
+  }
+
+  private static void saveFromForm(
+    Context context,
+    @Nullable Series existing,
+    TextInputEditText title,
+    TextInputEditText caption,
+    RadioButton kindMonthly,
+    long eventAt,
+    boolean lastOfPrev,
+    boolean day10,
+    boolean day20) {
+    String name = title.getText() == null ? "" : title.getText().toString().trim();
+    if (name.isEmpty()) {
+      Toast.makeText(context, R.string.need_title, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    Series series = existing == null ? new Series() : existing;
+    series.title = name;
+    series.kind = kindMonthly.isChecked() ? Series.KIND_MONTHLY : Series.KIND_COUNTDOWN;
+    series.caption = caption.getText() == null ? "" : caption.getText().toString();
+    series.eventAtMillis = eventAt;
+    series.lastOfPrevMonth = lastOfPrev;
+    series.day10 = day10;
+    series.day20 = day20;
+    series.enabled = true;
+    if (Series.KIND_MONTHLY.equals(series.kind)
+        && !series.lastOfPrevMonth
+        && !series.day10
+        && !series.day20) {
+      Toast.makeText(context, R.string.need_month_slot, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.saveSeries(app, series);
+      AppExecutors.main(() ->
+        Toast.makeText(context, R.string.series_saved, Toast.LENGTH_SHORT).show());
+    });
   }
 
   private static void confirmDelete(Context context, Series series) {
