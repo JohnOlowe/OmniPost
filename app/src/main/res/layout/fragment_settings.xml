@@ -56,6 +56,50 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="16dp"
+      android:text="@string/series_section"
+      android:textColor="@color/cream"
+      android:textSize="20sp"
+      android:textStyle="bold"/>
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:layout_marginBottom="8dp"
+      android:text="@string/series_section_body"
+      android:textColor="@color/text_muted"
+      android:textSize="14sp"/>
+
+    <LinearLayout
+      android:id="@+id/series_list"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"/>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_add_countdown"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp"
+      android:text="@string/add_countdown"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/gold"/>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_add_notice"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:text="@string/add_monthly"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/gold"/>
+
+    <TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="16dp"
       android:text="@string/survival_title"
       android:textColor="@color/cream"
       android:textSize="20sp"

@@ -33,6 +33,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void onReopen(Task task);
 
     void onDelete(Task task);
+
+    void onEditSeries(Task task);
   }
 
   static final class Row {
