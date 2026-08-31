@@ -87,10 +87,10 @@
   <string name="add_countdown">Daily countdown until D-Day</string>
   <string name="add_monthly">Monthly notice (end of last month, 10th, 20th)</string>
   <string name="series_section">Repeating templates</string>
-  <string name="series_section_body">Beyond Limit and the birthday NOTICE start here. Add more that count down every day, or that fire on the last day of the previous month and the 10th and 20th. {Days}, {away}, {days}, and {month} fill themselves. Long-press a card on Tasks to edit.</string>
+  <string name="series_section_body">Beyond Limit and the birthday NOTICE start here. Add more that count down every day, or that fire on the last day of the previous month and the 10th and 20th. Days / away / days / month placeholders fill themselves. Long-press a card on Tasks to edit.</string>
   <string name="series_title">Name</string>
   <string name="series_caption">Caption template</string>
-  <string name="series_placeholders">{Days} becomes 9 DAYS TO GO. {away} becomes is 9 days away. {days} is the number. {month} is the month name.</string>
+  <string name="series_placeholders">Placeholders: Days becomes 9 DAYS TO GO. away becomes is 9 days away. days is the number. month is the month name. Write them inside curly braces in the template.</string>
   <string name="kind_countdown">Daily until D-Day — one card, day count updates itself</string>
   <string name="kind_monthly">Last day of previous month, then the 10th and 20th — month name updates itself</string>
   <string name="pick_dday">Pick D-Day</string>

@@ -13,6 +13,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Draft;
+import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityDraftBinding;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
@@ -70,7 +71,7 @@ public class DraftActivity extends AppCompatActivity {
           found = new Draft();
           found.taskId = taskId;
           found.title = linked == null ? "Caption" : linked.title;
-          found.variantA = CaptionTemplates.forTask(this, linked);
+          found.variantA = CaptionTemplates.forTask(this, linked, seriesFor(db, linked));
           found.finalizedText = found.variantA;
           found.updatedAt = System.currentTimeMillis();
           found.id = db.draftDao().insert(found);
@@ -88,7 +89,7 @@ public class DraftActivity extends AppCompatActivity {
         found.id = db.draftDao().insert(found);
       }
       if (linked != null && found != null && CaptionTemplates.isLive(linked.type)) {
-        String live = CaptionTemplates.forTask(this, linked);
+        String live = CaptionTemplates.forTask(this, linked, seriesFor(db, linked));
         if (live != null && !live.isEmpty()) {
           String previousA = found.variantA == null ? "" : found.variantA;
           found.variantA = live;
@@ -270,6 +271,13 @@ public class DraftActivity extends AppCompatActivity {
     };
     input.addTextChangedListener(watcher);
     count.setText(getString(R.string.chars, 0));
+  }
+
+  private static Series seriesFor(AppDatabase db, Task task) {
+    if (db == null || task == null || task.seriesId <= 0L) {
+      return null;
+    }
+    return db.seriesDao().getById(task.seriesId);
   }
 
   private static String text(com.google.android.material.textfield.TextInputEditText input) {

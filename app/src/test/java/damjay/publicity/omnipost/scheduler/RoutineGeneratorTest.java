@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -215,7 +216,7 @@ public class RoutineGeneratorTest {
     Series notice = SeriesDefaults.birthdayNotice();
     notice.id = 6L;
     List<Task> tasks = RoutineGenerator.generate(
-      now.getTimeInMillis(), utc, Collections.emptyList(), java.util.Arrays.asList(countdown, notice));
+      now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Arrays.asList(countdown, notice));
     boolean countdownKey = false;
     boolean noticeKey = false;
     for (Task task : tasks) {
@@ -265,7 +266,7 @@ public class RoutineGeneratorTest {
     notice.day20 = false;
 
     List<Task> tasks = RoutineGenerator.generate(
-      now.getTimeInMillis(), utc, Collections.emptyList(), java.util.Arrays.asList(camp, notice));
+      now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Arrays.asList(camp, notice));
     boolean campToday = false;
     boolean eve = false;
     boolean tenth = false;
@@ -302,7 +303,10 @@ public class RoutineGeneratorTest {
     now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
     now.set(Calendar.MILLISECOND, 0);
     List<Task> tasks = RoutineGenerator.generate(
-      now.getTimeInMillis(), utc, Collections.emptyList(), Collections.emptyList());
+      now.getTimeInMillis(),
+      utc,
+      Collections.<Member>emptyList(),
+      Collections.<Series>emptyList());
     for (Task task : tasks) {
       assertFalse(TaskTypes.COUNTDOWN.equals(task.type));
       assertFalse(TaskTypes.BIRTHDAY_NOTICE.equals(task.type));

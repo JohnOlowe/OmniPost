@@ -32,7 +32,7 @@ public final class ScheduleCoordinator {
     ensureSeriesDefaults(app, db);
 
     List<Member> members = db.memberDao().getAllSync();
-    List<Series> series = db.seriesDao().getEnabledSync();
+    List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members, series);
     for (Task candidate : generated) {
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
@@ -57,6 +57,19 @@ public final class ScheduleCoordinator {
     AlarmScheduler.scheduleWatchdog(app);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
+  }
+
+  private static List<Series> enabledSeries(List<Series> all) {
+    List<Series> out = new java.util.ArrayList<>();
+    if (all == null) {
+      return out;
+    }
+    for (Series series : all) {
+      if (series != null && series.enabled) {
+        out.add(series);
+      }
+    }
+    return out;
   }
 
   private static void ensureSeriesDefaults(Context app, AppDatabase db) {

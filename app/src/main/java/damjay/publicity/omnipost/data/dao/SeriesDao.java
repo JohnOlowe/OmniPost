@@ -22,9 +22,6 @@ public interface SeriesDao {
   @Query("SELECT * FROM post_series WHERE seedKey = :seedKey LIMIT 1")
   Series findBySeed(String seedKey);
 
-  @Query("SELECT * FROM post_series WHERE enabled = 1 ORDER BY id ASC")
-  List<Series> getEnabledSync();
-
   @Query("SELECT * FROM post_series ORDER BY id ASC")
   LiveData<List<Series>> observeAll();
 

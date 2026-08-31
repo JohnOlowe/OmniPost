@@ -1,7 +1,6 @@
 package damjay.publicity.omnipost.scheduler;
 
 import android.content.Context;
-import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.util.Prefs;
@@ -17,18 +16,7 @@ public final class CaptionTemplates {
   }
 
   public static String forTask(Context context, Task task) {
-    return forTask(context, task, loadSeries(context, task));
-  }
-
-  private static Series loadSeries(Context context, Task task) {
-    if (context == null || task == null || task.seriesId <= 0L) {
-      return null;
-    }
-    try {
-      return AppDatabase.get(context).seriesDao().getById(task.seriesId);
-    } catch (RuntimeException ignored) {
-      return null;
-    }
+    return forTask(context, task, null);
   }
 
   public static String forTask(Context context, Task task, Series series) {
