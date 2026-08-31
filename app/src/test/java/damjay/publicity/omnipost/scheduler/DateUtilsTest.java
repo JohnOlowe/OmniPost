@@ -97,6 +97,26 @@ public class DateUtilsTest {
   }
 
   @Test
+  public void calendarDaysFrom31AugTo9SeptIsNine() {
+    Calendar from = utc(2026, Calendar.AUGUST, 31, 12, 0);
+    Calendar to = utc(2026, Calendar.SEPTEMBER, 9, 7, 0);
+    assertEquals(9, DateUtils.calendarDaysBetween(from, to));
+    assertEquals(9, DateUtils.daysBetweenKeys("2026-08-31", "2026-09-09"));
+    assertEquals(0, DateUtils.calendarDaysBetween(to, to));
+    assertEquals(-9, DateUtils.calendarDaysBetween(to, from));
+  }
+
+  @Test
+  public void inMonthThirdsAreEquallySpaced() {
+    assertEquals(10, DateUtils.inMonthThirds(31)[0]);
+    assertEquals(20, DateUtils.inMonthThirds(31)[1]);
+    assertEquals(10, DateUtils.inMonthThirds(30)[0]);
+    assertEquals(20, DateUtils.inMonthThirds(30)[1]);
+    assertEquals(9, DateUtils.inMonthThirds(28)[0]);
+    assertEquals(18, DateUtils.inMonthThirds(28)[1]);
+  }
+
+  @Test
   public void dayBeforeIsPreviousEvening() {
     Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
     Calendar draft = DateUtils.dayBeforeAt(post, 20, 0);

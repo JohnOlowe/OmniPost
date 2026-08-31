@@ -33,7 +33,10 @@ public final class TaskStatus {
   }
 
   public static boolean needsYou(String status) {
-    return NAGGING.equals(status) || WARNING.equals(status) || SNOOZED.equals(status);
+    return NAGGING.equals(status)
+        || WARNING.equals(status)
+        || SNOOZED.equals(status)
+        || DRAFTING.equals(status);
   }
 
   public static String dueStatus(long draftAtMillis, long postAtMillis, long now) {

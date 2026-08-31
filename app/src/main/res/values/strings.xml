@@ -10,7 +10,7 @@
   <string name="filter_pending">Pending</string>
   <string name="filter_posted">Posted</string>
   <string name="empty_tasks">Nothing pending. Weekly and monthly stay fixed. Add a flexible or one-off post with +.</string>
-  <string name="how_it_works">You write every caption. OmniPost nags and vibrates until you save and mark Posted. Tune alarm, vibration, and nag time in Settings. Wrongly marked Posted? Bring it back or shift the time.</string>
+  <string name="how_it_works">Needs you first, then the next 48 hours, then weekly / monthly. Beyond Limit is one card until 9 Sept. Copy for Instagram from Tinker — WhatsApp *bold* and _italic_ become Instagram letters. WhatsApp send stays WhatsApp-only.</string>
   <string name="empty_posted">No completed posts yet.</string>
   <string name="empty_drafts">No drafts yet. Open a task or start a blank caption.</string>
   <string name="empty_birthdays">Add fellowship members and OmniPost will nag you at 7:00 AM on the day.</string>
@@ -23,6 +23,8 @@
   <string name="use_b">Use B</string>
   <string name="save">Save</string>
   <string name="send_peeps">Send to Important Info Peeps</string>
+  <string name="copy_instagram">Copy for Instagram</string>
+  <string name="instagram_copied">Instagram letters copied. Paste into the caption box.</string>
   <string name="final_post">Final Post</string>
   <string name="open_draft">Open draft</string>
   <string name="mark_posted">Mark posted</string>
@@ -69,7 +71,7 @@
   <string name="setting_warning">Caption-ready warning</string>
   <string name="warning_every">%1$d minutes before the post</string>
   <string name="setting_seed">Fill starter captions</string>
-  <string name="setting_seed_hint">Off by default. You write the caption. Turn on only if you want a canned first line.</string>
+  <string name="setting_seed_hint">Off by default. You write the caption. Beyond Limit and the birthday NOTICE always fill. Turn on only if you want canned lines for the weeklies.</string>
   <string name="setting_desk">Always-on next-up notification</string>
   <string name="setting_desk_hint">Keeps OmniPost alive and refreshes the next item every minute, even after you leave. Leave this on for this phone.</string>
   <string name="setting_fullscreen">Full-screen alarm</string>

@@ -29,9 +29,10 @@ public class TaskSectionsTest {
 
     assertEquals(5, sections.size());
     assertEquals(TaskTypes.SECTION_NOW, sections.get(0).title);
-    assertEquals(2, sections.get(0).tasks.size());
+    assertEquals(3, sections.get(0).tasks.size());
     assertEquals(snoozed.id, sections.get(0).tasks.get(0).id);
     assertEquals(nag.id, sections.get(0).tasks.get(1).id);
+    assertEquals(flexible.id, sections.get(0).tasks.get(2).id);
 
     assertEquals(TaskTypes.SECTION_WEEKLY, sections.get(1).title);
     assertEquals(2, sections.get(1).tasks.size());
@@ -43,13 +44,45 @@ public class TaskSectionsTest {
     assertEquals(fasting.id, sections.get(2).tasks.get(0).id);
 
     assertEquals(TaskTypes.SECTION_FLEXIBLE, sections.get(3).title);
-    assertEquals(2, sections.get(3).tasks.size());
-    assertEquals(flexible.id, sections.get(3).tasks.get(0).id);
-    assertEquals(birthday.id, sections.get(3).tasks.get(1).id);
+    assertEquals(1, sections.get(3).tasks.size());
+    assertEquals(birthday.id, sections.get(3).tasks.get(0).id);
 
     assertEquals(TaskTypes.SECTION_ONCE, sections.get(4).title);
     assertEquals(1, sections.get(4).tasks.size());
     assertEquals(once.id, sections.get(4).tasks.get(0).id);
+  }
+
+  @Test
+  public void nextFortyEightHoursThenCadenceAndOneCountdownCard() {
+    long now = 1_700_000_000_000L;
+    Task drafting = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.DRAFTING, now + 10_000L);
+    Task soonFriday = task(2, TaskTypes.FRIDAY_PRAYER, TaskStatus.SCHEDULED, now + 3_600_000L);
+    Task laterFasting = task(3, TaskTypes.FASTING_DAY, TaskStatus.SCHEDULED, now + 5L * 86_400_000L);
+    Task countdownToday = task(4, TaskTypes.COUNTDOWN, TaskStatus.SCHEDULED, now + 2_000L);
+    Task countdownTomorrow = task(5, TaskTypes.COUNTDOWN, TaskStatus.SCHEDULED, now + 86_400_000L);
+    Task noticeEve = task(6, TaskTypes.BIRTHDAY_NOTICE, TaskStatus.SCHEDULED, now + 1_000L);
+    Task noticeLater = task(7, TaskTypes.BIRTHDAY_NOTICE, TaskStatus.SCHEDULED, now + 10L * 86_400_000L);
+
+    List<TaskSections.Section> sections = TaskSections.group(
+      Arrays.asList(
+        drafting, soonFriday, laterFasting, countdownToday, countdownTomorrow, noticeEve, noticeLater),
+      false,
+      now);
+
+    assertEquals(TaskTypes.SECTION_NOW, sections.get(0).title);
+    assertEquals(1, sections.get(0).tasks.size());
+    assertEquals(drafting.id, sections.get(0).tasks.get(0).id);
+
+    assertEquals(TaskTypes.SECTION_NEXT, sections.get(1).title);
+    assertEquals(3, sections.get(1).tasks.size());
+    assertEquals(noticeEve.id, sections.get(1).tasks.get(0).id);
+    assertEquals(countdownToday.id, sections.get(1).tasks.get(1).id);
+    assertEquals(soonFriday.id, sections.get(1).tasks.get(2).id);
+
+    assertEquals(TaskTypes.SECTION_MONTHLY, sections.get(2).title);
+    assertEquals(1, sections.get(2).tasks.size());
+    assertEquals(laterFasting.id, sections.get(2).tasks.get(0).id);
+    assertEquals(3, sections.size());
   }
 
   @Test

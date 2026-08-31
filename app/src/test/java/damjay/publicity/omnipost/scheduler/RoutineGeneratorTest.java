@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Member;
@@ -108,14 +109,95 @@ public class RoutineGeneratorTest {
     assertEquals("Once", TaskTypes.cadence(TaskTypes.TEST));
     assertEquals("Flexible", TaskTypes.cadence(TaskTypes.FLEXIBLE));
     assertEquals("Once", TaskTypes.cadence(TaskTypes.ONE_OFF));
+    assertEquals("Daily", TaskTypes.cadence(TaskTypes.COUNTDOWN));
+    assertEquals("Monthly", TaskTypes.cadence(TaskTypes.BIRTHDAY_NOTICE));
   }
 
   @Test
   public void sectionsMatchHowTheDeskWorks() {
     assertEquals(TaskTypes.SECTION_WEEKLY, TaskTypes.section(TaskTypes.SUNDAY_SERVICE));
     assertEquals(TaskTypes.SECTION_MONTHLY, TaskTypes.section(TaskTypes.FASTING_DAY));
+    assertEquals(TaskTypes.SECTION_MONTHLY, TaskTypes.section(TaskTypes.BIRTHDAY_NOTICE));
+    assertEquals(TaskTypes.SECTION_CAMPAIGN, TaskTypes.section(TaskTypes.COUNTDOWN));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.BIRTHDAY));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.FLEXIBLE));
     assertEquals(TaskTypes.SECTION_ONCE, TaskTypes.section(TaskTypes.ONE_OFF));
+  }
+
+  @Test
+  public void beyondLimitCountdownIsNineDaysOn31AugAndStopsAfterDDay() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Task> tasks = RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.emptyList());
+    Task today = null;
+    int countdownCards = 0;
+    for (Task task : tasks) {
+      if (!TaskTypes.COUNTDOWN.equals(task.type)) {
+        continue;
+      }
+      countdownCards++;
+      if ((TaskTypes.COUNTDOWN + "|2026-09-09|2026-08-31").equals(task.occurrenceKey)) {
+        today = task;
+      }
+    }
+    assertTrue(countdownCards > 0);
+    assertTrue(countdownCards <= ScheduleTimes.GENERATE_COUNTDOWN_DAYS);
+    assertTrue(today != null);
+    assertEquals("Beyond Limit '26 · 9 days to go", today.title);
+    assertEquals(9, CaptionTemplates.countdownDays(today));
+    String caption = CaptionTemplates.forTask(null, today);
+    assertTrue(caption.contains("*IT'S 9 DAYS TO GO!*"));
+    assertTrue(caption.contains("is 9 days away"));
+
+    Calendar after = Calendar.getInstance(utc);
+    after.clear();
+    after.setTimeZone(utc);
+    after.set(2026, Calendar.SEPTEMBER, 10, 12, 0, 0);
+    after.set(Calendar.MILLISECOND, 0);
+    List<Task> later = RoutineGenerator.generate(after.getTimeInMillis(), utc, Collections.emptyList());
+    for (Task task : later) {
+      assertFalse(TaskTypes.COUNTDOWN.equals(task.type));
+    }
+  }
+
+  @Test
+  public void birthdayNoticeIsEveThenTwoInMonthWithMonthName() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 31, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Task> tasks = RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.emptyList());
+    boolean eve = false;
+    boolean first = false;
+    boolean second = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|2026-09|EVE|2026-08-31").equals(task.occurrenceKey)) {
+        eve = true;
+        assertEquals("Birthday notice · September", task.title);
+        String caption = CaptionTemplates.forTask(null, task);
+        assertTrue(caption.contains("*Month of September*"));
+        assertTrue(caption.contains("wa.me/2349112413798"));
+        Calendar post = Calendar.getInstance(utc);
+        post.setTimeInMillis(task.postAtMillis);
+        assertEquals(31, post.get(Calendar.DAY_OF_MONTH));
+        assertEquals(Calendar.AUGUST, post.get(Calendar.MONTH));
+        assertEquals(7, post.get(Calendar.HOUR_OF_DAY));
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|2026-09|FIRST|2026-09-10").equals(task.occurrenceKey)) {
+        first = true;
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|2026-09|SECOND|2026-09-20").equals(task.occurrenceKey)) {
+        second = true;
+      }
+    }
+    assertTrue(eve);
+    assertTrue(first);
+    assertTrue(second);
   }
 }

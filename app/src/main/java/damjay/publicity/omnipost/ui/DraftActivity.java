@@ -18,6 +18,7 @@ import damjay.publicity.omnipost.databinding.ActivityDraftBinding;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.share.InstagramStyle;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -44,6 +45,7 @@ public class DraftActivity extends AppCompatActivity {
     binding.btnUseA.setOnClickListener(v -> binding.inputFinal.setText(text(binding.inputA)));
     binding.btnUseB.setOnClickListener(v -> binding.inputFinal.setText(text(binding.inputB)));
     binding.btnPeeps.setOnClickListener(v -> sendToPeeps());
+    binding.btnInstagram.setOnClickListener(v -> copyInstagram());
     binding.btnFinal.setOnClickListener(v -> finalPost());
     watch(binding.inputA, binding.countA);
     watch(binding.inputB, binding.countB);
@@ -84,6 +86,20 @@ public class DraftActivity extends AppCompatActivity {
         found.title = "Untitled caption";
         found.updatedAt = System.currentTimeMillis();
         found.id = db.draftDao().insert(found);
+      }
+      if (linked != null && found != null && CaptionTemplates.isLive(linked.type)) {
+        String live = CaptionTemplates.forTask(this, linked);
+        if (live != null && !live.isEmpty()) {
+          String previousA = found.variantA == null ? "" : found.variantA;
+          found.variantA = live;
+          if (found.finalizedText == null
+              || found.finalizedText.isEmpty()
+              || found.finalizedText.equals(previousA)) {
+            found.finalizedText = live;
+          }
+          found.title = linked.title;
+          db.draftDao().update(found);
+        }
       }
       draft = found;
       task = linked;
@@ -134,6 +150,17 @@ public class DraftActivity extends AppCompatActivity {
           Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show());
       }
     });
+  }
+
+  private void copyInstagram() {
+    persist(false);
+    String caption = pickText();
+    if (caption.isEmpty()) {
+      Toast.makeText(this, R.string.need_caption, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    WhatsAppRouter.copyToClipboard(this, InstagramStyle.toUnicode(caption));
+    Toast.makeText(this, R.string.instagram_copied, Toast.LENGTH_LONG).show();
   }
 
   private void sendToPeeps() {

@@ -244,6 +244,16 @@
       app:strokeColor="@color/whatsapp"/>
 
     <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_instagram"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:text="@string/copy_instagram"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/gold"/>
+
+    <com.google.android.material.button.MaterialButton
       android:id="@+id/btn_final"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"

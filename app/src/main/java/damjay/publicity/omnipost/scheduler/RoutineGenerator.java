@@ -39,6 +39,8 @@ public final class RoutineGenerator {
     addFastingEve(out, now);
     addFastingDay(out, now);
     addHappyNewMonth(out, now);
+    addCountdown(out, now);
+    addBirthdayNotices(out, now);
     if (members != null) {
       for (Member member : members) {
         addBirthday(out, now, member);
@@ -120,6 +122,91 @@ public final class RoutineGenerator {
       post.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
       post.set(Calendar.MINUTE, 0);
     }
+  }
+
+  private static void addCountdown(List<Task> out, Calendar now) {
+    Calendar event = DateUtils.startOfDay(now);
+    event.set(Campaigns.BEYOND_LIMIT_YEAR, Campaigns.BEYOND_LIMIT_MONTH, Campaigns.BEYOND_LIMIT_DAY);
+    Calendar today = DateUtils.startOfDay(now);
+    if (today.after(event)) {
+      return;
+    }
+    for (int i = 0; i < ScheduleTimes.GENERATE_COUNTDOWN_DAYS; i++) {
+      Calendar postDay = (Calendar) today.clone();
+      postDay.add(Calendar.DAY_OF_MONTH, i);
+      if (postDay.after(event)) {
+        break;
+      }
+      int days = DateUtils.calendarDaysBetween(postDay, event);
+      Calendar post = DateUtils.sameDayAt(postDay, ScheduleTimes.MONTH_POST_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      out.add(build(
+        TaskTypes.COUNTDOWN,
+        CaptionTemplates.countdownTitle(days),
+        "Daily until 9 Sept 2026. One card — the day count updates itself.",
+        draft.getTimeInMillis(),
+        post.getTimeInMillis(),
+        TaskTypes.COUNTDOWN + "|" + DateUtils.dayKey(event) + "|" + DateUtils.dayKey(post),
+        0L));
+    }
+  }
+
+  private static void addBirthdayNotices(List<Task> out, Calendar now) {
+    Calendar monthStart = DateUtils.startOfDay(now);
+    monthStart.set(Calendar.DAY_OF_MONTH, 1);
+    String todayKey = DateUtils.dayKey(now);
+    for (int m = 0; m < ScheduleTimes.GENERATE_MONTH_COUNT; m++) {
+      Calendar target = (Calendar) monthStart.clone();
+      target.add(Calendar.MONTH, m);
+      String monthKey = DateUtils.monthKey(target);
+      String monthName = DateUtils.monthName(target);
+      int max = target.getActualMaximum(Calendar.DAY_OF_MONTH);
+      int[] thirds = DateUtils.inMonthThirds(max);
+
+      Calendar eve = (Calendar) target.clone();
+      eve.set(Calendar.DAY_OF_MONTH, 1);
+      eve.add(Calendar.MONTH, -1);
+      eve.set(Calendar.DAY_OF_MONTH, eve.getActualMaximum(Calendar.DAY_OF_MONTH));
+      eve.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
+      eve.set(Calendar.MINUTE, 0);
+      eve.set(Calendar.SECOND, 0);
+      eve.set(Calendar.MILLISECOND, 0);
+
+      Calendar first = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
+      first.set(Calendar.DAY_OF_MONTH, thirds[0]);
+      first.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
+      first.set(Calendar.MINUTE, 0);
+
+      Calendar second = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
+      second.set(Calendar.DAY_OF_MONTH, thirds[1]);
+      second.set(Calendar.HOUR_OF_DAY, ScheduleTimes.MONTH_POST_HOUR);
+      second.set(Calendar.MINUTE, 0);
+
+      addNoticeIfDue(out, todayKey, monthKey, monthName, "EVE", eve);
+      addNoticeIfDue(out, todayKey, monthKey, monthName, "FIRST", first);
+      addNoticeIfDue(out, todayKey, monthKey, monthName, "SECOND", second);
+    }
+  }
+
+  private static void addNoticeIfDue(
+    List<Task> out,
+    String todayKey,
+    String monthKey,
+    String monthName,
+    String slot,
+    Calendar post) {
+    if (DateUtils.dayKey(post).compareTo(todayKey) < 0) {
+      return;
+    }
+    Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+    out.add(build(
+      TaskTypes.BIRTHDAY_NOTICE,
+      "Birthday notice · " + monthName,
+      "Last day of the previous month, then twice in the month. Month name fills itself.",
+      draft.getTimeInMillis(),
+      post.getTimeInMillis(),
+      TaskTypes.BIRTHDAY_NOTICE + "|" + monthKey + "|" + slot + "|" + DateUtils.dayKey(post),
+      0L));
   }
 
   private static void addBirthday(List<Task> out, Calendar now, Member member) {

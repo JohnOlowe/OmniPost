@@ -7,6 +7,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
+import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -26,6 +27,7 @@ public final class ScheduleCoordinator {
       }
     }
     db.taskDao().deleteStaleTests(now - 24L * 60L * 60L * 1000L);
+    dropStaleCountdowns(app, db, now);
 
     List<Member> members = db.memberDao().getAllSync();
     List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members);
@@ -51,6 +53,29 @@ public final class ScheduleCoordinator {
     AlarmScheduler.scheduleWatchdog(app);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
+  }
+
+  /** Missed countdown days drop off so the desk never stacks 9-days, 8-days, 7-days. */
+  private static void dropStaleCountdowns(Context app, AppDatabase db, long now) {
+    List<Task> active = db.taskDao().getActiveSync();
+    if (active == null) {
+      return;
+    }
+    Calendar today = Calendar.getInstance();
+    today.setTimeInMillis(now);
+    String todayKey = DateUtils.dayKey(today);
+    for (Task task : active) {
+      if (!TaskTypes.COUNTDOWN.equals(task.type)) {
+        continue;
+      }
+      Calendar post = Calendar.getInstance();
+      post.setTimeInMillis(task.postAtMillis);
+      if (DateUtils.dayKey(post).compareTo(todayKey) < 0) {
+        AlarmScheduler.cancelTask(app, task.id);
+        NotificationHelper.cancelForTask(app, task.id);
+        db.taskDao().deleteById(task.id);
+      }
+    }
   }
 
   /** Heartbeat / pulse: catch missed phases and re-arm clocks. Does not start FGS. */

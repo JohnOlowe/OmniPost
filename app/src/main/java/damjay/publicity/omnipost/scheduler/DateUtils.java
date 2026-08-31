@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public final class DateUtils {
   private DateUtils() {}
@@ -90,6 +91,66 @@ public final class DateUtils {
       c.get(Calendar.YEAR),
       c.get(Calendar.MONTH) + 1,
       c.get(Calendar.DAY_OF_MONTH));
+  }
+
+  public static String monthKey(Calendar calendar) {
+    return String.format(Locale.US, "%04d-%02d",
+        calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1);
+  }
+
+  public static Calendar startOfDay(Calendar calendar) {
+    Calendar c = (Calendar) calendar.clone();
+    c.set(Calendar.HOUR_OF_DAY, 0);
+    c.set(Calendar.MINUTE, 0);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    return c;
+  }
+
+  /** Whole calendar days from {@code from} to {@code to} (negative if {@code to} is earlier). */
+  public static int calendarDaysBetween(Calendar from, Calendar to) {
+    Calendar a = startOfDay(from);
+    Calendar b = startOfDay(to);
+    int days = 0;
+    int step = a.after(b) ? -1 : 1;
+    while (!dayKey(a).equals(dayKey(b)) && Math.abs(days) < 4000) {
+      a.add(Calendar.DAY_OF_MONTH, step);
+      days += step;
+    }
+    return days;
+  }
+
+  public static Calendar parseDayKey(String key, TimeZone zone) {
+    String[] parts = key.split("-");
+    Calendar c = Calendar.getInstance(zone);
+    c.clear();
+    c.setTimeZone(zone);
+    c.set(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) - 1, Integer.parseInt(parts[2]), 0, 0, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    return c;
+  }
+
+  public static int daysBetweenKeys(String fromKey, String toKey) {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    return calendarDaysBetween(parseDayKey(fromKey, utc), parseDayKey(toKey, utc));
+  }
+
+  public static String monthName(Calendar calendar) {
+    String name = calendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US);
+    if (name != null && !name.isEmpty()) {
+      return name;
+    }
+    return new SimpleDateFormat("MMMM", Locale.US).format(calendar.getTime());
+  }
+
+  /** Two in-month dates, equally spaced (thirds). */
+  public static int[] inMonthThirds(int maxDay) {
+    int first = Math.max(1, maxDay / 3);
+    int second = Math.max(first + 1, (2 * maxDay) / 3);
+    if (second > maxDay) {
+      second = maxDay;
+    }
+    return new int[] {first, second};
   }
 
   public static String dayKey(long millis) {

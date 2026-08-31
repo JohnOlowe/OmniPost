@@ -18,6 +18,8 @@ public final class ScheduleTimes {
   public static final int WATCHDOG_HOUR = 5;
   public static final int GENERATE_WEEKLY_COUNT = 4;
   public static final int GENERATE_MONTH_COUNT = 2;
+  /** Rolling window so the next dawn is ready without dumping every day until D-Day. */
+  public static final int GENERATE_COUNTDOWN_DAYS = 3;
 
   private ScheduleTimes() {}
 }

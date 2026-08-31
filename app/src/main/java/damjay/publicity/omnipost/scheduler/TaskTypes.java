@@ -8,13 +8,17 @@ public final class TaskTypes {
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
   public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
+  public static final String COUNTDOWN = "COUNTDOWN";
+  public static final String BIRTHDAY_NOTICE = "BIRTHDAY_NOTICE";
   public static final String FLEXIBLE = "FLEXIBLE";
   public static final String ONE_OFF = "ONE_OFF";
   public static final String TEST = "TEST";
 
   public static final String SECTION_NOW = "Needs you";
+  public static final String SECTION_NEXT = "Next 48 hours";
   public static final String SECTION_WEEKLY = "Weekly";
   public static final String SECTION_MONTHLY = "Monthly";
+  public static final String SECTION_CAMPAIGN = "Campaign";
   public static final String SECTION_FLEXIBLE = "Flexible";
   public static final String SECTION_ONCE = "One-off";
 
@@ -39,6 +43,10 @@ public final class TaskTypes {
         return "Fasting today";
       case HAPPY_NEW_MONTH:
         return "Happy New Month";
+      case COUNTDOWN:
+        return "Beyond Limit countdown";
+      case BIRTHDAY_NOTICE:
+        return "Birthday notice";
       case FLEXIBLE:
         return "Flexible";
       case ONE_OFF:
@@ -62,7 +70,10 @@ public final class TaskTypes {
       case NEW_MONTH_FASTING:
       case FASTING_DAY:
       case HAPPY_NEW_MONTH:
+      case BIRTHDAY_NOTICE:
         return "Monthly";
+      case COUNTDOWN:
+        return "Daily";
       case BIRTHDAY:
         return "Yearly";
       case FLEXIBLE:
@@ -84,7 +95,10 @@ public final class TaskTypes {
       case NEW_MONTH_FASTING:
       case FASTING_DAY:
       case HAPPY_NEW_MONTH:
+      case BIRTHDAY_NOTICE:
         return SECTION_MONTHLY;
+      case COUNTDOWN:
+        return SECTION_CAMPAIGN;
       case BIRTHDAY:
       case FLEXIBLE:
         return SECTION_FLEXIBLE;
@@ -99,6 +113,13 @@ public final class TaskTypes {
 
   public static boolean isSeries(String type) {
     String section = section(type);
-    return SECTION_WEEKLY.equals(section) || SECTION_MONTHLY.equals(section);
+    return SECTION_WEEKLY.equals(section)
+        || SECTION_MONTHLY.equals(section)
+        || COUNTDOWN.equals(type);
+  }
+
+  /** Daily countdown and birthday NOTICE show as one card, not a cluster. */
+  public static boolean oneCard(String type) {
+    return COUNTDOWN.equals(type) || BIRTHDAY_NOTICE.equals(type);
   }
 }
