@@ -12,6 +12,9 @@ public final class ScheduleTimes {
   public static final long WARNING_LEAD_MS = 30 * 60_000L;
   public static final long NAG_INTERVAL_MS = 5 * 60_000L;
   public static final long BURST_MS = 25_000L;
+  /** Escalate: shake first so a quiet pocket is enough; then ring until they tap. */
+  public static final long ESCALATE_VIBRATE_MS = 30_000L;
+  public static final long ESCALATE_RING_MS = 5 * 60_000L;
   /** AlarmClock heartbeat so the desk text and missed phases survive swipe-away. */
   public static final long HEARTBEAT_MS = 60_000L;
   public static final long KICK_MS = 5_000L;

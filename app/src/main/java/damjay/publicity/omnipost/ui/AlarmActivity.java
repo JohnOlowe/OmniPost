@@ -2,12 +2,11 @@ package damjay.publicity.omnipost.ui;
 
 import android.app.KeyguardManager;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
@@ -16,18 +15,22 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityAlarmBinding;
-import damjay.publicity.omnipost.notify.Alerts;
+import damjay.publicity.omnipost.notify.AlarmPulse;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.ScheduleTimes;
+import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 
 public class AlarmActivity extends AppCompatActivity {
   private ActivityAlarmBinding binding;
-  private Ringtone ringtone;
+  private final Handler handler = new Handler(Looper.getMainLooper());
+  private final Runnable paintPulse = this::paintPulse;
   private long taskId;
+  private boolean selected;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -39,28 +42,36 @@ public class AlarmActivity extends AppCompatActivity {
     int phase = getIntent().getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
     if (phase == AlarmScheduler.PHASE_DRAFT) {
       binding.phase.setText(R.string.write_caption_now);
-      binding.subtitle.setText(R.string.alarm_subtitle_draft);
+      binding.subtitle.setText(
+        Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle_draft);
     } else if (phase == AlarmScheduler.PHASE_WARNING) {
       binding.phase.setText(getString(R.string.caption_ready_phase, Prefs.warningMinutes(this)));
-      binding.subtitle.setText(R.string.alarm_subtitle);
+      binding.subtitle.setText(
+        Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle);
     } else {
       binding.phase.setText(R.string.post_now);
-      binding.subtitle.setText(R.string.alarm_subtitle);
+      binding.subtitle.setText(
+        Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle);
     }
     binding.btnDraft.setOnClickListener(v -> {
+      acknowledge();
       Intent intent = new Intent(this, DraftActivity.class);
       intent.putExtra(ExtraKeys.TASK_ID, taskId);
       startActivity(intent);
       finish();
     });
-    binding.btnPosted.setOnClickListener(v -> AppExecutors.disk().execute(() -> {
-      ScheduleCoordinator.markPosted(this, taskId);
-      AppExecutors.main(() -> {
-        Toast.makeText(this, R.string.posted_toast, Toast.LENGTH_LONG).show();
-        finish();
+    binding.btnPosted.setOnClickListener(v -> {
+      acknowledge();
+      AppExecutors.disk().execute(() -> {
+        ScheduleCoordinator.markPosted(this, taskId);
+        AppExecutors.main(() -> {
+          Toast.makeText(this, R.string.posted_toast, Toast.LENGTH_LONG).show();
+          finish();
+        });
       });
-    }));
-    binding.btnSnooze.setOnClickListener(v -> SnoozeChooser.show(this, until ->
+    });
+    binding.btnSnooze.setOnClickListener(v -> SnoozeChooser.show(this, until -> {
+      acknowledge();
       AppExecutors.disk().execute(() -> {
         ScheduleCoordinator.snooze(this, taskId, until);
         AppExecutors.main(() -> {
@@ -71,11 +82,16 @@ public class AlarmActivity extends AppCompatActivity {
             .show();
           finish();
         });
-      })));
-    binding.btnLater.setOnClickListener(v -> finish());
+      });
+    }));
+    binding.btnLater.setOnClickListener(v -> {
+      acknowledge();
+      finish();
+    });
     load();
-    startSound();
-    Alerts.vibrate(this);
+    NagForegroundService.startPulse(this);
+    paintPulse();
+    handler.postDelayed(paintPulse, ScheduleTimes.ESCALATE_VIBRATE_MS);
   }
 
   @Override
@@ -105,6 +121,27 @@ public class AlarmActivity extends AppCompatActivity {
     });
   }
 
+  private void paintPulse() {
+    if (binding == null) {
+      return;
+    }
+    if (!Prefs.escalate(this)) {
+      binding.pulse.setVisibility(View.GONE);
+      return;
+    }
+    binding.pulse.setVisibility(View.VISIBLE);
+    if (AlarmPulse.state() == AlarmPulse.RINGING) {
+      binding.pulse.setText(R.string.pulse_ringing);
+    } else {
+      binding.pulse.setText(R.string.pulse_vibrating);
+    }
+  }
+
+  private void acknowledge() {
+    selected = true;
+    AlarmPulse.silence();
+  }
+
   private void turnScreenOn() {
     if (Build.VERSION.SDK_INT >= 27) {
       setShowWhenLocked(true);
@@ -122,29 +159,11 @@ public class AlarmActivity extends AppCompatActivity {
     }
   }
 
-  private void startSound() {
-    if (!Prefs.sound(this)) {
-      return;
-    }
-    try {
-      Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-      ringtone = RingtoneManager.getRingtone(this, uri);
-      if (ringtone != null) {
-        ringtone.setAudioAttributes(
-          new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ALARM)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build());
-        ringtone.play();
-      }
-    } catch (Exception ignored) {
-    }
-  }
-
   @Override
   protected void onDestroy() {
-    if (ringtone != null && ringtone.isPlaying()) {
-      ringtone.stop();
+    handler.removeCallbacks(paintPulse);
+    if (selected) {
+      AlarmPulse.silence();
     }
     super.onDestroy();
   }

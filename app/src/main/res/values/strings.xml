@@ -61,11 +61,15 @@
   <string name="desk_armed_title">Desk armed</string>
   <string name="desk_armed_text">Nothing due right now. OmniPost is watching.</string>
   <string name="settings_title">The desk</string>
-  <string name="settings_body">You write every caption. OmniPost only nags, vibrates, and keeps the time. Tune how loud and how often.</string>
+  <string name="settings_body">You write every caption. OmniPost only nags, vibrates, and keeps the time. Default: vibrate 30 seconds, then ring 5 minutes if you do not tap.</string>
   <string name="setting_alert">Alarm and vibration</string>
+  <string name="alert_escalate">Vibrate 30 seconds, then ring 5 minutes</string>
   <string name="alert_both">Alarm sound and vibration</string>
   <string name="alert_sound">Alarm sound only</string>
   <string name="alert_vibrate">Vibration only</string>
+  <string name="pulse_vibrating">Vibrating. Tap an action now, or it will ring in 30 seconds.</string>
+  <string name="pulse_ringing">Ringing for 5 minutes. Tap an action to stop.</string>
+  <string name="alarm_subtitle_escalate">Vibrate first. If you do not tap Open draft, I posted it, or Flyer not ready, it rings for 5 minutes so you cannot miss it.</string>
   <string name="setting_nag">Nag until posted</string>
   <string name="nag_every">Every %1$d minutes</string>
   <string name="setting_warning">Caption-ready warning</string>

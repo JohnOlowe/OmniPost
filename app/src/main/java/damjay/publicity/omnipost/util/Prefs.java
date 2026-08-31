@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 
 public final class Prefs {
+  public static final String MODE_ESCALATE = "escalate";
   public static final String MODE_BOTH = "both";
   public static final String MODE_SOUND = "sound";
   public static final String MODE_VIBRATE = "vibrate";
@@ -26,21 +27,25 @@ public final class Prefs {
   }
 
   public static String alertMode(Context ctx) {
-    return sp(ctx).getString(ALERT, MODE_BOTH);
+    return sp(ctx).getString(ALERT, MODE_ESCALATE);
   }
 
   public static void setAlertMode(Context ctx, String mode) {
     sp(ctx).edit().putString(ALERT, mode).apply();
   }
 
+  public static boolean escalate(Context ctx) {
+    return MODE_ESCALATE.equals(alertMode(ctx));
+  }
+
   public static boolean sound(Context ctx) {
     String mode = alertMode(ctx);
-    return MODE_BOTH.equals(mode) || MODE_SOUND.equals(mode);
+    return MODE_ESCALATE.equals(mode) || MODE_BOTH.equals(mode) || MODE_SOUND.equals(mode);
   }
 
   public static boolean vibrate(Context ctx) {
     String mode = alertMode(ctx);
-    return MODE_BOTH.equals(mode) || MODE_VIBRATE.equals(mode);
+    return MODE_ESCALATE.equals(mode) || MODE_BOTH.equals(mode) || MODE_VIBRATE.equals(mode);
   }
 
   public static int nagMinutes(Context ctx) {

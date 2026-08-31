@@ -16,6 +16,7 @@ import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityDraftBinding;
+import damjay.publicity.omnipost.notify.AlarmPulse;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
@@ -51,6 +52,7 @@ public class DraftActivity extends AppCompatActivity {
     watch(binding.inputA, binding.countA);
     watch(binding.inputB, binding.countB);
     applyCompareLayout();
+    AlarmPulse.silence();
     load();
   }
 

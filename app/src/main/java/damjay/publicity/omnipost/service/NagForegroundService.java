@@ -5,10 +5,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
-import android.media.AudioAttributes;
-import android.media.MediaPlayer;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -19,7 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
-import damjay.publicity.omnipost.notify.Alerts;
+import damjay.publicity.omnipost.notify.AlarmPulse;
+import damjay.publicity.omnipost.notify.AlertPlan;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
@@ -36,7 +33,6 @@ public class NagForegroundService extends Service {
 
   private final Handler handler = new Handler(Looper.getMainLooper());
   private final Runnable pulse = this::onPulse;
-  private MediaPlayer player;
   private volatile boolean keepAlive;
   private volatile boolean hasNagging;
   private volatile boolean destroyed;
@@ -50,6 +46,12 @@ public class NagForegroundService extends Service {
 
   public static void refresh(Context context) {
     start(context, 0L);
+  }
+
+  public static void startPulse(Context context) {
+    Intent intent = new Intent(context, NagForegroundService.class);
+    intent.putExtra(ExtraKeys.PULSE, true);
+    launch(context, intent);
   }
 
   public static void deliverAlarm(Context context, Intent alarm) {
@@ -86,11 +88,19 @@ public class NagForegroundService extends Service {
   public int onStartCommand(Intent intent, int flags, int startId) {
     NotificationHelper.ensureChannels(this);
     promoteForeground(0, null);
+    final boolean pulseOnly = intent != null && intent.getBooleanExtra(ExtraKeys.PULSE, false);
     final int phase = intent == null ? 0 : intent.getIntExtra(ExtraKeys.PHASE, 0);
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
+    if (pulseOnly) {
+      keepAlive = true;
+      AlarmPulse.begin(this);
+      acquireBurstLock();
+    }
     AppExecutors.disk().execute(() -> {
       try {
-        if (phase != 0) {
+        if (pulseOnly) {
+          /* AlarmPulse already running. Do not tick or the delayed ring restarts. */
+        } else if (phase != 0) {
           ScheduleCoordinator.onAlarm(this, phase, focusedId);
         } else {
           ScheduleCoordinator.tick(this);
@@ -102,7 +112,7 @@ public class NagForegroundService extends Service {
       Task next = nextToRing();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
-      keepAlive = hasNagging || desk;
+      keepAlive = hasNagging || desk || AlarmPulse.isLive() || pulseOnly;
       if (keepAlive) {
         AlarmScheduler.scheduleHeartbeat(this);
       }
@@ -119,7 +129,9 @@ public class NagForegroundService extends Service {
         handler.removeCallbacks(pulse);
         boolean explicitNag = focusedId > 0L
           && (phase == AlarmScheduler.PHASE_NAG || phase == AlarmScheduler.PHASE_PULSE);
-        if (hasNagging && shouldBurst(explicitNag || phase == AlarmScheduler.PHASE_NAG)) {
+        if (!pulseOnly
+            && hasNagging
+            && shouldBurst(explicitNag || phase == AlarmScheduler.PHASE_NAG)) {
           fireBurst(nagging, focusedId);
         }
         handler.postDelayed(pulse, ScheduleTimes.HEARTBEAT_MS);
@@ -157,7 +169,7 @@ public class NagForegroundService extends Service {
       Task next = nextToRing();
       hasNagging = nagging != null && !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
-      keepAlive = hasNagging || desk;
+      keepAlive = hasNagging || desk || AlarmPulse.isLive();
       if (keepAlive) {
         AlarmScheduler.scheduleHeartbeat(this);
       }
@@ -182,8 +194,7 @@ public class NagForegroundService extends Service {
 
   private void fireBurst(List<Task> nagging, long focusedId) {
     acquireBurstLock();
-    playAlarmSound();
-    Alerts.vibrate(this);
+    AlarmPulse.begin(this);
     Task focus = null;
     for (Task task : nagging) {
       NotificationHelper.showNagBurst(this, task);
@@ -223,42 +234,6 @@ public class NagForegroundService extends Service {
     }
   }
 
-  private void playAlarmSound() {
-    stopAlarmSound();
-    if (!Prefs.sound(this)) {
-      return;
-    }
-    try {
-      Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-      player = new MediaPlayer();
-      player.setAudioAttributes(
-        new AudioAttributes.Builder()
-          .setUsage(AudioAttributes.USAGE_ALARM)
-          .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-          .build());
-      player.setDataSource(this, uri);
-      player.setLooping(true);
-      player.prepare();
-      player.start();
-      handler.postDelayed(this::stopAlarmSound, Prefs.burstMs());
-    } catch (Exception ignored) {
-    }
-  }
-
-  private void stopAlarmSound() {
-    if (player != null) {
-      try {
-        player.stop();
-      } catch (Exception ignored) {
-      }
-      try {
-        player.release();
-      } catch (Exception ignored) {
-      }
-      player = null;
-    }
-  }
-
   private void acquireBurstLock() {
     try {
       if (wakeLock == null) {
@@ -269,7 +244,8 @@ public class NagForegroundService extends Service {
         }
       }
       if (wakeLock != null) {
-        wakeLock.acquire(Prefs.burstMs() + 5_000L);
+        long held = AlertPlan.totalMs(Prefs.alertMode(this)) + 5_000L;
+        wakeLock.acquire(Math.max(held, Prefs.burstMs() + 5_000L));
       }
     } catch (Exception ignored) {
     }
@@ -277,7 +253,7 @@ public class NagForegroundService extends Service {
 
   @Override
   public void onTaskRemoved(Intent rootIntent) {
-    if (keepAlive || Prefs.deskOngoing(this) || hasNagging) {
+    if (keepAlive || Prefs.deskOngoing(this) || hasNagging || AlarmPulse.isLive()) {
       AlarmScheduler.scheduleKick(this);
       AlarmScheduler.scheduleHeartbeat(this);
       try {
@@ -290,10 +266,9 @@ public class NagForegroundService extends Service {
 
   @Override
   public void onDestroy() {
-    boolean revive = keepAlive || Prefs.deskOngoing(this) || hasNagging;
+    boolean revive = keepAlive || Prefs.deskOngoing(this) || hasNagging || AlarmPulse.isLive();
     destroyed = true;
     handler.removeCallbacksAndMessages(null);
-    stopAlarmSound();
     if (wakeLock != null && wakeLock.isHeld()) {
       try {
         wakeLock.release();

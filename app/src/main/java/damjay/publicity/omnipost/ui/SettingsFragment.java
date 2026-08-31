@@ -145,8 +145,11 @@ public class SettingsFragment extends Fragment {
   }
 
   private void pickAlert() {
-    String[] modes = new String[] {Prefs.MODE_BOTH, Prefs.MODE_SOUND, Prefs.MODE_VIBRATE};
+    String[] modes = new String[] {
+      Prefs.MODE_ESCALATE, Prefs.MODE_BOTH, Prefs.MODE_SOUND, Prefs.MODE_VIBRATE
+    };
     String[] labels = new String[] {
+      getString(R.string.alert_escalate),
       getString(R.string.alert_both),
       getString(R.string.alert_sound),
       getString(R.string.alert_vibrate)
@@ -206,7 +209,10 @@ public class SettingsFragment extends Fragment {
     if (Prefs.MODE_VIBRATE.equals(mode)) {
       return getString(R.string.alert_vibrate);
     }
-    return getString(R.string.alert_both);
+    if (Prefs.MODE_BOTH.equals(mode)) {
+      return getString(R.string.alert_both);
+    }
+    return getString(R.string.alert_escalate);
   }
 
   private String nagLabel(int minutes) {

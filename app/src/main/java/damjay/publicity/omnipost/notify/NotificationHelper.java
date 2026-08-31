@@ -18,6 +18,7 @@ import damjay.publicity.omnipost.receiver.MarkPostedReceiver;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.ui.DraftActivity;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -144,16 +145,22 @@ public final class NotificationHelper {
       .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, task.id))
       .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, task.id))
       .setColor(0xFFFF4D4D)
-      .setSilent(!Prefs.sound(ctx));
+      .setSilent(Prefs.escalate(ctx) || !Prefs.sound(ctx));
+    if (Prefs.escalate(ctx)) {
+      builder.setSound(null);
+    }
     if (Prefs.fullScreen(ctx)) {
       builder.setFullScreenIntent(fullScreen, true);
     }
-    if (Prefs.vibrate(ctx)) {
+    if (Prefs.escalate(ctx)) {
+      builder.setVibrate(new long[] {0});
+    } else if (Prefs.vibrate(ctx)) {
       builder.setVibrate(new long[] {0, 400, 200, 400, 200, 800});
     } else {
       builder.setVibrate(new long[] {0});
     }
     notify(ctx, alarmId(task.id), builder.build());
+    NagForegroundService.startPulse(ctx);
   }
 
   public static void cancelForTask(Context ctx, long taskId) {
