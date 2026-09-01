@@ -69,8 +69,6 @@ public class SettingsFragment extends Fragment {
     binding.rowNag.getRoot().setOnClickListener(v -> pickNag());
     paintChoice(binding.rowWarning, R.string.setting_warning, warningLabel(Prefs.warningMinutes(ctx)));
     binding.rowWarning.getRoot().setOnClickListener(v -> pickWarning());
-    paintChoice(binding.rowDraft, R.string.setting_draft, draftLabel(Prefs.draftHour(ctx)));
-    binding.rowDraft.getRoot().setOnClickListener(v -> pickDraftHour());
     paintSwitch(
       binding.rowSeed,
       R.string.setting_seed,
@@ -186,24 +184,6 @@ public class SettingsFragment extends Fragment {
       .show();
   }
 
-  private void pickDraftHour() {
-    int[] values = new int[] {20, 19, 21, 10};
-    String[] labels = new String[] {
-      draftLabel(20), draftLabel(19), draftLabel(21), draftLabel(10)
-    };
-    int selected = indexOf(values, Prefs.draftHour(requireContext()));
-    new MaterialAlertDialogBuilder(requireContext())
-      .setTitle(R.string.setting_draft)
-      .setSingleChoiceItems(labels, selected, (d, which) -> {
-        Prefs.setDraftHour(requireContext(), values[which]);
-        d.dismiss();
-        bindDesk();
-        rearmQuiet();
-      })
-      .setNegativeButton(android.R.string.cancel, null)
-      .show();
-  }
-
   private void pickWarning() {
     int[] values = new int[] {15, 30, 60};
     String[] labels = new String[] {
@@ -241,14 +221,6 @@ public class SettingsFragment extends Fragment {
 
   private String warningLabel(int minutes) {
     return getString(R.string.warning_every, minutes);
-  }
-
-  private String draftLabel(int hour) {
-    if (hour < 12) {
-      return getString(R.string.draft_morning, hour);
-    }
-    int twelve = hour > 12 ? hour - 12 : hour;
-    return getString(R.string.draft_evening, twelve);
   }
 
   private static int indexOf(String[] values, String target) {
