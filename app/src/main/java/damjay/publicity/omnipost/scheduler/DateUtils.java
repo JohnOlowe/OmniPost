@@ -143,6 +143,69 @@ public final class DateUtils {
     return new SimpleDateFormat("MMMM", Locale.US).format(calendar.getTime());
   }
 
+  public static String ordinal(int day) {
+    int n = Math.abs(day);
+    int mod100 = n % 100;
+    if (mod100 >= 11 && mod100 <= 13) {
+      return n + "th";
+    }
+    switch (n % 10) {
+      case 1:
+        return n + "st";
+      case 2:
+        return n + "nd";
+      case 3:
+        return n + "rd";
+      default:
+        return n + "th";
+    }
+  }
+
+  /** 9th September, 2026 */
+  public static String prettyDate(Calendar calendar) {
+    if (calendar == null) {
+      return "";
+    }
+    return ordinal(calendar.get(Calendar.DAY_OF_MONTH))
+      + " "
+      + monthName(calendar)
+      + ", "
+      + calendar.get(Calendar.YEAR);
+  }
+
+  /** 9th – 13th September, 2026 (collapses when the month or year is shared). */
+  public static String prettyRange(Calendar start, Calendar end) {
+    if (start == null) {
+      return "";
+    }
+    if (end == null || dayKey(start).equals(dayKey(end))) {
+      return prettyDate(start);
+    }
+    boolean sameYear = start.get(Calendar.YEAR) == end.get(Calendar.YEAR);
+    boolean sameMonth = sameYear && start.get(Calendar.MONTH) == end.get(Calendar.MONTH);
+    if (sameMonth) {
+      return ordinal(start.get(Calendar.DAY_OF_MONTH))
+        + " – "
+        + ordinal(end.get(Calendar.DAY_OF_MONTH))
+        + " "
+        + monthName(start)
+        + ", "
+        + start.get(Calendar.YEAR);
+    }
+    if (sameYear) {
+      return ordinal(start.get(Calendar.DAY_OF_MONTH))
+        + " "
+        + monthName(start)
+        + " – "
+        + ordinal(end.get(Calendar.DAY_OF_MONTH))
+        + " "
+        + monthName(end)
+        + ", "
+        + start.get(Calendar.YEAR);
+    }
+    return prettyDate(start) + " – " + prettyDate(end);
+  }
+
   /** Two in-month dates, equally spaced (thirds). */
   public static int[] inMonthThirds(int maxDay) {
     int first = Math.max(1, maxDay / 3);
