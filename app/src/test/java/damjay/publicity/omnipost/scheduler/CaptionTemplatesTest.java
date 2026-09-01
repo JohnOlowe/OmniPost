@@ -102,6 +102,42 @@ public class CaptionTemplatesTest {
   }
 
   @Test
+  public void todayIsNotTheDueDate() {
+    Calendar today = DateUtils.startOfDay(Calendar.getInstance());
+    Calendar due = (Calendar) today.clone();
+    due.add(Calendar.DAY_OF_MONTH, 3);
+    Task task = new Task();
+    task.type = TaskTypes.ONE_OFF;
+    task.postAtMillis = due.getTimeInMillis();
+    assertEquals(DateUtils.prettyDate(today), CaptionTemplates.apply("{today}", task));
+    assertEquals(DateUtils.prettyDate(due), CaptionTemplates.apply("{date}", task));
+    assertEquals(
+      DateUtils.monthName(today),
+      CaptionTemplates.apply("{today_month}", task));
+  }
+
+  @Test
+  public void nestedVarsAndComposedRangeFill() {
+    Calendar today = DateUtils.startOfDay(Calendar.getInstance());
+    Calendar week = (Calendar) today.clone();
+    week.add(Calendar.DAY_OF_MONTH, 6);
+    java.util.Map<String, String> extras = new java.util.LinkedHashMap<>();
+    extras.put("theme", "Grace");
+    extras.put("line", "*{theme}* through {range:today:today+6}");
+    Task task = new Task();
+    task.type = TaskTypes.ONE_OFF;
+    task.postAtMillis = today.getTimeInMillis();
+    assertEquals(
+      "*Grace* through " + DateUtils.prettyRange(today, week),
+      CaptionTemplates.apply("{line}", task, null, extras));
+    Calendar tomorrow = (Calendar) today.clone();
+    tomorrow.add(Calendar.DAY_OF_MONTH, 1);
+    assertEquals(
+      DateUtils.prettyDate(tomorrow),
+      CaptionTemplates.apply("{today+1}", task));
+  }
+
+  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));

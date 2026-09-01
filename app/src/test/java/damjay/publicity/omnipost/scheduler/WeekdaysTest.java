@@ -30,5 +30,8 @@ public class WeekdaysTest {
     assertTrue(CaptionTemplates.isTokenName("theme_2"));
     assertFalse(CaptionTemplates.isTokenName("2theme"));
     assertFalse(CaptionTemplates.isTokenName("no spaces"));
+    assertTrue(CaptionVars.isReserved("today"));
+    assertTrue(CaptionVars.isReserved("{date}"));
+    assertFalse(CaptionVars.isReserved("theme"));
   }
 }

@@ -127,50 +127,61 @@ public final class CaptionTemplates {
       return "";
     }
     String month = monthName == null || monthName.isEmpty() ? "this month" : monthName;
+    Calendar today = DateUtils.startOfDay(Calendar.getInstance());
+    Calendar start = startOf(series, task);
+    Calendar due = postDay(task, start);
+    if (due == null) {
+      due = today;
+    }
+    Calendar end = endOf(series, start);
     Map<String, String> tokens = new LinkedHashMap<>();
     if (extras != null) {
       tokens.putAll(extras);
     }
     tokens.putAll(parseVars(series == null ? null : series.vars));
-    String out = applyTokens(template, tokens);
+    putBuiltins(tokens, days, month, today, due, start, end, series, task);
+    return CaptionVars.expand(template, tokens, today, due, start, end);
+  }
+
+  static void putBuiltins(
+    Map<String, String> tokens,
+    int days,
+    String month,
+    Calendar today,
+    Calendar due,
+    Calendar start,
+    Calendar end,
+    Series series,
+    Task task) {
+    Calendar now = Calendar.getInstance();
+    tokens.put("today", DateUtils.prettyDate(today));
+    tokens.put("today_weekday", CaptionVars.weekdayName(today));
+    tokens.put("today_month", DateUtils.monthName(today));
+    tokens.put("today_year", CaptionVars.yearName(today));
+    tokens.put("now", DateUtils.formatStamp(now.getTimeInMillis()));
+    tokens.put("clock", DateUtils.prettyClock(now));
+    tokens.put("date", DateUtils.prettyDate(due));
+    tokens.put("due", DateUtils.prettyDate(due));
+    tokens.put("weekday", CaptionVars.weekdayName(due));
+    tokens.put("month", month);
+    tokens.put("Month", month);
+    Calendar yearSrc = start != null ? start : due;
+    tokens.put("year", CaptionVars.yearName(yearSrc));
+    tokens.put("start", DateUtils.prettyDate(start != null ? start : due));
+    Calendar last = end != null ? end : start;
+    tokens.put("end", DateUtils.prettyDate(last != null ? last : due));
+    tokens.put("range", DateUtils.prettyRange(start != null ? start : due, last));
+    tokens.put("Days", daysHeadline(days));
+    tokens.put("away", daysAway(days));
+    tokens.put("days", String.valueOf(Math.max(days, 0)));
+    String name = "";
     if (series != null && series.title != null && !series.title.isEmpty()) {
-      out = out.replace("{name}", series.title);
+      name = series.title;
     } else if (task != null && task.title != null && !task.title.isEmpty()
         && TaskTypes.BIRTHDAY.equals(task.type)) {
-      out = out.replace("{name}", task.title.replace("'s Birthday", "").trim());
+      name = task.title.replace("'s Birthday", "").trim();
     }
-    out = out.replace("{Days}", daysHeadline(days));
-    out = out.replace("{away}", daysAway(days));
-    out = out.replace("{days}", String.valueOf(Math.max(days, 0)));
-    out = out.replace("{month}", month);
-    out = out.replace("{Month}", month);
-    Calendar start = startOf(series, task);
-    Calendar end = endOf(series, start);
-    if (out.contains("{range}")) {
-      out = out.replace("{range}", DateUtils.prettyRange(start, end));
-    }
-    if (out.contains("{date}")) {
-      out = out.replace("{date}", start == null ? "" : DateUtils.prettyDate(start));
-    }
-    if (out.contains("{start}")) {
-      out = out.replace("{start}", start == null ? "" : DateUtils.prettyDate(start));
-    }
-    if (out.contains("{end}")) {
-      Calendar last = end == null ? start : end;
-      out = out.replace("{end}", last == null ? "" : DateUtils.prettyDate(last));
-    }
-    if (out.contains("{year}")) {
-      Calendar yearSrc = start == null ? Calendar.getInstance() : start;
-      out = out.replace("{year}", String.valueOf(yearSrc.get(Calendar.YEAR)));
-    }
-    if (out.contains("{weekday}")) {
-      Calendar day = postDay(task, start);
-      String weekday = day == null
-        ? ""
-        : day.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.US);
-      out = out.replace("{weekday}", weekday == null ? "" : weekday);
-    }
-    return out;
+    tokens.put("name", name);
   }
 
   static String applyVars(String template, String vars) {
@@ -202,21 +213,7 @@ public final class CaptionTemplates {
   }
 
   static String applyTokens(String template, Map<String, String> tokens) {
-    if (template == null || template.isEmpty()) {
-      return template == null ? "" : template;
-    }
-    if (tokens == null || tokens.isEmpty()) {
-      return template;
-    }
-    String out = template;
-    for (Map.Entry<String, String> entry : tokens.entrySet()) {
-      if (entry.getKey() == null || entry.getKey().isEmpty()) {
-        continue;
-      }
-      String value = entry.getValue() == null ? "" : entry.getValue();
-      out = out.replace("{" + entry.getKey() + "}", value);
-    }
-    return out;
+    return CaptionVars.applyLongest(template, tokens);
   }
 
   public static boolean isTokenName(String key) {

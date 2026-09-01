@@ -161,6 +161,14 @@ public final class DateUtils {
     }
   }
 
+  /** 5:00 PM */
+  public static String prettyClock(Calendar calendar) {
+    if (calendar == null) {
+      return "";
+    }
+    return new SimpleDateFormat("h:mm a", Locale.US).format(calendar.getTime());
+  }
+
   /** 9th September, 2026 */
   public static String prettyDate(Calendar calendar) {
     if (calendar == null) {
