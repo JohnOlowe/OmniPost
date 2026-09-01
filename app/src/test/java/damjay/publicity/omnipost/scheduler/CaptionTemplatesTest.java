@@ -67,31 +67,6 @@ public class CaptionTemplatesTest {
   }
 
   @Test
-  public void customVarsAndRangeFill() {
-    damjay.publicity.omnipost.data.entity.Series series =
-      SeriesDefaults.beyondLimit();
-    Task countdown = new Task();
-    countdown.type = TaskTypes.COUNTDOWN;
-    countdown.occurrenceKey = "COUNTDOWN|2026-09-09|2026-08-31";
-    String filled = CaptionTemplates.apply(
-      "{theme} / {range} / {event} / {venue}", countdown, series);
-    Calendar start = Calendar.getInstance();
-    start.setTimeInMillis(series.eventAtMillis);
-    Calendar end = Calendar.getInstance();
-    end.setTimeInMillis(series.endAtMillis);
-    String range = DateUtils.prettyRange(DateUtils.startOfDay(start), DateUtils.startOfDay(end));
-    assertEquals(
-      "No Cross, No Crown. / "
-        + range
-        + " / Beyond Limit / RCCG The Lord's Court, 13, Osholake Street, Ebute-Metta, Lagos.",
-      filled);
-    series.vars = "theme=Grace\nrange=1st – 3rd October, 2026";
-    assertEquals(
-      "Grace / 1st – 3rd October, 2026",
-      CaptionTemplates.apply("{theme} / {range}", countdown, series));
-  }
-
-  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));

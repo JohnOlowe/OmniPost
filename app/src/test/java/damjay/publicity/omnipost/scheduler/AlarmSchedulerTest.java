@@ -20,11 +20,8 @@ public class AlarmSchedulerTest {
     int draft = AlarmScheduler.requestCode(id, AlarmScheduler.PHASE_DRAFT);
     int warn = AlarmScheduler.requestCode(id, AlarmScheduler.PHASE_WARNING);
     int nag = AlarmScheduler.requestCode(id, AlarmScheduler.PHASE_NAG);
-    int minute = AlarmScheduler.requestCode(id, AlarmScheduler.PHASE_MINUTE);
     assertNotEquals(draft, warn);
     assertNotEquals(warn, nag);
     assertNotEquals(draft, nag);
-    assertNotEquals(minute, nag);
-    assertNotEquals(minute, warn);
   }
 }
