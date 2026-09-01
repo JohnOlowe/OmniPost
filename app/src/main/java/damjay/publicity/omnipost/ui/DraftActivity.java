@@ -32,6 +32,7 @@ public class DraftActivity extends AppCompatActivity {
   private long draftId;
   private Draft draft;
   private Task task;
+  private Series series;
   private boolean loaded;
   private boolean usingB;
 
@@ -102,6 +103,7 @@ public class DraftActivity extends AppCompatActivity {
       }
       draft = found;
       task = linked;
+      series = seriesFor(db, linked);
       if (draft != null) {
         draftId = draft.id;
         taskId = draft.taskId > 0L ? draft.taskId : taskId;
@@ -133,7 +135,7 @@ public class DraftActivity extends AppCompatActivity {
     }
     draft.variantA = text(binding.inputA);
     draft.variantB = text(binding.inputB);
-    draft.finalizedText = CaptionTemplates.apply(source(), task);
+    draft.finalizedText = CaptionTemplates.apply(source(), task, series);
     if (draft.title == null || draft.title.isEmpty()) {
       draft.title = task != null ? task.title : "Untitled caption";
     }
@@ -220,14 +222,14 @@ public class DraftActivity extends AppCompatActivity {
   }
 
   private String pickText() {
-    return CaptionTemplates.apply(source(), task);
+    return CaptionTemplates.apply(source(), task, series);
   }
 
   private void paintPreview() {
     if (binding == null) {
       return;
     }
-    String filled = CaptionTemplates.apply(source(), task);
+    String filled = CaptionTemplates.apply(source(), task, series);
     binding.previewFinal.setText(WhatsAppPreview.display(filled));
   }
 

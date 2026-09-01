@@ -61,7 +61,7 @@
   <string name="desk_armed_title">Desk armed</string>
   <string name="desk_armed_text">Nothing due right now. OmniPost is watching.</string>
   <string name="settings_title">The desk</string>
-  <string name="settings_body">You write every caption. OmniPost only nags, vibrates, and keeps the time. Default: vibrate 30 seconds, then ring 5 minutes if you do not tap.</string>
+  <string name="settings_body">You write every caption. Writing gets a short vibrate. Sending the flyer uses the loud ring, plus a 1-minute warning so it goes out on time.</string>
   <string name="setting_alert">Alarm and vibration</string>
   <string name="alert_escalate">Vibrate 30 seconds, then ring 5 minutes</string>
   <string name="alert_both">Alarm sound and vibration</string>
@@ -74,6 +74,11 @@
   <string name="nag_every">Every %1$d minutes</string>
   <string name="setting_warning">Caption-ready warning</string>
   <string name="warning_every">%1$d minutes before the post</string>
+  <string name="setting_draft">Write the caption</string>
+  <string name="draft_evening">%1$d:00 PM the evening before</string>
+  <string name="draft_morning">%1$d:00 AM the morning before</string>
+  <string name="alarm_subtitle_soft">A nudge to write the caption — not the loud ring. That is for sending the flyer, plus a 1-minute warning so it goes out on time.</string>
+  <string name="minute_notif_text">One minute. Send it now so it goes out on time.</string>
   <string name="setting_seed">Fill starter captions</string>
   <string name="setting_seed_hint">Off by default. You write the caption. Countdowns and monthly notices always fill from their template. Turn on only if you want canned lines for the weeklies.</string>
   <string name="setting_desk">Always-on next-up notification</string>
@@ -91,10 +96,13 @@
   <string name="add_countdown">Daily countdown until D-Day</string>
   <string name="add_monthly">Monthly notice (end of last month, 10th, 20th)</string>
   <string name="series_section">Repeating templates</string>
-  <string name="series_section_body">Beyond Limit and the birthday NOTICE start here. Add more that count down every day, or that fire on the last day of the previous month and the 10th and 20th. Days / away / days / month placeholders fill themselves. Long-press a card on Tasks to edit.</string>
+  <string name="series_section_body">Beyond Limit and the birthday NOTICE start here. Add more that count down every day, or that fire on the last day of the previous month and the 10th and 20th. Placeholders and your own variables fill themselves. Long-press a card on Tasks to edit.</string>
   <string name="series_title">Name</string>
   <string name="series_caption">Caption template</string>
-  <string name="series_placeholders">Placeholders: Days becomes 9 DAYS TO GO. away becomes is 9 days away. days is the number. month is the month name. Write them inside curly braces in the template.</string>
+  <string name="series_vars">Variables (one per line: name=value)</string>
+  <string name="series_placeholders" formatted="false">Built-in: {Days} {away} {days} {month} {range} {date} {year} {weekday} {name} {start} {end}. Add your own in Variables, e.g. theme=No Cross, No Crown. then write {theme} in the template.</string>
+  <string name="pick_end" formatted="false">Pick last day (for {range})</string>
+  <string name="end_on">Last day · %1$s</string>
   <string name="kind_countdown">Daily until D-Day — one card, day count updates itself</string>
   <string name="kind_monthly">Last day of previous month, then the 10th and 20th — month name updates itself</string>
   <string name="pick_dday">Pick D-Day</string>

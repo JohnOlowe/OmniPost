@@ -2,6 +2,7 @@ package damjay.publicity.omnipost.scheduler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Task;
 import java.util.Arrays;
@@ -145,6 +146,21 @@ public class TaskSectionsTest {
     assertEquals(TaskTypes.SECTION_WEEKLY, sections.get(0).title);
     assertEquals(2, sections.get(0).tasks.size());
     assertFalse(TaskTypes.SECTION_NOW.equals(sections.get(0).title));
+  }
+
+  @Test
+  public void nextRingIncludesOneMinuteWarning() {
+    long now = 1_000_000L;
+    Task task = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.WARNING, now + 90_000L);
+    task.draftAtMillis = now - 10_000L;
+    assertEquals(
+      now + 30_000L,
+      TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
+    assertEquals(AlarmScheduler.PHASE_MINUTE, 7);
+    assertTrue(AlarmScheduler.loudPhase(AlarmScheduler.PHASE_MINUTE));
+    assertTrue(AlarmScheduler.loudPhase(AlarmScheduler.PHASE_NAG));
+    assertFalse(AlarmScheduler.loudPhase(AlarmScheduler.PHASE_DRAFT));
+    assertFalse(AlarmScheduler.loudPhase(AlarmScheduler.PHASE_WARNING));
   }
 
   @Test
