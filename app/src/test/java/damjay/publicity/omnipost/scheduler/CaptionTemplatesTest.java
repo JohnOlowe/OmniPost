@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Task;
+import java.util.Calendar;
 import org.junit.Test;
 
 public class CaptionTemplatesTest {
