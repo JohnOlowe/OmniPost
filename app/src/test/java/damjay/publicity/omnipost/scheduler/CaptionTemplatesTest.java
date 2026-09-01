@@ -47,6 +47,25 @@ public class CaptionTemplatesTest {
   }
 
   @Test
+  public void rawTemplateKeepsPlaceholders() {
+    Task notice = new Task();
+    notice.type = TaskTypes.BIRTHDAY_NOTICE;
+    String raw = CaptionTemplates.rawTemplate(notice, null);
+    assertTrue(raw.contains("{month}"));
+    assertTrue(raw.contains("*NOTICE!*"));
+  }
+
+  @Test
+  public void applyFillsPlaceholdersWithoutReplacingTheRest() {
+    Task notice = new Task();
+    notice.type = TaskTypes.BIRTHDAY_NOTICE;
+    notice.occurrenceKey = "BIRTHDAY_NOTICE|2026-09|EVE|2026-08-31";
+    assertEquals(
+      "Send pictures for *Month of September*",
+      CaptionTemplates.apply("Send pictures for *Month of {month}*", notice));
+  }
+
+  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));

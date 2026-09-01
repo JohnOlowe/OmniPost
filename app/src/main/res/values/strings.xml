@@ -140,7 +140,7 @@
   <string name="overdue">OVERDUE</string>
   <string name="chars">%1$d chars</string>
   <string name="use_as_final">Set as final</string>
-  <string name="final_caption">Final caption</string>
+  <string name="final_caption">Final post — as it will look</string>
   <string name="delete_member_title">Remove member?</string>
   <string name="delete_member_body">Upcoming birthday tasks for %1$s will be cancelled.</string>
   <string name="alarm_subtitle">If this is not posted, OmniPost will keep coming back. If the flyer is not ready, tell it when to nag again. Change the interval in Settings.</string>

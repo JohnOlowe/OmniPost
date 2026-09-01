@@ -56,10 +56,24 @@ public final class CaptionTemplates {
     if (task == null || task.type == null) {
       return "";
     }
+    return apply(rawTemplate(task, series), task);
+  }
+
+  /** Fill Days / away / days / month in the user's caption. Does not replace their words. */
+  public static String apply(String source, Task task) {
+    if (source == null || source.isEmpty()) {
+      return "";
+    }
     int days = countdownDays(task);
-    String month = monthNameFromOccurrence(task.occurrenceKey);
-    String template = templateFor(task, series);
-    return fill(template, days, month);
+    String month = monthNameFromOccurrence(task == null ? null : task.occurrenceKey);
+    if (month == null || month.isEmpty()) {
+      month = DateUtils.monthName(Calendar.getInstance());
+    }
+    return fill(source, days, month);
+  }
+
+  public static String rawTemplate(Task task, Series series) {
+    return templateFor(task, series);
   }
 
   public static String fill(String template, int days, String monthName) {
@@ -172,6 +186,9 @@ public final class CaptionTemplates {
   private static String templateFor(Task task, Series series) {
     if (series != null && series.caption != null && !series.caption.isEmpty()) {
       return series.caption;
+    }
+    if (task == null || task.type == null) {
+      return "";
     }
     if (TaskTypes.COUNTDOWN.equals(task.type)) {
       return SeriesDefaults.countdownCaption();

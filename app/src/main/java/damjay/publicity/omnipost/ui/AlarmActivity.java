@@ -16,6 +16,7 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityAlarmBinding;
 import damjay.publicity.omnipost.notify.AlarmPulse;
+import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
@@ -70,20 +71,22 @@ public class AlarmActivity extends AppCompatActivity {
         });
       });
     });
-    binding.btnSnooze.setOnClickListener(v -> SnoozeChooser.show(this, until -> {
+    binding.btnSnooze.setOnClickListener(v -> {
       acknowledge();
-      AppExecutors.disk().execute(() -> {
-        ScheduleCoordinator.snooze(this, taskId, until);
-        AppExecutors.main(() -> {
-          Toast.makeText(
-            this,
-            getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
-            Toast.LENGTH_LONG)
-            .show();
-          finish();
+      SnoozeChooser.show(this, until -> {
+        AppExecutors.disk().execute(() -> {
+          ScheduleCoordinator.snooze(this, taskId, until);
+          AppExecutors.main(() -> {
+            Toast.makeText(
+              this,
+              getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+              Toast.LENGTH_LONG)
+              .show();
+            finish();
+          });
         });
       });
-    }));
+    });
     binding.btnLater.setOnClickListener(v -> {
       acknowledge();
       finish();
@@ -139,7 +142,7 @@ public class AlarmActivity extends AppCompatActivity {
 
   private void acknowledge() {
     selected = true;
-    AlarmPulse.silence();
+    NotificationHelper.hush(this, taskId);
   }
 
   private void turnScreenOn() {

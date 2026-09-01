@@ -5,7 +5,6 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
-import damjay.publicity.omnipost.notify.AlarmPulse;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
@@ -213,12 +212,11 @@ public final class ScheduleCoordinator {
   }
 
   public static void markPosted(Context context, long taskId) {
-    AlarmPulse.silence();
     Context app = context.getApplicationContext();
+    NotificationHelper.hush(app, taskId);
     AppDatabase db = AppDatabase.get(app);
     db.taskDao().markPosted(taskId, System.currentTimeMillis());
     AlarmScheduler.cancelTask(app, taskId);
-    NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }
@@ -244,8 +242,8 @@ public final class ScheduleCoordinator {
   }
 
   public static void shift(Context context, long taskId, long newPostAt) {
-    AlarmPulse.silence();
     Context app = context.getApplicationContext();
+    NotificationHelper.hush(app, taskId);
     AppDatabase db = AppDatabase.get(app);
     Task task = db.taskDao().getById(taskId);
     if (task == null) {
@@ -270,8 +268,8 @@ public final class ScheduleCoordinator {
   }
 
   public static void snooze(Context context, long taskId, long untilMillis) {
-    AlarmPulse.silence();
     Context app = context.getApplicationContext();
+    NotificationHelper.hush(app, taskId);
     long when = Math.max(untilMillis, System.currentTimeMillis() + 60_000L);
     AppDatabase db = AppDatabase.get(app);
     Task task = db.taskDao().getById(taskId);
@@ -334,10 +332,9 @@ public final class ScheduleCoordinator {
   }
 
   public static void deleteCustom(Context context, long taskId) {
-    AlarmPulse.silence();
     Context app = context.getApplicationContext();
+    NotificationHelper.hush(app, taskId);
     AlarmScheduler.cancelTask(app, taskId);
-    NotificationHelper.cancelForTask(app, taskId);
     AppDatabase.get(app).taskDao().deleteById(taskId);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);

@@ -16,11 +16,12 @@ import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityDraftBinding;
-import damjay.publicity.omnipost.notify.AlarmPulse;
+import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.share.InstagramStyle;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -32,6 +33,7 @@ public class DraftActivity extends AppCompatActivity {
   private Draft draft;
   private Task task;
   private boolean loaded;
+  private boolean usingB;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -44,15 +46,23 @@ public class DraftActivity extends AppCompatActivity {
     binding.btnBack.setOnClickListener(v -> finish());
     binding.btnSave.setOnClickListener(v -> persist(true));
     binding.toggleCompare.setOnCheckedChangeListener((b, checked) -> applyCompareLayout());
-    binding.btnUseA.setOnClickListener(v -> binding.inputFinal.setText(text(binding.inputA)));
-    binding.btnUseB.setOnClickListener(v -> binding.inputFinal.setText(text(binding.inputB)));
+    binding.btnUseA.setOnClickListener(v -> {
+      usingB = false;
+      paintPreview();
+    });
+    binding.btnUseB.setOnClickListener(v -> {
+      usingB = true;
+      paintPreview();
+    });
     binding.btnPeeps.setOnClickListener(v -> sendToPeeps());
     binding.btnInstagram.setOnClickListener(v -> copyInstagram());
     binding.btnFinal.setOnClickListener(v -> finalPost());
     watch(binding.inputA, binding.countA);
     watch(binding.inputB, binding.countB);
     applyCompareLayout();
-    AlarmPulse.silence();
+    if (taskId > 0L) {
+      NotificationHelper.hush(this, taskId);
+    }
     load();
   }
 
@@ -73,8 +83,8 @@ public class DraftActivity extends AppCompatActivity {
           found = new Draft();
           found.taskId = taskId;
           found.title = linked == null ? "Caption" : linked.title;
-          found.variantA = CaptionTemplates.forTask(this, linked, seriesFor(db, linked));
-          found.finalizedText = found.variantA;
+          found.variantA = seedCaption(this, db, linked);
+          found.finalizedText = "";
           found.updatedAt = System.currentTimeMillis();
           found.id = db.draftDao().insert(found);
           if (linked != null) {
@@ -90,20 +100,6 @@ public class DraftActivity extends AppCompatActivity {
         found.updatedAt = System.currentTimeMillis();
         found.id = db.draftDao().insert(found);
       }
-      if (linked != null && found != null && CaptionTemplates.isLive(linked.type)) {
-        String live = CaptionTemplates.forTask(this, linked, seriesFor(db, linked));
-        if (live != null && !live.isEmpty()) {
-          String previousA = found.variantA == null ? "" : found.variantA;
-          found.variantA = live;
-          if (found.finalizedText == null
-              || found.finalizedText.isEmpty()
-              || found.finalizedText.equals(previousA)) {
-            found.finalizedText = live;
-          }
-          found.title = linked.title;
-          db.draftDao().update(found);
-        }
-      }
       draft = found;
       task = linked;
       if (draft != null) {
@@ -117,11 +113,8 @@ public class DraftActivity extends AppCompatActivity {
         binding.taskTitle.setText(draft.title);
         binding.inputA.setText(draft.variantA);
         binding.inputB.setText(draft.variantB);
-        binding.inputFinal.setText(
-          draft.finalizedText == null || draft.finalizedText.isEmpty()
-            ? draft.variantA
-            : draft.finalizedText);
         loaded = true;
+        paintPreview();
       });
     });
   }
@@ -140,7 +133,7 @@ public class DraftActivity extends AppCompatActivity {
     }
     draft.variantA = text(binding.inputA);
     draft.variantB = text(binding.inputB);
-    draft.finalizedText = text(binding.inputFinal);
+    draft.finalizedText = CaptionTemplates.apply(source(), task);
     if (draft.title == null || draft.title.isEmpty()) {
       draft.title = task != null ? task.title : "Untitled caption";
     }
@@ -216,16 +209,26 @@ public class DraftActivity extends AppCompatActivity {
     });
   }
 
+  private String source() {
+    if (usingB) {
+      String b = text(binding.inputB);
+      if (!b.isEmpty()) {
+        return b;
+      }
+    }
+    return text(binding.inputA);
+  }
+
   private String pickText() {
-    String finalized = text(binding.inputFinal);
-    if (!finalized.isEmpty()) {
-      return finalized;
+    return CaptionTemplates.apply(source(), task);
+  }
+
+  private void paintPreview() {
+    if (binding == null) {
+      return;
     }
-    String a = text(binding.inputA);
-    if (!a.isEmpty()) {
-      return a;
-    }
-    return text(binding.inputB);
+    String filled = CaptionTemplates.apply(source(), task);
+    binding.previewFinal.setText(WhatsAppPreview.display(filled));
   }
 
   private void applyCompareLayout() {
@@ -233,6 +236,9 @@ public class DraftActivity extends AppCompatActivity {
     binding.colB.setVisibility(compare ? View.VISIBLE : View.GONE);
     binding.btnUseA.setVisibility(compare ? View.VISIBLE : View.GONE);
     binding.labelA.setText(compare ? R.string.variation_a : R.string.caption);
+    if (!compare) {
+      usingB = false;
+    }
     boolean landscape =
       getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
     if (compare && landscape) {
@@ -253,6 +259,7 @@ public class DraftActivity extends AppCompatActivity {
       binding.colA.setLayoutParams(full);
       binding.colB.setLayoutParams(full);
     }
+    paintPreview();
   }
 
   private void watch(
@@ -269,10 +276,23 @@ public class DraftActivity extends AppCompatActivity {
       public void afterTextChanged(Editable s) {
         int n = s == null ? 0 : s.length();
         count.setText(getString(R.string.chars, n));
+        if (loaded) {
+          paintPreview();
+        }
       }
     };
     input.addTextChangedListener(watcher);
     count.setText(getString(R.string.chars, 0));
+  }
+
+  private static String seedCaption(android.content.Context context, AppDatabase db, Task task) {
+    if (task != null && CaptionTemplates.isLive(task.type)) {
+      String raw = CaptionTemplates.rawTemplate(task, seriesFor(db, task));
+      if (raw != null && !raw.isEmpty()) {
+        return raw;
+      }
+    }
+    return CaptionTemplates.forTask(context, task, seriesFor(db, task));
   }
 
   private static Series seriesFor(AppDatabase db, Task task) {

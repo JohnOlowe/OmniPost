@@ -49,6 +49,9 @@ public class NagForegroundService extends Service {
   }
 
   public static void startPulse(Context context) {
+    if (AlarmPulse.isQuiet()) {
+      return;
+    }
     Intent intent = new Intent(context, NagForegroundService.class);
     intent.putExtra(ExtraKeys.PULSE, true);
     launch(context, intent);
@@ -93,8 +96,10 @@ public class NagForegroundService extends Service {
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
     if (pulseOnly) {
       keepAlive = true;
-      AlarmPulse.begin(this);
-      acquireBurstLock();
+      if (!AlarmPulse.isQuiet()) {
+        AlarmPulse.begin(this);
+        acquireBurstLock();
+      }
     }
     AppExecutors.disk().execute(() -> {
       try {

@@ -205,23 +205,20 @@
         android:textColor="@color/gold"
         android:textStyle="bold"/>
 
-      <com.google.android.material.textfield.TextInputLayout
+      <TextView
+        android:id="@+id/preview_final"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:boxBackgroundColor="@color/navy_800"
-        app:boxStrokeColor="@color/gold"
-        app:hintEnabled="false">
-
-        <com.google.android.material.textfield.TextInputEditText
-          android:id="@+id/input_final"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:gravity="top"
-          android:importantForAutofill="no"
-          android:inputType="textMultiLine|textCapSentences"
-          android:minLines="4"
-          android:textColor="@color/cream"/>
-      </com.google.android.material.textfield.TextInputLayout>
+        android:layout_marginTop="8dp"
+        android:background="@color/navy_800"
+        android:focusable="false"
+        android:gravity="top"
+        android:longClickable="false"
+        android:minLines="4"
+        android:padding="16dp"
+        android:textColor="@color/cream"
+        android:textIsSelectable="true"
+        android:textSize="16sp"/>
     </LinearLayout>
   </androidx.core.widget.NestedScrollView>
 

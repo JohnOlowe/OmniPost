@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
@@ -24,11 +25,13 @@ public final class AlarmPulse {
 
   private static final Handler HANDLER = new Handler(Looper.getMainLooper());
   private static final long[] VIBE = new long[] {0, 600, 200, 600, 200, 900, 350};
+  private static final long QUIET_MS = 8_000L;
 
   private static int state = IDLE;
   private static int generation;
   private static MediaPlayer player;
   private static Vibrator vibrator;
+  private static volatile long quietUntil;
 
   private AlarmPulse() {}
 
@@ -40,8 +43,12 @@ public final class AlarmPulse {
     return state != IDLE;
   }
 
+  public static boolean isQuiet() {
+    return SystemClock.elapsedRealtime() < quietUntil;
+  }
+
   public static void begin(Context ctx) {
-    if (ctx == null) {
+    if (ctx == null || isQuiet()) {
       return;
     }
     final Context app = ctx.getApplicationContext();
@@ -52,17 +59,18 @@ public final class AlarmPulse {
     }
   }
 
-  /** User tapped Open draft, Posted, snooze, or Keep nagging — do not ring. */
+  /** User tapped an action — stop vibrate and ring immediately and stay quiet briefly. */
   public static void silence() {
+    quietUntil = SystemClock.elapsedRealtime() + QUIET_MS;
     if (Looper.myLooper() == Looper.getMainLooper()) {
       stopOnMain();
     } else {
-      HANDLER.post(AlarmPulse::stopOnMain);
+      HANDLER.postAtFrontOfQueue(AlarmPulse::stopOnMain);
     }
   }
 
   private static void startOnMain(Context app) {
-    if (state != IDLE) {
+    if (isQuiet() || state != IDLE) {
       return;
     }
     final int gen = ++generation;
@@ -86,7 +94,7 @@ public final class AlarmPulse {
   }
 
   private static void startRingOnMain(Context app, int gen) {
-    if (gen != generation) {
+    if (gen != generation || isQuiet()) {
       return;
     }
     if (AlertPlan.escalate(Prefs.alertMode(app))) {
@@ -155,16 +163,28 @@ public final class AlarmPulse {
   }
 
   private static void stopPlayer() {
-    if (player != null) {
-      try {
-        player.stop();
-      } catch (Exception ignored) {
+    MediaPlayer current = player;
+    player = null;
+    if (current == null) {
+      return;
+    }
+    try {
+      current.setVolume(0f, 0f);
+    } catch (Exception ignored) {
+    }
+    try {
+      if (current.isPlaying()) {
+        current.stop();
       }
-      try {
-        player.release();
-      } catch (Exception ignored) {
-      }
-      player = null;
+    } catch (Exception ignored) {
+    }
+    try {
+      current.reset();
+    } catch (Exception ignored) {
+    }
+    try {
+      current.release();
+    } catch (Exception ignored) {
     }
   }
 

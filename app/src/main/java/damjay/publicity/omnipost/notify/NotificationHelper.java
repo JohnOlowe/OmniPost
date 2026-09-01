@@ -6,9 +6,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioAttributes;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import damjay.publicity.omnipost.MainActivity;
@@ -26,7 +23,7 @@ import damjay.publicity.omnipost.util.Prefs;
 
 public final class NotificationHelper {
   public static final String CHANNEL_DRAFT = "omnipost.draft.v1";
-  public static final String CHANNEL_ALARM = "omnipost.alarm.v1";
+  public static final String CHANNEL_ALARM = "omnipost.alarm.v3";
   public static final String CHANNEL_ONGOING = "omnipost.ongoing.v2";
   public static final int FGS_ID = 42;
 
@@ -38,12 +35,6 @@ public final class NotificationHelper {
     if (manager == null) {
       return;
     }
-    Uri alarm = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-    AudioAttributes alarmAttrs = new AudioAttributes.Builder()
-      .setUsage(AudioAttributes.USAGE_ALARM)
-      .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-      .build();
-
     NotificationChannel draft = new NotificationChannel(
       CHANNEL_DRAFT, "Drafting reminders", NotificationManager.IMPORTANCE_HIGH);
     draft.setDescription("Time to write the caption");
@@ -53,8 +44,8 @@ public final class NotificationHelper {
     NotificationChannel alarmChannel = new NotificationChannel(
       CHANNEL_ALARM, "Posting alarms", NotificationManager.IMPORTANCE_HIGH);
     alarmChannel.setDescription("Caption-ready warning and nag until Posted");
-    alarmChannel.enableVibration(true);
-    alarmChannel.setSound(alarm, alarmAttrs);
+    alarmChannel.enableVibration(false);
+    alarmChannel.setSound(null, null);
     alarmChannel.setBypassDnd(true);
     alarmChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
 
@@ -145,22 +136,21 @@ public final class NotificationHelper {
       .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, task.id))
       .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, task.id))
       .setColor(0xFFFF4D4D)
-      .setSilent(Prefs.escalate(ctx) || !Prefs.sound(ctx));
-    if (Prefs.escalate(ctx)) {
-      builder.setSound(null);
-    }
+      .setSilent(true)
+      .setSound(null)
+      .setVibrate(new long[] {0});
     if (Prefs.fullScreen(ctx)) {
       builder.setFullScreenIntent(fullScreen, true);
     }
-    if (Prefs.escalate(ctx)) {
-      builder.setVibrate(new long[] {0});
-    } else if (Prefs.vibrate(ctx)) {
-      builder.setVibrate(new long[] {0, 400, 200, 400, 200, 800});
-    } else {
-      builder.setVibrate(new long[] {0});
-    }
     notify(ctx, alarmId(task.id), builder.build());
-    NagForegroundService.startPulse(ctx);
+    if (!AlarmPulse.isQuiet()) {
+      NagForegroundService.startPulse(ctx);
+    }
+  }
+
+  public static void hush(Context ctx, long taskId) {
+    AlarmPulse.silence();
+    cancelForTask(ctx, taskId);
   }
 
   public static void cancelForTask(Context ctx, long taskId) {
