@@ -33,7 +33,8 @@ public final class ScheduleCoordinator {
 
     List<Member> members = db.memberDao().getAllSync();
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
-    List<Task> generated = RoutineGenerator.generate(now, TimeZone.getDefault(), members, series);
+    List<Task> generated = RoutineGenerator.generate(
+      now, TimeZone.getDefault(), members, series, Prefs.draftHour(app));
     for (Task candidate : generated) {
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
@@ -73,16 +74,40 @@ public final class ScheduleCoordinator {
   }
 
   private static void ensureSeriesDefaults(Context app, AppDatabase db) {
-    if (Prefs.seriesDefaultsInstalled(app)) {
-      return;
+    boolean seeded = Prefs.seriesDefaultsInstalled(app);
+    Series countdown = db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN);
+    if (countdown == null) {
+      if (!seeded) {
+        db.seriesDao().insert(SeriesDefaults.beyondLimit());
+      }
+    } else {
+      backfillVars(
+        db, countdown, SeriesDefaults.countdownVars(), SeriesDefaults.beyondLimit().endAtMillis);
     }
-    if (db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN) == null) {
-      db.seriesDao().insert(SeriesDefaults.beyondLimit());
-    }
-    if (db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE) == null) {
-      db.seriesDao().insert(SeriesDefaults.birthdayNotice());
+    Series notice = db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE);
+    if (notice == null) {
+      if (!seeded) {
+        db.seriesDao().insert(SeriesDefaults.birthdayNotice());
+      }
+    } else {
+      backfillVars(db, notice, SeriesDefaults.noticeVars(), 0L);
     }
     Prefs.setSeriesDefaultsInstalled(app, true);
+  }
+
+  private static void backfillVars(AppDatabase db, Series series, String vars, long endAt) {
+    boolean dirty = false;
+    if ((series.vars == null || series.vars.isEmpty()) && vars != null && !vars.isEmpty()) {
+      series.vars = vars;
+      dirty = true;
+    }
+    if (endAt > 0L && series.endAtMillis <= 0L) {
+      series.endAtMillis = endAt;
+      dirty = true;
+    }
+    if (dirty) {
+      db.seriesDao().update(series);
+    }
   }
 
   /** Missed countdown days drop off so the desk never stacks 9-days, 8-days, 7-days. */
@@ -156,6 +181,9 @@ public final class ScheduleCoordinator {
         task.snoozeUntilMillis = 0L;
       }
       if (!due.equals(previous)) {
+        if (TaskStatus.SCHEDULED.equals(due) && TaskStatus.needsYou(previous)) {
+          NotificationHelper.hush(app, task.id);
+        }
         fireTransition(app, task, due);
       }
       AlarmScheduler.scheduleTask(app, task);
@@ -193,6 +221,9 @@ public final class ScheduleCoordinator {
         AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.WARNING);
         task.status = TaskStatus.WARNING;
         NotificationHelper.showWarning(app, task);
+        break;
+      case AlarmScheduler.PHASE_MINUTE:
+        NotificationHelper.showMinute(app, task);
         break;
       case AlarmScheduler.PHASE_NAG:
       case AlarmScheduler.PHASE_PULSE:
@@ -252,8 +283,10 @@ public final class ScheduleCoordinator {
     long now = System.currentTimeMillis();
     long postAt = Math.max(newPostAt, now + 60_000L);
     task.postAtMillis = postAt;
-    long draft = postAt - 24L * 60L * 60L * 1000L;
-    task.draftAtMillis = Math.max(now, draft);
+    Calendar postCal = Calendar.getInstance();
+    postCal.setTimeInMillis(postAt);
+    Calendar draftCal = DateUtils.dayBeforeAt(postCal, Prefs.draftHour(app), 0);
+    task.draftAtMillis = Math.max(now, draftCal.getTimeInMillis());
     task.timesLocked = true;
     task.postedAtMillis = 0L;
     task.snoozeUntilMillis = 0L;
@@ -315,8 +348,10 @@ public final class ScheduleCoordinator {
         + " minutes before."
       : "One-off. Write the caption. Ready " + warn + " minutes before.";
     task.postAtMillis = postAt;
-    long draft = postAt - 24L * 60L * 60L * 1000L;
-    task.draftAtMillis = Math.max(now, draft);
+    Calendar postCal = Calendar.getInstance();
+    postCal.setTimeInMillis(postAt);
+    Calendar draftCal = DateUtils.dayBeforeAt(postCal, Prefs.draftHour(app), 0);
+    task.draftAtMillis = Math.max(now, draftCal.getTimeInMillis());
     task.timesLocked = true;
     task.status = TaskStatus.dueStatus(
       task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));

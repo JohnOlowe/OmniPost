@@ -117,6 +117,19 @@ public class DateUtilsTest {
   }
 
   @Test
+  public void prettyRangeCollapsesSharedMonth() {
+    Calendar start = utc(2026, Calendar.SEPTEMBER, 9, 0, 0);
+    Calendar end = utc(2026, Calendar.SEPTEMBER, 13, 0, 0);
+    assertEquals("9th September, 2026", DateUtils.prettyDate(start));
+    assertEquals("9th – 13th September, 2026", DateUtils.prettyRange(start, end));
+    assertEquals("1st", DateUtils.ordinal(1));
+    assertEquals("2nd", DateUtils.ordinal(2));
+    assertEquals("3rd", DateUtils.ordinal(3));
+    assertEquals("11th", DateUtils.ordinal(11));
+    assertEquals("21st", DateUtils.ordinal(21));
+  }
+
+  @Test
   public void dayBeforeIsPreviousEvening() {
     Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
     Calendar draft = DateUtils.dayBeforeAt(post, 20, 0);

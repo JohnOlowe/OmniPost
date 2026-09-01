@@ -10,8 +10,12 @@ public final class ScheduleTimes {
   public static final int BIRTHDAY_POST_HOUR = 7;
   public static final int MONTH_POST_HOUR = 7;
   public static final long WARNING_LEAD_MS = 30 * 60_000L;
+  /** Loud ring so the flyer actually goes out on time. */
+  public static final long MINUTE_LEAD_MS = 60_000L;
   public static final long NAG_INTERVAL_MS = 5 * 60_000L;
   public static final long BURST_MS = 25_000L;
+  /** Write-caption nudge: a short vibrate, never the 5-minute ring. */
+  public static final long GENTLE_MS = 8_000L;
   /** Escalate: shake first so a quiet pocket is enough; then ring until they tap. */
   public static final long ESCALATE_VIBRATE_MS = 30_000L;
   public static final long ESCALATE_RING_MS = 5 * 60_000L;

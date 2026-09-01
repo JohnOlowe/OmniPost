@@ -41,12 +41,15 @@ public class AlarmActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
     taskId = getIntent().getLongExtra(ExtraKeys.TASK_ID, 0L);
     int phase = getIntent().getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
+    boolean loud = AlarmScheduler.loudPhase(phase);
     if (phase == AlarmScheduler.PHASE_DRAFT) {
       binding.phase.setText(R.string.write_caption_now);
-      binding.subtitle.setText(
-        Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle_draft);
+      binding.subtitle.setText(R.string.alarm_subtitle_soft);
     } else if (phase == AlarmScheduler.PHASE_WARNING) {
       binding.phase.setText(getString(R.string.caption_ready_phase, Prefs.warningMinutes(this)));
+      binding.subtitle.setText(R.string.alarm_subtitle_soft);
+    } else if (phase == AlarmScheduler.PHASE_MINUTE) {
+      binding.phase.setText(R.string.one_minute);
       binding.subtitle.setText(
         Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle);
     } else {
@@ -92,7 +95,11 @@ public class AlarmActivity extends AppCompatActivity {
       finish();
     });
     load();
-    NagForegroundService.startPulse(this);
+    if (loud) {
+      NagForegroundService.startPulse(this);
+    } else {
+      AlarmPulse.beginSoft(this);
+    }
     paintPulse();
     handler.postDelayed(paintPulse, ScheduleTimes.ESCALATE_VIBRATE_MS);
   }
@@ -128,7 +135,10 @@ public class AlarmActivity extends AppCompatActivity {
     if (binding == null) {
       return;
     }
-    if (!Prefs.escalate(this)) {
+    int phase = getIntent() == null
+      ? AlarmScheduler.PHASE_NAG
+      : getIntent().getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
+    if (!AlarmScheduler.loudPhase(phase) || !Prefs.escalate(this)) {
       binding.pulse.setVisibility(View.GONE);
       return;
     }

@@ -13,13 +13,20 @@ public final class RoutineGenerator {
   private RoutineGenerator() {}
 
   public static List<Task> generate(long nowMillis, TimeZone tz, List<Member> members) {
-    return generate(nowMillis, tz, members, SeriesDefaults.builtins());
+    return generate(
+      nowMillis, tz, members, SeriesDefaults.builtins(), ScheduleTimes.EVENING_DRAFT_HOUR);
   }
 
   public static List<Task> generate(
     long nowMillis, TimeZone tz, List<Member> members, List<Series> seriesList) {
+    return generate(nowMillis, tz, members, seriesList, ScheduleTimes.EVENING_DRAFT_HOUR);
+  }
+
+  public static List<Task> generate(
+    long nowMillis, TimeZone tz, List<Member> members, List<Series> seriesList, int draftHour) {
     Calendar now = Calendar.getInstance(tz);
     now.setTimeInMillis(nowMillis);
+    int writeHour = draftHour > 0 ? draftHour : ScheduleTimes.EVENING_DRAFT_HOUR;
     List<Task> out = new ArrayList<>();
     addWeeklies(
       out,
@@ -27,32 +34,35 @@ public final class RoutineGenerator {
       Calendar.SATURDAY,
       TaskTypes.SUNDAY_SERVICE,
       "Sunday Service",
-      "Write the caption tomorrow-minus-one. Have it ready by 9:30 AM Saturday. Post at 10:00 AM.");
+      "Write the caption the evening before. One-minute ring at 9:59 AM Saturday so it goes out at 10:00.",
+      writeHour);
     addWeeklies(
       out,
       now,
       Calendar.WEDNESDAY,
       TaskTypes.WEDNESDAY_BIBLE_STUDY,
       "Wednesday Bible Study",
-      "Write the caption a day early. Have it ready by 9:30 AM Wednesday. Post at 10:00 AM.");
+      "Write the caption the evening before. One-minute ring so it goes out at 10:00 AM Wednesday.",
+      writeHour);
     addWeeklies(
       out,
       now,
       Calendar.FRIDAY,
       TaskTypes.FRIDAY_PRAYER,
       "Friday Prayer Meeting",
-      "Write the caption a day early. Have it ready by 9:30 AM Friday. Post at 10:00 AM.");
-    addFastingEve(out, now);
-    addFastingDay(out, now);
-    addHappyNewMonth(out, now);
+      "Write the caption the evening before. One-minute ring so it goes out at 10:00 AM Friday.",
+      writeHour);
+    addFastingEve(out, now, writeHour);
+    addFastingDay(out, now, writeHour);
+    addHappyNewMonth(out, now, writeHour);
     if (seriesList != null) {
       for (Series series : seriesList) {
-        addSeries(out, now, series);
+        addSeries(out, now, series, writeHour);
       }
     }
     if (members != null) {
       for (Member member : members) {
-        addBirthday(out, now, member);
+        addBirthday(out, now, member, writeHour);
       }
     }
     return out;
@@ -64,22 +74,22 @@ public final class RoutineGenerator {
     int dayOfWeek,
     String type,
     String title,
-    String description) {
+    String description,
+    int draftHour) {
     Calendar post = DateUtils.nextWeekdayAt(
       now, dayOfWeek, ScheduleTimes.WEEKLY_POST_HOUR, ScheduleTimes.WEEKLY_POST_MINUTE);
     for (int i = 0; i < ScheduleTimes.GENERATE_WEEKLY_COUNT; i++) {
-      Calendar draft = DateUtils.dayBeforeAt(
-        post, ScheduleTimes.WEEKLY_DRAFT_HOUR, ScheduleTimes.WEEKLY_DRAFT_MINUTE);
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
       out.add(build(type, title, description, draft.getTimeInMillis(), post.getTimeInMillis(),
         type + "|" + DateUtils.dayKey(post), 0L, 0L));
       post.add(Calendar.DAY_OF_MONTH, 7);
     }
   }
 
-  private static void addFastingEve(List<Task> out, Calendar now) {
+  private static void addFastingEve(List<Task> out, Calendar now, int draftHour) {
     Calendar post = DateUtils.nextMonthEndAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
     for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
-      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
       out.add(build(
         TaskTypes.NEW_MONTH_FASTING,
         "Fasting tomorrow",
@@ -96,10 +106,10 @@ public final class RoutineGenerator {
     }
   }
 
-  private static void addFastingDay(List<Task> out, Calendar now) {
+  private static void addFastingDay(List<Task> out, Calendar now, int draftHour) {
     Calendar post = DateUtils.nextMonthStartAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
     for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
-      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
       out.add(build(
         TaskTypes.FASTING_DAY,
         "Fasting today",
@@ -116,10 +126,10 @@ public final class RoutineGenerator {
     }
   }
 
-  private static void addHappyNewMonth(List<Task> out, Calendar now) {
+  private static void addHappyNewMonth(List<Task> out, Calendar now, int draftHour) {
     Calendar post = DateUtils.nextMonthStartAt(now, ScheduleTimes.MONTH_POST_HOUR, 0);
     for (int i = 0; i < ScheduleTimes.GENERATE_MONTH_COUNT; i++) {
-      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
       out.add(build(
         TaskTypes.HAPPY_NEW_MONTH,
         "Happy New Month",
@@ -136,20 +146,20 @@ public final class RoutineGenerator {
     }
   }
 
-  static void addSeries(List<Task> out, Calendar now, Series series) {
+  static void addSeries(List<Task> out, Calendar now, Series series, int draftHour) {
     if (series == null || !series.enabled) {
       return;
     }
     if (Series.KIND_COUNTDOWN.equals(series.kind)) {
-      addCountdown(out, now, series);
+      addCountdown(out, now, series, draftHour);
       return;
     }
     if (Series.KIND_MONTHLY.equals(series.kind)) {
-      addMonthlyNotice(out, now, series);
+      addMonthlyNotice(out, now, series, draftHour);
     }
   }
 
-  private static void addCountdown(List<Task> out, Calendar now, Series series) {
+  private static void addCountdown(List<Task> out, Calendar now, Series series, int draftHour) {
     Calendar event = DateUtils.startOfDay(now);
     event.setTimeInMillis(series.eventAtMillis);
     event = DateUtils.startOfDay(event);
@@ -167,7 +177,7 @@ public final class RoutineGenerator {
       }
       int days = DateUtils.calendarDaysBetween(postDay, event);
       Calendar post = DateUtils.sameDayAt(postDay, hour, series.postMinute);
-      Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
       out.add(build(
         TaskTypes.COUNTDOWN,
         CaptionTemplates.countdownTitle(series.title, days),
@@ -182,7 +192,8 @@ public final class RoutineGenerator {
     }
   }
 
-  private static void addMonthlyNotice(List<Task> out, Calendar now, Series series) {
+  private static void addMonthlyNotice(
+    List<Task> out, Calendar now, Series series, int draftHour) {
     Calendar monthStart = DateUtils.startOfDay(now);
     monthStart.set(Calendar.DAY_OF_MONTH, 1);
     String todayKey = DateUtils.dayKey(now);
@@ -203,13 +214,13 @@ public final class RoutineGenerator {
         eve.set(Calendar.MINUTE, series.postMinute);
         eve.set(Calendar.SECOND, 0);
         eve.set(Calendar.MILLISECOND, 0);
-        addNoticeIfDue(out, series, todayKey, monthKey, monthName, "EVE", eve);
+        addNoticeIfDue(out, series, todayKey, monthKey, monthName, "EVE", eve, draftHour);
       }
       if (series.tenth) {
-        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D10", 10, max, hour);
+        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D10", 10, max, hour, draftHour);
       }
       if (series.twentieth) {
-        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D20", 20, max, hour);
+        addFixedDay(out, series, todayKey, target, monthKey, monthName, "D20", 20, max, hour, draftHour);
       }
     }
   }
@@ -224,7 +235,8 @@ public final class RoutineGenerator {
     String slot,
     int day,
     int max,
-    int hour) {
+    int hour,
+    int draftHour) {
     if (day > max) {
       return;
     }
@@ -232,7 +244,7 @@ public final class RoutineGenerator {
     post.set(Calendar.DAY_OF_MONTH, day);
     post.set(Calendar.HOUR_OF_DAY, hour);
     post.set(Calendar.MINUTE, series.postMinute);
-    addNoticeIfDue(out, series, todayKey, monthKey, monthName, slot, post);
+    addNoticeIfDue(out, series, todayKey, monthKey, monthName, slot, post, draftHour);
   }
 
   private static void addNoticeIfDue(
@@ -242,11 +254,12 @@ public final class RoutineGenerator {
     String monthKey,
     String monthName,
     String slot,
-    Calendar post) {
+    Calendar post,
+    int draftHour) {
     if (DateUtils.dayKey(post).compareTo(todayKey) < 0) {
       return;
     }
-    Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+    Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
     out.add(build(
       TaskTypes.BIRTHDAY_NOTICE,
       CaptionTemplates.monthlyTitle(series.title, monthName),
@@ -302,7 +315,7 @@ public final class RoutineGenerator {
     return TaskTypes.BIRTHDAY_NOTICE + "|" + monthKey + "|" + legacySlot + "|" + dayKey;
   }
 
-  private static void addBirthday(List<Task> out, Calendar now, Member member) {
+  private static void addBirthday(List<Task> out, Calendar now, Member member, int draftHour) {
     if (member == null || member.birthMonth < 1 || member.birthDay < 1) {
       return;
     }
@@ -312,7 +325,7 @@ public final class RoutineGenerator {
       member.birthDay,
       ScheduleTimes.BIRTHDAY_POST_HOUR,
       0);
-    Calendar draft = DateUtils.dayBeforeAt(post, ScheduleTimes.EVENING_DRAFT_HOUR, 0);
+    Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
     String title = member.name + "'s Birthday";
     out.add(build(
       TaskTypes.BIRTHDAY,
