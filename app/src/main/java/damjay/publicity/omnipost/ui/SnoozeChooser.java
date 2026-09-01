@@ -52,6 +52,18 @@ public final class SnoozeChooser {
       .show();
   }
 
+  public static void pickClock(Context context, int hour, int minute, ClockCallback callback) {
+    int h = Math.max(0, Math.min(23, hour));
+    int m = Math.max(0, Math.min(59, minute));
+    new TimePickerDialog(
+      context,
+      (view, hourOfDay, minuteOfHour) -> callback.onChosen(hourOfDay, minuteOfHour),
+      h,
+      m,
+      false)
+      .show();
+  }
+
   public static void pickDateTime(Context context, Callback callback) {
     Calendar start = Calendar.getInstance();
     start.add(Calendar.HOUR_OF_DAY, 1);

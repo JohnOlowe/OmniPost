@@ -12,10 +12,10 @@ import java.util.List;
 @Dao
 public interface CaptionVarDao {
   @Insert(onConflict = OnConflictStrategy.ABORT)
-  long insert(CaptionVar var);
+  long insert(CaptionVar item);
 
   @Update
-  int update(CaptionVar var);
+  int update(CaptionVar item);
 
   @Query("SELECT * FROM caption_vars WHERE id = :id LIMIT 1")
   CaptionVar getById(long id);
