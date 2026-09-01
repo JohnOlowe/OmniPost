@@ -133,9 +133,7 @@ public class NagForegroundService extends Service {
         promoteForeground(hasNagging ? nagging.size() : 0, next);
         handler.removeCallbacks(pulse);
         boolean explicitNag = focusedId > 0L
-          && (phase == AlarmScheduler.PHASE_NAG
-            || phase == AlarmScheduler.PHASE_MINUTE
-            || phase == AlarmScheduler.PHASE_PULSE);
+          && (phase == AlarmScheduler.PHASE_NAG || phase == AlarmScheduler.PHASE_PULSE);
         if (!pulseOnly
             && hasNagging
             && shouldBurst(explicitNag || phase == AlarmScheduler.PHASE_NAG)) {
@@ -200,9 +198,6 @@ public class NagForegroundService extends Service {
   }
 
   private void fireBurst(List<Task> nagging, long focusedId) {
-    if (AlarmPulse.isQuiet()) {
-      return;
-    }
     acquireBurstLock();
     AlarmPulse.begin(this);
     Task focus = null;

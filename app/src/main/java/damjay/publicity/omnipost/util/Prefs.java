@@ -14,7 +14,6 @@ public final class Prefs {
   private static final String ALERT = "alert_mode";
   private static final String NAG_MIN = "nag_minutes";
   private static final String WARN_MIN = "warning_minutes";
-  private static final String DRAFT_HOUR = "draft_hour";
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
@@ -71,15 +70,6 @@ public final class Prefs {
 
   public static long warningLeadMs(Context ctx) {
     return warningMinutes(ctx) * 60_000L;
-  }
-
-  /** Hour (0–23) the day before the post when OmniPost nudges you to write the caption. */
-  public static int draftHour(Context ctx) {
-    return sp(ctx).getInt(DRAFT_HOUR, ScheduleTimes.EVENING_DRAFT_HOUR);
-  }
-
-  public static void setDraftHour(Context ctx, int hour) {
-    sp(ctx).edit().putInt(DRAFT_HOUR, hour).apply();
   }
 
   public static boolean seedCaptions(Context ctx) {

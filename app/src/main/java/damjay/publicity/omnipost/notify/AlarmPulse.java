@@ -12,7 +12,6 @@ import android.os.SystemClock;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.os.VibratorManager;
-import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.util.Prefs;
 
 /**
@@ -49,26 +48,14 @@ public final class AlarmPulse {
   }
 
   public static void begin(Context ctx) {
-    begin(ctx, true);
-  }
-
-  /** Short vibrate only — write-caption nudge, never the 5-minute ring. */
-  public static void beginSoft(Context ctx) {
-    if (isLive() && state == RINGING) {
-      return;
-    }
-    begin(ctx, false);
-  }
-
-  private static void begin(Context ctx, boolean loud) {
     if (ctx == null || isQuiet()) {
       return;
     }
     final Context app = ctx.getApplicationContext();
     if (Looper.myLooper() == Looper.getMainLooper()) {
-      startOnMain(app, loud);
+      startOnMain(app);
     } else {
-      HANDLER.post(() -> startOnMain(app, loud));
+      HANDLER.post(() -> startOnMain(app));
     }
   }
 
@@ -82,24 +69,16 @@ public final class AlarmPulse {
     }
   }
 
-  private static void startOnMain(Context app, boolean loud) {
+  private static void startOnMain(Context app) {
     if (isQuiet() || state != IDLE) {
       return;
     }
     final int gen = ++generation;
     String mode = Prefs.alertMode(app);
-    if (!loud) {
-      if (AlertPlan.vibrate(mode)) {
-        state = VIBRATING;
-        startVibrate(app, false);
-      }
-      HANDLER.postDelayed(() -> finish(gen), ScheduleTimes.GENTLE_MS);
-      return;
-    }
     long delay = AlertPlan.ringDelayMs(mode);
     if (AlertPlan.vibrate(mode)) {
       state = delay > 0L ? VIBRATING : RINGING;
-      startVibrate(app, true);
+      startVibrate(app);
     }
     if (AlertPlan.ring(mode)) {
       if (delay <= 0L) {
@@ -147,14 +126,14 @@ public final class AlarmPulse {
     }
   }
 
-  private static void startVibrate(Context app, boolean loop) {
+  private static void startVibrate(Context app) {
     stopVibrate();
     vibrator = vibratorOf(app);
     if (vibrator == null || !vibrator.hasVibrator()) {
       return;
     }
     try {
-      vibrator.vibrate(VibrationEffect.createWaveform(VIBE, loop ? 0 : -1));
+      vibrator.vibrate(VibrationEffect.createWaveform(VIBE, 0));
     } catch (Exception ignored) {
     }
   }

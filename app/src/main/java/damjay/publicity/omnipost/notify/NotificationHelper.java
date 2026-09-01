@@ -101,70 +101,50 @@ public final class NotificationHelper {
   }
 
   public static void showDraft(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_DRAFT,
+    showAlarm(ctx, task, AlarmScheduler.PHASE_DRAFT,
       ctx.getString(R.string.write_caption_now),
-      ctx.getString(R.string.draft_notif_body),
-      false);
+      ctx.getString(R.string.draft_notif_body));
   }
 
   public static void showWarning(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_WARNING,
+    showAlarm(ctx, task, AlarmScheduler.PHASE_WARNING,
       ctx.getString(R.string.caption_ready_phase, Prefs.warningMinutes(ctx)),
-      ctx.getString(R.string.warning_notif_text),
-      false);
-  }
-
-  public static void showMinute(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_MINUTE,
-      ctx.getString(R.string.one_minute),
-      ctx.getString(R.string.minute_notif_text),
-      true);
+      ctx.getString(R.string.warning_notif_text));
   }
 
   public static void showNagBurst(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_NAG,
+    showAlarm(ctx, task, AlarmScheduler.PHASE_NAG,
       ctx.getString(R.string.post_now),
-      ctx.getString(R.string.nag_notif_text),
-      true);
+      ctx.getString(R.string.nag_notif_text));
   }
 
-  private static void showCue(
-    Context ctx, Task task, int phase, String title, String body, boolean loud) {
+  private static void showAlarm(Context ctx, Task task, int phase, String title, String body) {
     ensureChannels(ctx);
-    PendingIntent open = fullScreen(ctx, task.id, phase);
-    NotificationCompat.Builder builder = new NotificationCompat.Builder(
-        ctx, loud ? CHANNEL_ALARM : CHANNEL_DRAFT)
+    PendingIntent fullScreen = fullScreen(ctx, task.id, phase);
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(ctx, CHANNEL_ALARM)
       .setSmallIcon(R.drawable.ic_stat_omnipost)
       .setContentTitle(title)
       .setContentText(task.title + " · " + DateUtils.formatStamp(task.postAtMillis))
       .setStyle(new NotificationCompat.BigTextStyle()
         .bigText(task.title + "\n" + body + "\n" + DateUtils.formatStamp(task.postAtMillis)))
-      .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setCategory(loud ? NotificationCompat.CATEGORY_ALARM : NotificationCompat.CATEGORY_REMINDER)
+      .setPriority(NotificationCompat.PRIORITY_MAX)
+      .setCategory(NotificationCompat.CATEGORY_ALARM)
       .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-      .setOngoing(loud)
-      .setAutoCancel(!loud)
-      .setContentIntent(open)
+      .setOngoing(true)
+      .setAutoCancel(false)
+      .setContentIntent(fullScreen)
       .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, task.id))
       .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, task.id))
-      .setColor(loud ? 0xFFFF4D4D : 0xFFE8C36A)
+      .setColor(0xFFFF4D4D)
       .setSilent(true)
       .setSound(null)
       .setVibrate(new long[] {0});
-    if (loud) {
-      builder.setPriority(NotificationCompat.PRIORITY_MAX);
-      if (Prefs.fullScreen(ctx)) {
-        builder.setFullScreenIntent(open, true);
-      }
+    if (Prefs.fullScreen(ctx)) {
+      builder.setFullScreenIntent(fullScreen, true);
     }
     notify(ctx, alarmId(task.id), builder.build());
-    if (AlarmPulse.isQuiet()) {
-      return;
-    }
-    if (loud) {
+    if (!AlarmPulse.isQuiet()) {
       NagForegroundService.startPulse(ctx);
-    } else {
-      AlarmPulse.beginSoft(ctx);
     }
   }
 

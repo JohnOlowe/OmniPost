@@ -19,7 +19,6 @@ public final class AlarmScheduler {
   public static final int PHASE_PULSE = 4;
   public static final int PHASE_WATCHDOG = 5;
   public static final int PHASE_SNOOZE = 6;
-  public static final int PHASE_MINUTE = 7;
 
   private static final String TAG = "OmniPost";
   private static final int WATCHDOG_CODE = 0x0A11;
@@ -48,17 +47,9 @@ public final class AlarmScheduler {
     if (warningAt > now) {
       setAlarmClock(ctx, task.id, PHASE_WARNING, warningAt);
     }
-    long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
-    if (minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
-      setAlarmClock(ctx, task.id, PHASE_MINUTE, minuteAt);
-    }
     if (task.postAtMillis > now) {
       setAlarmClock(ctx, task.id, PHASE_NAG, task.postAtMillis);
     }
-  }
-
-  public static boolean loudPhase(int phase) {
-    return phase == PHASE_NAG || phase == PHASE_MINUTE;
   }
 
   public static void scheduleHeartbeat(Context ctx) {
@@ -90,7 +81,6 @@ public final class AlarmScheduler {
     AlarmManager manager = am(ctx);
     manager.cancel(broadcast(ctx, taskId, PHASE_DRAFT));
     manager.cancel(broadcast(ctx, taskId, PHASE_WARNING));
-    manager.cancel(broadcast(ctx, taskId, PHASE_MINUTE));
     manager.cancel(broadcast(ctx, taskId, PHASE_NAG));
     manager.cancel(broadcast(ctx, taskId, PHASE_PULSE));
     manager.cancel(broadcast(ctx, taskId, PHASE_SNOOZE));

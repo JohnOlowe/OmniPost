@@ -75,16 +75,12 @@ public final class TaskStatus {
     }
     long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
     long warningAt = task.postAtMillis - lead;
-    long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
     long next = Long.MAX_VALUE;
     if (task.draftAtMillis > now) {
       next = Math.min(next, task.draftAtMillis);
     }
     if (warningAt > now) {
       next = Math.min(next, warningAt);
-    }
-    if (minuteAt > now && minuteAt < task.postAtMillis) {
-      next = Math.min(next, minuteAt);
     }
     if (task.postAtMillis > now) {
       next = Math.min(next, task.postAtMillis);

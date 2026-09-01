@@ -36,7 +36,7 @@ public class RoutineGeneratorTest {
         Calendar draft = Calendar.getInstance(utc);
         draft.setTimeInMillis(task.draftAtMillis);
         assertEquals(28, draft.get(Calendar.DAY_OF_MONTH));
-        assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
+        assertEquals(10, draft.get(Calendar.HOUR_OF_DAY));
         assertEquals(ScheduleTimes.WARNING_LEAD_MS, 30 * 60_000L);
       }
     }
