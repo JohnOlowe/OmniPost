@@ -16,6 +16,7 @@
   <string name="empty_birthdays">Add fellowship members and OmniPost will nag you at 7:00 AM on the day.</string>
   <string name="tinker_title">Tinker</string>
   <string name="compare">Compare variations</string>
+  <string name="compare_hint">Swipe right to see the other caption. Rotate the phone to see both at once.</string>
   <string name="variation_a">Variation A</string>
   <string name="variation_b">Variation B</string>
   <string name="caption">Caption</string>
@@ -26,7 +27,12 @@
   <string name="copy_instagram">Copy for Instagram</string>
   <string name="instagram_copied">Instagram letters copied. Paste into the caption box.</string>
   <string name="final_post">Final Post</string>
-  <string name="open_draft">Open draft</string>
+  <string name="open_draft">Open caption</string>
+  <string name="open_caption">Open caption</string>
+  <string name="write_caption">Write caption</string>
+  <string name="caption_saved">Caption saved</string>
+  <string name="caption_saved_waiting">Caption saved. Next ring is 1 minute before post, then at post time — not 30 minutes early to write.</string>
+  <string name="caption_saved_post">Caption saved. Post it now.</string>
   <string name="mark_posted">Mark posted</string>
   <string name="i_posted_it">I posted it</string>
   <string name="keep_nagging">Not yet — keep nagging</string>
@@ -69,7 +75,7 @@
   <string name="alert_vibrate">Vibration only</string>
   <string name="pulse_vibrating">Vibrating. Tap an action now, or it will ring in 30 seconds.</string>
   <string name="pulse_ringing">Ringing for 5 minutes. Tap an action to stop.</string>
-  <string name="alarm_subtitle_escalate">Vibrate first. If you do not tap Open draft, I posted it, or Flyer not ready, it rings for 5 minutes so you cannot miss it.</string>
+  <string name="alarm_subtitle_escalate">Vibrate first. If you do not tap Open caption, I posted it, or Flyer not ready, it rings for 5 minutes so you cannot miss it.</string>
   <string name="setting_nag">Nag until posted</string>
   <string name="nag_every">Every %1$d minutes</string>
   <string name="setting_warning">Caption-ready warning</string>
@@ -179,7 +185,7 @@
   <string name="whatsapp_missing">WhatsApp is not installed. Caption copied to the clipboard.</string>
   <string name="copied">Copied. Pick the Important Info group in WhatsApp.</string>
   <string name="need_caption">Write a caption first.</string>
-  <string name="saved">Draft saved</string>
+  <string name="saved">Caption saved</string>
   <string name="posted_toast">Marked posted. Nagging stopped.</string>
   <string name="test_armed">Draft in 5s, then the nag. Swipe OmniPost away to prove it.</string>
   <string name="rearmed">Routine regenerated and alarms re-armed.</string>

@@ -20,7 +20,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 
 @Database(
   entities = {Task.class, Draft.class, Member.class, Series.class, CaptionVar.class},
-  version = 6,
+  version = 7,
   exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -95,6 +95,14 @@ public abstract class AppDatabase extends RoomDatabase {
     }
   };
 
+  static final Migration MIGRATION_6_7 = new Migration(6, 7) {
+    @Override
+    public void migrate(@NonNull SupportSQLiteDatabase db) {
+      db.execSQL(
+        "ALTER TABLE tasks ADD COLUMN captionSavedAt INTEGER NOT NULL DEFAULT 0");
+    }
+  };
+
   private static volatile AppDatabase INSTANCE;
 
   public static AppDatabase get(Context context) {
@@ -106,7 +114,8 @@ public abstract class AppDatabase extends RoomDatabase {
               AppDatabase.class,
               "omnipost.db")
             .addMigrations(
-              MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+              MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
+              MIGRATION_6_7)
             .fallbackToDestructiveMigration()
             .build();
         }

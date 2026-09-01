@@ -6,6 +6,7 @@ import java.util.List;
 public final class TaskStatus {
   public static final String SCHEDULED = "SCHEDULED";
   public static final String DRAFTING = "DRAFTING";
+  public static final String READY = "READY";
   public static final String WARNING = "WARNING";
   public static final String NAGGING = "NAGGING";
   public static final String SNOOZED = "SNOOZED";
@@ -22,6 +23,8 @@ public final class TaskStatus {
         return "Upcoming";
       case DRAFTING:
         return "Write caption";
+      case READY:
+        return "Caption saved";
       case WARNING:
         return "Caption ready";
       case NAGGING:
@@ -43,13 +46,37 @@ public final class TaskStatus {
   }
 
   public static String dueStatus(long draftAtMillis, long postAtMillis, long now) {
-    return dueStatus(draftAtMillis, postAtMillis, now, ScheduleTimes.WARNING_LEAD_MS);
+    return dueStatus(draftAtMillis, postAtMillis, now, ScheduleTimes.WARNING_LEAD_MS, false);
   }
 
   public static String dueStatus(
     long draftAtMillis, long postAtMillis, long now, long warningLeadMs) {
+    return dueStatus(draftAtMillis, postAtMillis, now, warningLeadMs, false);
+  }
+
+  public static String dueStatus(Task task, long now, long warningLeadMs) {
+    if (task == null) {
+      return SCHEDULED;
+    }
+    return dueStatus(
+      task.draftAtMillis,
+      task.postAtMillis,
+      now,
+      warningLeadMs,
+      captionIsSaved(task));
+  }
+
+  public static String dueStatus(
+    long draftAtMillis,
+    long postAtMillis,
+    long now,
+    long warningLeadMs,
+    boolean captionSaved) {
     if (postAtMillis <= now) {
       return NAGGING;
+    }
+    if (captionSaved) {
+      return READY;
     }
     long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
     if (postAtMillis - lead <= now) {
@@ -59,6 +86,10 @@ public final class TaskStatus {
       return DRAFTING;
     }
     return SCHEDULED;
+  }
+
+  public static boolean captionIsSaved(Task task) {
+    return task != null && task.captionSavedAt > 0L;
   }
 
   /**
@@ -77,10 +108,11 @@ public final class TaskStatus {
     long warningAt = task.postAtMillis - lead;
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
     long next = Long.MAX_VALUE;
-    if (task.draftAtMillis > now) {
+    boolean saved = captionIsSaved(task);
+    if (!saved && task.draftAtMillis > now) {
       next = Math.min(next, task.draftAtMillis);
     }
-    if (warningAt > now) {
+    if (!saved && warningAt > now) {
       next = Math.min(next, warningAt);
     }
     if (minuteAt > now && minuteAt < task.postAtMillis) {

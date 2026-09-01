@@ -5,10 +5,6 @@
     android:icon="@drawable/ic_nav_tasks"
     android:title="@string/nav_tasks"/>
   <item
-    android:id="@+id/nav_drafts"
-    android:icon="@drawable/ic_nav_drafts"
-    android:title="@string/nav_drafts"/>
-  <item
     android:id="@+id/nav_birthdays"
     android:icon="@drawable/ic_nav_birthdays"
     android:title="@string/nav_birthdays"/>

@@ -41,11 +41,12 @@ public final class AlarmScheduler {
       setAlarmClock(ctx, task.id, PHASE_SNOOZE, task.snoozeUntilMillis);
       return;
     }
-    if (task.draftAtMillis > now) {
+    boolean saved = TaskStatus.captionIsSaved(task);
+    if (!saved && task.draftAtMillis > now) {
       setAlarmClock(ctx, task.id, PHASE_DRAFT, task.draftAtMillis);
     }
     long warningAt = task.postAtMillis - Prefs.warningLeadMs(ctx);
-    if (warningAt > now) {
+    if (!saved && warningAt > now) {
       setAlarmClock(ctx, task.id, PHASE_WARNING, warningAt);
     }
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;

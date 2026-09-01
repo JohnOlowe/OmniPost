@@ -11,7 +11,6 @@ import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.ui.BirthdaysFragment;
 import damjay.publicity.omnipost.ui.DraftActivity;
-import damjay.publicity.omnipost.ui.DraftsFragment;
 import damjay.publicity.omnipost.ui.SettingsFragment;
 import damjay.publicity.omnipost.ui.TasksFragment;
 import damjay.publicity.omnipost.util.AppExecutors;
@@ -37,10 +36,6 @@ public class MainActivity extends AppCompatActivity {
       int id = item.getItemId();
       if (id == R.id.nav_tasks) {
         show(new TasksFragment());
-        return true;
-      }
-      if (id == R.id.nav_drafts) {
-        show(new DraftsFragment());
         return true;
       }
       if (id == R.id.nav_birthdays) {

@@ -173,15 +173,14 @@ public final class ScheduleCoordinator {
         continue;
       }
       String previous = task.status;
-      String due = TaskStatus.dueStatus(
-        task.draftAtMillis, task.postAtMillis, now, warningLead);
+      String due = TaskStatus.dueStatus(task, now, warningLead);
       if (!due.equals(task.status) || task.snoozeUntilMillis != 0L) {
         db.taskDao().setSnooze(task.id, due, 0L);
         task.status = due;
         task.snoozeUntilMillis = 0L;
       }
       if (!due.equals(previous)) {
-        if (TaskStatus.SCHEDULED.equals(due) && TaskStatus.needsYou(previous)) {
+        if (!TaskStatus.needsYou(due) && TaskStatus.needsYou(previous)) {
           NotificationHelper.hush(app, task.id);
         }
         fireTransition(app, task, due);
@@ -213,11 +212,21 @@ public final class ScheduleCoordinator {
     long now = System.currentTimeMillis();
     switch (phase) {
       case AlarmScheduler.PHASE_DRAFT:
+        if (TaskStatus.captionIsSaved(task)) {
+          AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.READY);
+          task.status = TaskStatus.READY;
+          break;
+        }
         AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.DRAFTING);
         task.status = TaskStatus.DRAFTING;
         NotificationHelper.showDraft(app, task);
         break;
       case AlarmScheduler.PHASE_WARNING:
+        if (TaskStatus.captionIsSaved(task)) {
+          AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.READY);
+          task.status = TaskStatus.READY;
+          break;
+        }
         AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.WARNING);
         task.status = TaskStatus.WARNING;
         NotificationHelper.showWarning(app, task);
@@ -242,6 +251,30 @@ public final class ScheduleCoordinator {
     tick(context);
   }
 
+  public static void markCaptionSaved(Context context, long taskId) {
+    if (taskId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Task task = db.taskDao().getById(taskId);
+    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    task.captionSavedAt = now;
+    if (!(TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now)) {
+      task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
+      task.snoozeUntilMillis = 0L;
+    }
+    db.taskDao().update(task);
+    NotificationHelper.hush(app, taskId);
+    AlarmScheduler.cancelTask(app, taskId);
+    AlarmScheduler.scheduleTask(app, task);
+    AlarmScheduler.scheduleHeartbeat(app);
+    NagForegroundService.refresh(app);
+  }
+
   public static void markPosted(Context context, long taskId) {
     Context app = context.getApplicationContext();
     NotificationHelper.hush(app, taskId);
@@ -260,8 +293,7 @@ public final class ScheduleCoordinator {
       return;
     }
     long now = System.currentTimeMillis();
-    String due = TaskStatus.dueStatus(
-      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    String due = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
     task.status = due;
     task.postedAtMillis = 0L;
     task.snoozeUntilMillis = 0L;
@@ -290,8 +322,7 @@ public final class ScheduleCoordinator {
     task.timesLocked = true;
     task.postedAtMillis = 0L;
     task.snoozeUntilMillis = 0L;
-    task.status = TaskStatus.dueStatus(
-      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
     db.taskDao().update(task);
     AlarmScheduler.cancelTask(app, taskId);
     NotificationHelper.cancelForTask(app, taskId);
@@ -326,8 +357,7 @@ public final class ScheduleCoordinator {
       return;
     }
     long now = System.currentTimeMillis();
-    String due = TaskStatus.dueStatus(
-      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    String due = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
     db.taskDao().setSnooze(taskId, due, 0L);
     task.status = due;
     task.snoozeUntilMillis = 0L;
@@ -353,8 +383,7 @@ public final class ScheduleCoordinator {
     Calendar draftCal = DateUtils.dayBeforeAt(postCal, Prefs.draftHour(app), 0);
     task.draftAtMillis = Math.max(now, draftCal.getTimeInMillis());
     task.timesLocked = true;
-    task.status = TaskStatus.dueStatus(
-      task.draftAtMillis, task.postAtMillis, now, Prefs.warningLeadMs(app));
+    task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
     task.occurrenceKey = task.type + "|" + postAt + "|" + title.hashCode();
     long id = AppDatabase.get(app).taskDao().insert(task);
     if (id > 0L) {

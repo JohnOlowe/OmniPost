@@ -57,7 +57,6 @@ public class DraftActivity extends AppCompatActivity {
     binding.btnVars.setOnClickListener(v ->
       startActivity(new Intent(this, VariablesActivity.class)));
     binding.btnSave.setOnClickListener(v -> persist(true));
-    binding.toggleCompare.setOnCheckedChangeListener((b, checked) -> applyCompareLayout());
     binding.btnUseA.setOnClickListener(v -> {
       usingB = false;
       paintPreview();
@@ -71,7 +70,12 @@ public class DraftActivity extends AppCompatActivity {
     binding.btnFinal.setOnClickListener(v -> finalPost());
     watch(binding.inputA, binding.countA);
     watch(binding.inputB, binding.countB);
-    applyCompareLayout();
+    binding.compareScroll.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+      if (r - l != or - ol) {
+        sizeColumns();
+      }
+    });
+    sizeColumns();
     if (taskId > 0L) {
       NotificationHelper.hush(this, taskId);
     }
@@ -133,6 +137,7 @@ public class DraftActivity extends AppCompatActivity {
         binding.inputA.setText(draft.variantA);
         binding.inputB.setText(draft.variantB);
         loaded = true;
+        paintTokens();
         paintPreview();
       });
     });
@@ -180,11 +185,19 @@ public class DraftActivity extends AppCompatActivity {
     }
     draft.updatedAt = System.currentTimeMillis();
     Draft snapshot = copy(draft);
+    final long linkedTask = taskId;
+    final boolean mark = toast && linkedTask > 0L && !pickText().isEmpty();
     AppExecutors.disk().execute(() -> {
       AppDatabase.get(this).draftDao().update(snapshot);
+      if (mark) {
+        ScheduleCoordinator.markCaptionSaved(this, linkedTask);
+      }
       if (toast) {
         AppExecutors.main(() ->
-          Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show());
+          Toast.makeText(
+            this,
+            mark ? R.string.caption_saved : R.string.saved,
+            Toast.LENGTH_SHORT).show());
       }
     });
   }
@@ -317,35 +330,28 @@ public class DraftActivity extends AppCompatActivity {
     binding.previewFinal.setText(WhatsAppPreview.display(filled));
   }
 
-  private void applyCompareLayout() {
-    boolean compare = binding.toggleCompare.isChecked();
-    binding.colB.setVisibility(compare ? View.VISIBLE : View.GONE);
-    binding.btnUseA.setVisibility(compare ? View.VISIBLE : View.GONE);
-    binding.labelA.setText(compare ? R.string.variation_a : R.string.caption);
-    if (!compare) {
-      usingB = false;
+  private void sizeColumns() {
+    if (binding == null) {
+      return;
+    }
+    int scrollW = binding.compareScroll.getWidth()
+      - binding.compareScroll.getPaddingLeft()
+      - binding.compareScroll.getPaddingRight();
+    if (scrollW <= 0) {
+      float density = getResources().getDisplayMetrics().density;
+      scrollW = getResources().getDisplayMetrics().widthPixels - Math.round(32f * density);
     }
     boolean landscape =
       getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
-    if (compare && landscape) {
-      binding.compareRow.setOrientation(LinearLayout.HORIZONTAL);
-      LinearLayout.LayoutParams left =
-        new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-      left.setMarginEnd(8);
-      binding.colA.setLayoutParams(left);
-      LinearLayout.LayoutParams right =
-        new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-      right.setMarginStart(8);
-      binding.colB.setLayoutParams(right);
-    } else {
-      binding.compareRow.setOrientation(LinearLayout.VERTICAL);
-      LinearLayout.LayoutParams full =
-        new LinearLayout.LayoutParams(
-          LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-      binding.colA.setLayoutParams(full);
-      binding.colB.setLayoutParams(full);
-    }
-    paintPreview();
+    int colW = landscape ? Math.max(scrollW / 2, 1) : Math.max(scrollW, 1);
+    LinearLayout.LayoutParams left =
+      new LinearLayout.LayoutParams(colW, LinearLayout.LayoutParams.WRAP_CONTENT);
+    binding.colA.setLayoutParams(left);
+    LinearLayout.LayoutParams right =
+      new LinearLayout.LayoutParams(colW, LinearLayout.LayoutParams.WRAP_CONTENT);
+    binding.colB.setLayoutParams(right);
+    binding.colB.setVisibility(View.VISIBLE);
+    binding.compareHint.setVisibility(landscape ? View.GONE : View.VISIBLE);
   }
 
   private void watch(

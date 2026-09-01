@@ -136,7 +136,16 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     void bind(Task task, Listener listener) {
       binding.title.setText(task.title);
-      binding.description.setText(task.description);
+      if (TaskStatus.captionIsSaved(task) && !TaskStatus.POSTED.equals(task.status)) {
+        binding.description.setText(
+          TaskStatus.NAGGING.equals(task.status)
+            ? itemView.getContext().getString(R.string.caption_saved_post)
+            : itemView.getContext().getString(R.string.caption_saved_waiting));
+      } else {
+        binding.description.setText(task.description);
+      }
+      binding.btnDraft.setText(
+        TaskStatus.captionIsSaved(task) ? R.string.open_caption : R.string.write_caption);
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
         binding.when.setText(
           itemView.getContext().getString(
@@ -198,6 +207,11 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         color = R.color.gold;
         accent = R.color.gold;
         stroke = R.color.gold;
+      } else if (TaskStatus.READY.equals(task.status)) {
+        bg = R.drawable.bg_chip_green;
+        color = R.color.success;
+        accent = R.color.success;
+        stroke = R.color.success;
       } else if (TaskStatus.POSTED.equals(task.status)) {
         bg = R.drawable.bg_chip_green;
         color = R.color.success;

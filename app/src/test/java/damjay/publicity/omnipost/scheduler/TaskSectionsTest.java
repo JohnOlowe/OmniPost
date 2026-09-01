@@ -164,6 +164,33 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void savedCaptionLeavesWriteStateAndSkipsThirtyMinuteRing() {
+    long now = 1_000_000L;
+    long post = now + 3L * 60L * 60L * 1000L;
+    Task task = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.DRAFTING, post);
+    task.draftAtMillis = now - 10_000L;
+    assertEquals(
+      TaskStatus.DRAFTING,
+      TaskStatus.dueStatus(task, now, ScheduleTimes.WARNING_LEAD_MS));
+    long warningAt = post - ScheduleTimes.WARNING_LEAD_MS;
+    assertEquals(warningAt, TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
+
+    task.captionSavedAt = now;
+    assertEquals(
+      TaskStatus.READY,
+      TaskStatus.dueStatus(task, now, ScheduleTimes.WARNING_LEAD_MS));
+    assertEquals("Caption saved", TaskStatus.label(TaskStatus.READY));
+    assertFalse(TaskStatus.needsYou(TaskStatus.READY));
+    assertEquals(
+      post - ScheduleTimes.MINUTE_LEAD_MS,
+      TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
+
+    assertEquals(
+      TaskStatus.NAGGING,
+      TaskStatus.dueStatus(task, post, ScheduleTimes.WARNING_LEAD_MS));
+  }
+
+  @Test
   public void dueStatusWalksTheChain() {
     long now = 1_000_000L;
     assertEquals(TaskStatus.NAGGING, TaskStatus.dueStatus(now - 10, now - 1, now));
