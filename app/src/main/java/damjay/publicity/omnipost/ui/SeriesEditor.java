@@ -49,20 +49,17 @@ public final class SeriesEditor {
     View view = LayoutInflater.from(context).inflate(R.layout.dialog_series, null, false);
     TextInputEditText title = view.findViewById(R.id.series_name);
     TextInputEditText caption = view.findViewById(R.id.series_body);
-    TextInputEditText vars = view.findViewById(R.id.series_vars);
     RadioGroup kindGroup = view.findViewById(R.id.series_kind);
     RadioButton kindCountdown = view.findViewById(R.id.radio_countdown);
     RadioButton kindMonthly = view.findViewById(R.id.radio_monthly);
     View blockCountdown = view.findViewById(R.id.block_countdown);
     View blockMonthly = view.findViewById(R.id.block_monthly);
     MaterialButton eventBtn = view.findViewById(R.id.btn_event);
-    MaterialButton endBtn = view.findViewById(R.id.btn_end);
     CheckBox optEve = view.findViewById(R.id.opt_eve);
     CheckBox opt10 = view.findViewById(R.id.opt_tenth);
     CheckBox opt20 = view.findViewById(R.id.opt_twentieth);
 
     AtomicLong eventAt = new AtomicLong(source.eventAtMillis);
-    AtomicLong endAt = new AtomicLong(source.endAtMillis);
     if (eventAt.get() <= 0L) {
       Calendar start = Calendar.getInstance();
       start.add(Calendar.DAY_OF_MONTH, 7);
@@ -72,15 +69,8 @@ public final class SeriesEditor {
       start.set(Calendar.MILLISECOND, 0);
       eventAt.set(start.getTimeInMillis());
     }
-    if (endAt.get() <= 0L) {
-      Calendar last = Calendar.getInstance();
-      last.setTimeInMillis(eventAt.get());
-      last.add(Calendar.DAY_OF_MONTH, 4);
-      endAt.set(last.getTimeInMillis());
-    }
     title.setText(source.title);
     caption.setText(source.caption);
-    vars.setText(source.vars);
     boolean monthly = Series.KIND_MONTHLY.equals(source.kind);
     kindMonthly.setChecked(monthly);
     kindCountdown.setChecked(!monthly);
@@ -88,7 +78,6 @@ public final class SeriesEditor {
     opt10.setChecked(source.tenth);
     opt20.setChecked(source.twentieth);
     paintEvent(context, eventBtn, eventAt.get());
-    paintEnd(context, endBtn, endAt.get());
     paintKind(kindMonthly, blockCountdown, blockMonthly);
     kindGroup.setOnCheckedChangeListener((group, checkedId) -> {
       paintKind(kindMonthly, blockCountdown, blockMonthly);
@@ -104,18 +93,6 @@ public final class SeriesEditor {
     eventBtn.setOnClickListener(v -> pickDay(context, eventAt.get(), chosen -> {
       eventAt.set(chosen);
       paintEvent(context, eventBtn, eventAt.get());
-      if (endAt.get() < chosen) {
-        Calendar last = Calendar.getInstance();
-        last.setTimeInMillis(chosen);
-        last.add(Calendar.DAY_OF_MONTH, 4);
-        endAt.set(last.getTimeInMillis());
-        paintEnd(context, endBtn, endAt.get());
-      }
-    }));
-    endBtn.setOnClickListener(v -> pickDay(context, endAt.get(), chosen -> {
-      long start = eventAt.get();
-      endAt.set(Math.max(chosen, start));
-      paintEnd(context, endBtn, endAt.get());
     }));
 
     boolean editing = source.id > 0L;
@@ -127,10 +104,8 @@ public final class SeriesEditor {
         existing,
         title,
         caption,
-        vars,
         kindMonthly,
         eventAt.get(),
-        endAt.get(),
         optEve.isChecked(),
         opt10.isChecked(),
         opt20.isChecked()))
@@ -145,10 +120,6 @@ public final class SeriesEditor {
     eventBtn.setText(context.getString(R.string.dday_on, DateUtils.formatDayHeader(millis)));
   }
 
-  private static void paintEnd(Context context, MaterialButton endBtn, long millis) {
-    endBtn.setText(context.getString(R.string.end_on, DateUtils.formatDayHeader(millis)));
-  }
-
   private static void paintKind(RadioButton kindMonthly, View blockCountdown, View blockMonthly) {
     boolean isMonthly = kindMonthly.isChecked();
     blockCountdown.setVisibility(isMonthly ? View.GONE : View.VISIBLE);
@@ -160,10 +131,8 @@ public final class SeriesEditor {
     @Nullable Series existing,
     TextInputEditText title,
     TextInputEditText caption,
-    TextInputEditText vars,
     RadioButton kindMonthly,
     long eventAt,
-    long endAt,
     boolean lastOfPrev,
     boolean day10,
     boolean day20) {
@@ -176,9 +145,7 @@ public final class SeriesEditor {
     series.title = name;
     series.kind = kindMonthly.isChecked() ? Series.KIND_MONTHLY : Series.KIND_COUNTDOWN;
     series.caption = caption.getText() == null ? "" : caption.getText().toString();
-    series.vars = vars.getText() == null ? "" : vars.getText().toString();
     series.eventAtMillis = eventAt;
-    series.endAtMillis = Math.max(endAt, eventAt);
     series.lastOfPrevMonth = lastOfPrev;
     series.tenth = day10;
     series.twentieth = day20;

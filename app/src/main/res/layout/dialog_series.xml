@@ -60,15 +60,6 @@
         android:layout_marginTop="8dp"
         android:text="@string/pick_dday"
         android:textColor="@color/gold"/>
-
-      <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_end"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/pick_end"
-        android:textColor="@color/gold"/>
     </LinearLayout>
 
     <LinearLayout
@@ -102,22 +93,6 @@
         android:text="@string/opt_day_20"
         android:textColor="@color/cream"/>
     </LinearLayout>
-
-    <com.google.android.material.textfield.TextInputLayout
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="8dp"
-      android:hint="@string/series_vars">
-
-      <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/series_vars"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="top"
-        android:inputType="textMultiLine|textNoSuggestions"
-        android:minLines="3"
-        android:textColor="@color/cream"/>
-    </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
       android:layout_width="match_parent"
