@@ -24,6 +24,7 @@ public final class SeriesDefaults {
     series.title = Campaigns.BEYOND_LIMIT_NAME;
     series.kind = Series.KIND_COUNTDOWN;
     series.caption = countdownCaption();
+    series.vars = countdownVars();
     Calendar event = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     event.clear();
     event.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -36,6 +37,18 @@ public final class SeriesDefaults {
       0);
     event.set(Calendar.MILLISECOND, 0);
     series.eventAtMillis = event.getTimeInMillis();
+    Calendar end = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    end.clear();
+    end.setTimeZone(TimeZone.getTimeZone("UTC"));
+    end.set(
+      Campaigns.BEYOND_LIMIT_YEAR,
+      Campaigns.BEYOND_LIMIT_MONTH,
+      Campaigns.BEYOND_LIMIT_END_DAY,
+      0,
+      0,
+      0);
+    end.set(Calendar.MILLISECOND, 0);
+    series.endAtMillis = end.getTimeInMillis();
     series.postHour = ScheduleTimes.MONTH_POST_HOUR;
     series.seedKey = SEED_COUNTDOWN;
     series.enabled = true;
@@ -47,6 +60,7 @@ public final class SeriesDefaults {
     series.title = "Birthday notice";
     series.kind = Series.KIND_MONTHLY;
     series.caption = noticeCaption();
+    series.vars = noticeVars();
     series.postHour = ScheduleTimes.MONTH_POST_HOUR;
     series.lastOfPrevMonth = true;
     series.tenth = true;
@@ -82,8 +96,19 @@ public final class SeriesDefaults {
       + "Thank you";
   }
 
+  public static String countdownVars() {
+    return "event=Beyond Limit\n"
+      + "theme=No Cross, No Crown.\n"
+      + "venue=RCCG The Lord's Court, 13, Osholake Street, Ebute-Metta, Lagos.\n"
+      + "time=5pm Daily";
+  }
+
+  public static String noticeVars() {
+    return "link=" + Campaigns.BIRTHDAY_WA;
+  }
+
   public static String blankCountdownCaption() {
-    return "*IT'S {Days}!*\n\n{away}.";
+    return "*IT'S {Days}!*\n\n{away}.\n\n{range}";
   }
 
   public static String blankNoticeCaption() {

@@ -67,6 +67,19 @@ public class CaptionTemplatesTest {
   }
 
   @Test
+  public void customVarsFillWithoutTouchingOtherWords() {
+    damjay.publicity.omnipost.data.entity.Series series =
+      new damjay.publicity.omnipost.data.entity.Series();
+    series.vars = "theme=Grace\nvenue=The Court";
+    Task countdown = new Task();
+    countdown.type = TaskTypes.COUNTDOWN;
+    countdown.occurrenceKey = "COUNTDOWN|2026-09-09|2026-08-31";
+    assertEquals(
+      "Grace at The Court",
+      CaptionTemplates.apply("{theme} at {venue}", countdown, series));
+  }
+
+  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));
