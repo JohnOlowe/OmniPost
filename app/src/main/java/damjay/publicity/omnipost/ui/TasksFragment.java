@@ -175,6 +175,8 @@ public class TasksFragment extends Fragment {
 
   private void showAddChooser() {
     CharSequence[] items = new CharSequence[] {
+      getString(R.string.add_weekly),
+      getString(R.string.add_daily),
       getString(R.string.add_custom),
       getString(R.string.add_countdown),
       getString(R.string.add_monthly)
@@ -183,8 +185,12 @@ public class TasksFragment extends Fragment {
       .setTitle(R.string.add)
       .setItems(items, (d, which) -> {
         if (which == 0) {
-          showCustomEditor();
+          SeriesEditor.createWeekly(requireContext());
         } else if (which == 1) {
+          SeriesEditor.createDaily(requireContext());
+        } else if (which == 2) {
+          showCustomEditor();
+        } else if (which == 3) {
           SeriesEditor.createCountdown(requireContext());
         } else {
           SeriesEditor.createMonthly(requireContext());

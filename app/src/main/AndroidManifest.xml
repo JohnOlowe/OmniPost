@@ -57,6 +57,19 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.VariablesActivity"
+      android:exported="false"
+      android:label="@string/variables_title"
+      android:parentActivityName=".MainActivity"/>
+
+    <activity
+      android:name=".ui.VariableEditActivity"
+      android:exported="false"
+      android:label="@string/add_variable"
+      android:parentActivityName=".ui.VariablesActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlarmActivity"
       android:excludeFromRecents="true"
       android:exported="false"

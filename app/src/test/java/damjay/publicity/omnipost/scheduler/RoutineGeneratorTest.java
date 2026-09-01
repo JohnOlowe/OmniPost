@@ -295,6 +295,82 @@ public class RoutineGeneratorTest {
   }
 
   @Test
+  public void customWeeklyUsesChosenDayAndHour() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+
+    Series weekly = new Series();
+    weekly.id = 11L;
+    weekly.title = "Youth service";
+    weekly.kind = Series.KIND_WEEKLY;
+    weekly.enabled = true;
+    weekly.postHour = 16;
+    weekly.postMinute = 30;
+    weekly.weekdays = Weekdays.bit(Calendar.SATURDAY);
+
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Collections.singletonList(weekly));
+    boolean found = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.WEEKLY + "|11|2026-08-29").equals(task.occurrenceKey)) {
+        found = true;
+        assertEquals("Youth service", task.title);
+        assertEquals("Weekly", TaskTypes.cadence(task.type));
+        assertEquals(TaskTypes.SECTION_WEEKLY, TaskTypes.section(task.type));
+        Calendar post = Calendar.getInstance(utc);
+        post.setTimeInMillis(task.postAtMillis);
+        assertEquals(Calendar.SATURDAY, post.get(Calendar.DAY_OF_WEEK));
+        assertEquals(16, post.get(Calendar.HOUR_OF_DAY));
+        assertEquals(30, post.get(Calendar.MINUTE));
+      }
+    }
+    assertTrue(found);
+  }
+
+  @Test
+  public void customDailyUsesChosenClockAndSkipsPastToday() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+
+    Series daily = new Series();
+    daily.id = 12L;
+    daily.title = "Vespers";
+    daily.kind = Series.KIND_DAILY;
+    daily.enabled = true;
+    daily.postHour = 18;
+    daily.postMinute = 0;
+
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Collections.singletonList(daily));
+    boolean today = false;
+    boolean tomorrow = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.DAILY + "|12|2026-08-26").equals(task.occurrenceKey)) {
+        today = true;
+        Calendar post = Calendar.getInstance(utc);
+        post.setTimeInMillis(task.postAtMillis);
+        assertEquals(18, post.get(Calendar.HOUR_OF_DAY));
+        assertEquals("Daily", TaskTypes.cadence(task.type));
+        assertEquals(TaskTypes.SECTION_CAMPAIGN, TaskTypes.section(task.type));
+        assertTrue(TaskTypes.oneCard(task.type));
+      }
+      if ((TaskTypes.DAILY + "|12|2026-08-27").equals(task.occurrenceKey)) {
+        tomorrow = true;
+      }
+    }
+    assertTrue(today);
+    assertTrue(tomorrow);
+  }
+
+  @Test
   public void emptySeriesListDoesNotInventCountdown() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);

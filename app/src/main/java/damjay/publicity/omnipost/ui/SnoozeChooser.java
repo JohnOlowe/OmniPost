@@ -13,6 +13,10 @@ public final class SnoozeChooser {
     void onChosen(long untilMillis);
   }
 
+  public interface ClockCallback {
+    void onChosen(int hour, int minute);
+  }
+
   private SnoozeChooser() {}
 
   public static void show(Context context, Callback callback) {

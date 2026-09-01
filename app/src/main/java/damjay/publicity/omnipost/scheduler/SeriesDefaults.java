@@ -114,4 +114,12 @@ public final class SeriesDefaults {
   public static String blankNoticeCaption() {
     return "*NOTICE!*\n\n*Month of {month}*\n";
   }
+
+  public static String blankWeeklyCaption() {
+    return "{weekday} — \n";
+  }
+
+  public static String blankDailyCaption() {
+    return "{weekday}, {date}\n";
+  }
 }

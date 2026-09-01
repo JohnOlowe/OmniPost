@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +25,7 @@ import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.scheduler.Weekdays;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.Prefs;
@@ -41,6 +43,8 @@ public class SettingsFragment extends Fragment {
     binding = FragmentSettingsBinding.inflate(inflater, container, false);
     binding.btnTest.setOnClickListener(v -> fireTest());
     binding.btnRearm.setOnClickListener(v -> rearm());
+    binding.btnAddWeekly.setOnClickListener(v -> SeriesEditor.createWeekly(requireContext()));
+    binding.btnAddDaily.setOnClickListener(v -> SeriesEditor.createDaily(requireContext()));
     binding.btnAddCountdown.setOnClickListener(v -> SeriesEditor.createCountdown(requireContext()));
     binding.btnAddNotice.setOnClickListener(v -> SeriesEditor.createMonthly(requireContext()));
     AppDatabase.get(requireContext())
@@ -95,6 +99,9 @@ public class SettingsFragment extends Fragment {
       R.string.setting_fullscreen_hint,
       Prefs.fullScreen(ctx),
       (b, on) -> Prefs.setFullScreen(ctx, on));
+    paintChoice(binding.rowVars, R.string.variables_title, getString(R.string.variables_tagline));
+    binding.rowVars.getRoot().setOnClickListener(v ->
+      startActivity(new Intent(requireContext(), VariablesActivity.class)));
   }
 
   private void paintSeries(java.util.List<Series> series) {
@@ -118,7 +125,19 @@ public class SettingsFragment extends Fragment {
 
   private String seriesSummary(Series series) {
     if (Series.KIND_MONTHLY.equals(series.kind)) {
-      return getString(R.string.kind_monthly);
+      return getString(R.string.kind_monthly)
+        + " · "
+        + damjay.publicity.omnipost.scheduler.Weekdays.clock(series.postHour, series.postMinute);
+    }
+    if (Series.KIND_WEEKLY.equals(series.kind)) {
+      return damjay.publicity.omnipost.scheduler.Weekdays.sentence(series.weekdays)
+        + " · "
+        + damjay.publicity.omnipost.scheduler.Weekdays.clock(series.postHour, series.postMinute);
+    }
+    if (Series.KIND_DAILY.equals(series.kind)) {
+      return getString(R.string.kind_daily)
+        + " · "
+        + damjay.publicity.omnipost.scheduler.Weekdays.clock(series.postHour, series.postMinute);
     }
     if (series.eventAtMillis > 0L) {
       return getString(R.string.kind_countdown)

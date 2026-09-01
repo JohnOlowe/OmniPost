@@ -80,6 +80,28 @@ public class CaptionTemplatesTest {
   }
 
   @Test
+  public void globalVarsFillAnyCaptionAndSeriesWins() {
+    java.util.Map<String, String> extras = new java.util.LinkedHashMap<>();
+    extras.put("theme", "Grace");
+    extras.put("venue", "Line 1\nLine 2");
+    Task sunday = new Task();
+    sunday.type = TaskTypes.SUNDAY_SERVICE;
+    assertEquals(
+      "Grace at Line 1\nLine 2",
+      CaptionTemplates.apply("{theme} at {venue}", sunday, null, extras));
+
+    damjay.publicity.omnipost.data.entity.Series series =
+      new damjay.publicity.omnipost.data.entity.Series();
+    series.vars = "theme=Local";
+    Task countdown = new Task();
+    countdown.type = TaskTypes.COUNTDOWN;
+    countdown.occurrenceKey = "COUNTDOWN|2026-09-09|2026-08-31";
+    assertEquals(
+      "Local",
+      CaptionTemplates.apply("{theme}", countdown, series, extras));
+  }
+
+  @Test
   public void dDayAndOneDayGrammar() {
     assertTrue(CaptionTemplates.countdownCaption(0).startsWith("*IT'S D-DAY!*"));
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));

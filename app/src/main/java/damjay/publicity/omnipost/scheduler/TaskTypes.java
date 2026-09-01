@@ -12,6 +12,8 @@ public final class TaskTypes {
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
   public static final String COUNTDOWN = "COUNTDOWN";
   public static final String BIRTHDAY_NOTICE = "BIRTHDAY_NOTICE";
+  public static final String WEEKLY = "WEEKLY";
+  public static final String DAILY = "DAILY";
   public static final String FLEXIBLE = "FLEXIBLE";
   public static final String ONE_OFF = "ONE_OFF";
   public static final String TEST = "TEST";
@@ -49,6 +51,10 @@ public final class TaskTypes {
         return "Beyond Limit countdown";
       case BIRTHDAY_NOTICE:
         return "Birthday notice";
+      case WEEKLY:
+        return "Weekly";
+      case DAILY:
+        return "Daily";
       case FLEXIBLE:
         return "Flexible";
       case ONE_OFF:
@@ -68,7 +74,10 @@ public final class TaskTypes {
       case SUNDAY_SERVICE:
       case WEDNESDAY_BIBLE_STUDY:
       case FRIDAY_PRAYER:
+      case WEEKLY:
         return "Weekly";
+      case DAILY:
+        return "Daily";
       case NEW_MONTH_FASTING:
       case FASTING_DAY:
       case HAPPY_NEW_MONTH:
@@ -93,7 +102,10 @@ public final class TaskTypes {
       case SUNDAY_SERVICE:
       case WEDNESDAY_BIBLE_STUDY:
       case FRIDAY_PRAYER:
+      case WEEKLY:
         return SECTION_WEEKLY;
+      case DAILY:
+        return SECTION_CAMPAIGN;
       case NEW_MONTH_FASTING:
       case FASTING_DAY:
       case HAPPY_NEW_MONTH:
@@ -117,12 +129,12 @@ public final class TaskTypes {
     String section = section(type);
     return SECTION_WEEKLY.equals(section)
         || SECTION_MONTHLY.equals(section)
-        || COUNTDOWN.equals(type);
+        || SECTION_CAMPAIGN.equals(section);
   }
 
-  /** Daily countdown and birthday NOTICE show as one card, not a cluster. */
+  /** Daily countdown, daily posts, and birthday NOTICE show as one card, not a cluster. */
   public static boolean oneCard(String type) {
-    return COUNTDOWN.equals(type) || BIRTHDAY_NOTICE.equals(type);
+    return COUNTDOWN.equals(type) || BIRTHDAY_NOTICE.equals(type) || DAILY.equals(type);
   }
 
   /** Collapse each repeating series separately so two countdowns do not merge. */
@@ -130,7 +142,7 @@ public final class TaskTypes {
     if (task == null || task.type == null) {
       return "";
     }
-    if (oneCard(task.type) && task.seriesId > 0L) {
+    if (task.seriesId > 0L && (oneCard(task.type) || WEEKLY.equals(task.type))) {
       return task.type + "#" + task.seriesId;
     }
     return task.type;

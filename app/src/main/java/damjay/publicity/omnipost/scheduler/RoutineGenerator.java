@@ -156,7 +156,88 @@ public final class RoutineGenerator {
     }
     if (Series.KIND_MONTHLY.equals(series.kind)) {
       addMonthlyNotice(out, now, series, draftHour);
+      return;
     }
+    if (Series.KIND_WEEKLY.equals(series.kind)) {
+      addWeeklySeries(out, now, series, draftHour);
+      return;
+    }
+    if (Series.KIND_DAILY.equals(series.kind)) {
+      addDailySeries(out, now, series, draftHour);
+    }
+  }
+
+  private static void addWeeklySeries(List<Task> out, Calendar now, Series series, int draftHour) {
+    if (series.weekdays == Weekdays.NONE) {
+      return;
+    }
+    int hour = clampHour(series.postHour, ScheduleTimes.WEEKLY_POST_HOUR);
+    int minute = clampMinute(series.postMinute);
+    String description = "Repeats "
+      + Weekdays.sentence(series.weekdays)
+      + " at "
+      + Weekdays.clock(hour, minute)
+      + ". Write the caption the evening before.";
+    for (int day : Weekdays.days()) {
+      if (!Weekdays.has(series.weekdays, day)) {
+        continue;
+      }
+      Calendar post = DateUtils.nextWeekdayAt(now, day, hour, minute);
+      for (int i = 0; i < ScheduleTimes.GENERATE_WEEKLY_COUNT; i++) {
+        Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
+        out.add(build(
+          TaskTypes.WEEKLY,
+          series.title,
+          description,
+          draft.getTimeInMillis(),
+          post.getTimeInMillis(),
+          TaskTypes.WEEKLY + "|" + series.id + "|" + DateUtils.dayKey(post),
+          0L,
+          series.id));
+        post.add(Calendar.DAY_OF_MONTH, 7);
+      }
+    }
+  }
+
+  private static void addDailySeries(List<Task> out, Calendar now, Series series, int draftHour) {
+    int hour = clampHour(series.postHour, ScheduleTimes.MONTH_POST_HOUR);
+    int minute = clampMinute(series.postMinute);
+    String description = "Every day at "
+      + Weekdays.clock(hour, minute)
+      + ". One card — {weekday} and {date} fill themselves.";
+    Calendar today = DateUtils.startOfDay(now);
+    for (int i = 0; i < ScheduleTimes.GENERATE_WEEKLY_COUNT; i++) {
+      Calendar postDay = (Calendar) today.clone();
+      postDay.add(Calendar.DAY_OF_MONTH, i);
+      Calendar post = DateUtils.sameDayAt(postDay, hour, minute);
+      if (!post.after(now)) {
+        continue;
+      }
+      Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
+      out.add(build(
+        TaskTypes.DAILY,
+        series.title,
+        description,
+        draft.getTimeInMillis(),
+        post.getTimeInMillis(),
+        TaskTypes.DAILY + "|" + series.id + "|" + DateUtils.dayKey(post),
+        0L,
+        series.id));
+    }
+  }
+
+  private static int clampHour(int hour, int fallback) {
+    if (hour < 0 || hour > 23) {
+      return fallback;
+    }
+    return hour;
+  }
+
+  private static int clampMinute(int minute) {
+    if (minute < 0 || minute > 59) {
+      return 0;
+    }
+    return minute;
   }
 
   private static void addCountdown(List<Task> out, Calendar now, Series series, int draftHour) {

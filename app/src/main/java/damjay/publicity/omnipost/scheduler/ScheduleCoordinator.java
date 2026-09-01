@@ -383,8 +383,11 @@ public final class ScheduleCoordinator {
   public static void saveSeries(Context context, Series series) {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
-    if (series.postHour <= 0) {
+    if (series.postHour < 0 || series.postHour > 23) {
       series.postHour = ScheduleTimes.MONTH_POST_HOUR;
+    }
+    if (series.postMinute < 0 || series.postMinute > 59) {
+      series.postMinute = 0;
     }
     boolean countdownSeed = SeriesDefaults.SEED_COUNTDOWN.equals(series.seedKey)
       && Series.KIND_COUNTDOWN.equals(series.kind);

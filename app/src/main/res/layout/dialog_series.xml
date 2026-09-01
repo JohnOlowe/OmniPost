@@ -31,6 +31,20 @@
       android:orientation="vertical">
 
       <RadioButton
+        android:id="@+id/radio_weekly"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/kind_weekly"
+        android:textColor="@color/cream"/>
+
+      <RadioButton
+        android:id="@+id/radio_daily"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/kind_daily"
+        android:textColor="@color/cream"/>
+
+      <RadioButton
         android:id="@+id/radio_countdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -45,6 +59,111 @@
         android:text="@string/kind_monthly"
         android:textColor="@color/cream"/>
     </RadioGroup>
+
+    <LinearLayout
+      android:id="@+id/block_weekly"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:visibility="gone">
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/pick_weekdays"
+        android:textColor="@color/gold"
+        android:textStyle="bold"/>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+          android:id="@+id/day_sun"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_sun"
+          android:textColor="@color/cream"/>
+
+        <CheckBox
+          android:id="@+id/day_mon"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_mon"
+          android:textColor="@color/cream"/>
+
+        <CheckBox
+          android:id="@+id/day_tue"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_tue"
+          android:textColor="@color/cream"/>
+
+        <CheckBox
+          android:id="@+id/day_wed"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_wed"
+          android:textColor="@color/cream"/>
+      </LinearLayout>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <CheckBox
+          android:id="@+id/day_thu"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_thu"
+          android:textColor="@color/cream"/>
+
+        <CheckBox
+          android:id="@+id/day_fri"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_fri"
+          android:textColor="@color/cream"/>
+
+        <CheckBox
+          android:id="@+id/day_sat"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:text="@string/dow_sat"
+          android:textColor="@color/cream"/>
+
+        <View
+          android:layout_width="0dp"
+          android:layout_height="1dp"
+          android:layout_weight="1"/>
+      </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/block_daily"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:visibility="gone">
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/daily_hint"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"/>
+    </LinearLayout>
 
     <LinearLayout
       android:id="@+id/block_countdown"
@@ -103,6 +222,24 @@
         android:textColor="@color/cream"/>
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_post_time"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:text="@string/pick_post_time"
+      android:textColor="@color/gold"/>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_vars"
+      style="@style/Widget.Material3.Button.TextButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="4dp"
+      android:text="@string/open_variables"
+      android:textColor="@color/gold"/>
+
     <com.google.android.material.textfield.TextInputLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
@@ -115,7 +252,7 @@
         android:layout_height="wrap_content"
         android:gravity="top"
         android:inputType="textMultiLine|textNoSuggestions"
-        android:minLines="3"
+        android:minLines="2"
         android:textColor="@color/cream"/>
     </com.google.android.material.textfield.TextInputLayout>
 

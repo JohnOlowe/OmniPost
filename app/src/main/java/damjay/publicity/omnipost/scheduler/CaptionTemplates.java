@@ -1,18 +1,24 @@
 package damjay.publicity.omnipost.scheduler;
 
 import android.content.Context;
+import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 public final class CaptionTemplates {
   private CaptionTemplates() {}
 
   public static boolean isLive(String type) {
-    return TaskTypes.COUNTDOWN.equals(type) || TaskTypes.BIRTHDAY_NOTICE.equals(type);
+    return TaskTypes.COUNTDOWN.equals(type)
+        || TaskTypes.BIRTHDAY_NOTICE.equals(type)
+        || TaskTypes.WEEKLY.equals(type)
+        || TaskTypes.DAILY.equals(type);
   }
 
   public static String forTask(Context context, Task task) {
@@ -24,7 +30,7 @@ public final class CaptionTemplates {
       return "";
     }
     if (isLive(task.type)) {
-      return live(task, series);
+      return live(task, series, extrasFrom(context));
     }
     if (context != null && !Prefs.seedCaptions(context)) {
       return "";
@@ -53,23 +59,31 @@ public final class CaptionTemplates {
   }
 
   public static String live(Task task, Series series) {
+    return live(task, series, null);
+  }
+
+  public static String live(Task task, Series series, Map<String, String> extras) {
     if (task == null || task.type == null) {
       return "";
     }
     Series resolved = implicit(task, series);
-    return apply(rawTemplate(task, resolved), task, resolved);
+    return apply(rawTemplate(task, resolved), task, resolved, extras);
   }
 
   public static String apply(String source, Task task) {
-    return apply(source, task, null);
+    return apply(source, task, null, null);
   }
 
   /** Fill placeholders in the user's caption. Does not replace their other words. */
   public static String apply(String source, Task task, Series series) {
+    return apply(source, task, series, null);
+  }
+
+  public static String apply(String source, Task task, Series series, Map<String, String> extras) {
     if (source == null || source.isEmpty()) {
       return "";
     }
-    return fillAll(source, task, implicit(task, series));
+    return fillAll(source, task, implicit(task, series), extras);
   }
 
   public static String rawTemplate(Task task, Series series) {
@@ -81,6 +95,10 @@ public final class CaptionTemplates {
   }
 
   static String fillAll(String source, Task task, Series series) {
+    return fillAll(source, task, series, null);
+  }
+
+  static String fillAll(String source, Task task, Series series, Map<String, String> extras) {
     int days = countdownDays(task);
     String month = monthNameFromOccurrence(task == null ? null : task.occurrenceKey);
     if ((month == null || month.isEmpty()) && series != null && series.eventAtMillis > 0L) {
@@ -91,15 +109,30 @@ public final class CaptionTemplates {
     if (month == null || month.isEmpty()) {
       month = DateUtils.monthName(Calendar.getInstance());
     }
-    return fillAll(source, days, month, task, series);
+    return fillAll(source, days, month, task, series, extras);
   }
 
   static String fillAll(String template, int days, String monthName, Task task, Series series) {
+    return fillAll(template, days, monthName, task, series, null);
+  }
+
+  static String fillAll(
+    String template,
+    int days,
+    String monthName,
+    Task task,
+    Series series,
+    Map<String, String> extras) {
     if (template == null || template.isEmpty()) {
       return "";
     }
     String month = monthName == null || monthName.isEmpty() ? "this month" : monthName;
-    String out = applyVars(template, series == null ? null : series.vars);
+    Map<String, String> tokens = new LinkedHashMap<>();
+    if (extras != null) {
+      tokens.putAll(extras);
+    }
+    tokens.putAll(parseVars(series == null ? null : series.vars));
+    String out = applyTokens(template, tokens);
     if (series != null && series.title != null && !series.title.isEmpty()) {
       out = out.replace("{name}", series.title);
     } else if (task != null && task.title != null && !task.title.isEmpty()
@@ -141,10 +174,14 @@ public final class CaptionTemplates {
   }
 
   static String applyVars(String template, String vars) {
-    if (template == null || template.isEmpty() || vars == null || vars.isEmpty()) {
-      return template == null ? "" : template;
+    return applyTokens(template, parseVars(vars));
+  }
+
+  static Map<String, String> parseVars(String vars) {
+    Map<String, String> out = new LinkedHashMap<>();
+    if (vars == null || vars.isEmpty()) {
+      return out;
     }
-    String out = template;
     String[] lines = vars.split("\n");
     for (String line : lines) {
       if (line == null) {
@@ -159,12 +196,30 @@ public final class CaptionTemplates {
       if (key.isEmpty() || !isTokenName(key)) {
         continue;
       }
-      out = out.replace("{" + key + "}", value);
+      out.put(key, value);
     }
     return out;
   }
 
-  static boolean isTokenName(String key) {
+  static String applyTokens(String template, Map<String, String> tokens) {
+    if (template == null || template.isEmpty()) {
+      return template == null ? "" : template;
+    }
+    if (tokens == null || tokens.isEmpty()) {
+      return template;
+    }
+    String out = template;
+    for (Map.Entry<String, String> entry : tokens.entrySet()) {
+      if (entry.getKey() == null || entry.getKey().isEmpty()) {
+        continue;
+      }
+      String value = entry.getValue() == null ? "" : entry.getValue();
+      out = out.replace("{" + entry.getKey() + "}", value);
+    }
+    return out;
+  }
+
+  public static boolean isTokenName(String key) {
     if (key == null || key.isEmpty()) {
       return false;
     }
@@ -292,6 +347,17 @@ public final class CaptionTemplates {
       return SeriesDefaults.noticeCaption();
     }
     return "";
+  }
+
+  private static Map<String, String> extrasFrom(Context context) {
+    if (context == null) {
+      return null;
+    }
+    try {
+      return CaptionVars.map(AppDatabase.get(context));
+    } catch (RuntimeException ignored) {
+      return null;
+    }
   }
 
   static Series implicit(Task task, Series series) {

@@ -8,6 +8,8 @@ import androidx.room.PrimaryKey;
 public class Series {
   public static final String KIND_COUNTDOWN = "COUNTDOWN";
   public static final String KIND_MONTHLY = "MONTHLY";
+  public static final String KIND_WEEKLY = "WEEKLY";
+  public static final String KIND_DAILY = "DAILY";
 
   @PrimaryKey(autoGenerate = true)
   public long id;
@@ -36,6 +38,12 @@ public class Series {
 
   public int postHour = 7;
   public int postMinute = 0;
+
+  /**
+   * Bitmask of {@link java.util.Calendar} weekdays for {@link #KIND_WEEKLY}
+   * (Sunday = bit 0). Ignored for other kinds.
+   */
+  public int weekdays;
 
   public boolean lastOfPrevMonth = true;
   public boolean tenth = true;

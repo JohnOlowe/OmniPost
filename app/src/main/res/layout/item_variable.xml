@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="wrap_content"
+  android:layout_marginBottom="12dp"
+  android:clickable="true"
+  android:focusable="true"
+  android:foreground="?attr/selectableItemBackground"
+  app:cardBackgroundColor="@color/navy_800"
+  app:cardCornerRadius="16dp"
+  app:cardElevation="0dp"
+  app:strokeColor="@color/navy_700"
+  app:strokeWidth="1dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+      android:id="@+id/token"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:textColor="@color/gold"
+      android:textSize="16sp"
+      android:textStyle="bold"
+      tools:text="{theme}"/>
+
+    <TextView
+      android:id="@+id/label"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="2dp"
+      android:textColor="@color/cream"
+      android:textSize="14sp"
+      tools:text="Event theme"/>
+
+    <TextView
+      android:id="@+id/preview"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="6dp"
+      android:ellipsize="end"
+      android:maxLines="3"
+      android:textColor="@color/text_muted"
+      android:textSize="13sp"
+      tools:text="No Cross, No Crown."/>
+  </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -48,6 +48,14 @@
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_vars"
+      style="@style/Widget.Material3.Button.TextButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/variables_short"
+      android:textColor="@color/gold"/>
+
+    <com.google.android.material.button.MaterialButton
       android:id="@+id/btn_save"
       style="@style/Widget.Material3.Button.TextButton"
       android:layout_width="wrap_content"
@@ -137,6 +145,20 @@
           android:layout_marginTop="4dp"
           android:textColor="@color/text_muted"
           android:textSize="12sp"/>
+
+        <HorizontalScrollView
+          android:id="@+id/token_scroll"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:layout_marginTop="8dp"
+          android:scrollbars="none">
+
+          <LinearLayout
+            android:id="@+id/token_row"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"/>
+        </HorizontalScrollView>
       </LinearLayout>
 
       <LinearLayout

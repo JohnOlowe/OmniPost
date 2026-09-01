@@ -1,5 +1,6 @@
 package damjay.publicity.omnipost.ui;
 
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.text.Editable;
@@ -12,12 +13,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.CaptionVar;
 import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityDraftBinding;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
+import damjay.publicity.omnipost.scheduler.CaptionVars;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.share.InstagramStyle;
@@ -25,6 +28,10 @@ import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DraftActivity extends AppCompatActivity {
   private ActivityDraftBinding binding;
@@ -33,6 +40,8 @@ public class DraftActivity extends AppCompatActivity {
   private Draft draft;
   private Task task;
   private Series series;
+  private Map<String, String> extras = new LinkedHashMap<>();
+  private final List<CaptionVar> varList = new ArrayList<>();
   private boolean loaded;
   private boolean usingB;
 
@@ -45,6 +54,8 @@ public class DraftActivity extends AppCompatActivity {
     draftId = getIntent().getLongExtra(ExtraKeys.DRAFT_ID, 0L);
 
     binding.btnBack.setOnClickListener(v -> finish());
+    binding.btnVars.setOnClickListener(v ->
+      startActivity(new Intent(this, VariablesActivity.class)));
     binding.btnSave.setOnClickListener(v -> persist(true));
     binding.toggleCompare.setOnCheckedChangeListener((b, checked) -> applyCompareLayout());
     binding.btnUseA.setOnClickListener(v -> {
@@ -104,6 +115,12 @@ public class DraftActivity extends AppCompatActivity {
       draft = found;
       task = linked;
       series = seriesFor(db, linked);
+      List<CaptionVar> vars = db.captionVarDao().getAllSync();
+      extras = CaptionVars.map(vars);
+      varList.clear();
+      if (vars != null) {
+        varList.addAll(vars);
+      }
       if (draft != null) {
         draftId = draft.id;
         taskId = draft.taskId > 0L ? draft.taskId : taskId;
@@ -122,6 +139,28 @@ public class DraftActivity extends AppCompatActivity {
   }
 
   @Override
+  protected void onResume() {
+    super.onResume();
+    if (loaded) {
+      AppExecutors.disk().execute(() -> {
+        List<CaptionVar> vars = AppDatabase.get(this).captionVarDao().getAllSync();
+        extras = CaptionVars.map(vars);
+        varList.clear();
+        if (vars != null) {
+          varList.addAll(vars);
+        }
+        AppExecutors.main(() -> {
+          if (isFinishing() || binding == null) {
+            return;
+          }
+          paintTokens();
+          paintPreview();
+        });
+      });
+    }
+  }
+
+  @Override
   protected void onPause() {
     super.onPause();
     if (loaded) {
@@ -135,7 +174,7 @@ public class DraftActivity extends AppCompatActivity {
     }
     draft.variantA = text(binding.inputA);
     draft.variantB = text(binding.inputB);
-    draft.finalizedText = CaptionTemplates.apply(source(), task, series);
+    draft.finalizedText = CaptionTemplates.apply(source(), task, series, extras);
     if (draft.title == null || draft.title.isEmpty()) {
       draft.title = task != null ? task.title : "Untitled caption";
     }
@@ -222,14 +261,59 @@ public class DraftActivity extends AppCompatActivity {
   }
 
   private String pickText() {
-    return CaptionTemplates.apply(source(), task, series);
+    return CaptionTemplates.apply(source(), task, series, extras);
+  }
+
+  private void paintTokens() {
+    if (binding == null) {
+      return;
+    }
+    binding.tokenRow.removeAllViews();
+    if (varList.isEmpty()) {
+      binding.tokenScroll.setVisibility(View.GONE);
+      return;
+    }
+    binding.tokenScroll.setVisibility(View.VISIBLE);
+    for (CaptionVar var : varList) {
+      android.widget.TextView chip = new android.widget.TextView(this);
+      chip.setText(CaptionVars.token(var.name));
+      chip.setTextColor(getColor(R.color.gold));
+      chip.setTextSize(13f);
+      chip.setPadding(20, 12, 20, 12);
+      chip.setBackgroundResource(R.drawable.bg_chip_gold);
+      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+      params.setMarginEnd(8);
+      chip.setLayoutParams(params);
+      chip.setOnClickListener(v -> insertToken(var.name));
+      binding.tokenRow.addView(chip);
+    }
+  }
+
+  private void insertToken(String name) {
+    String token = CaptionVars.token(name);
+    if (token.isEmpty() || binding == null) {
+      return;
+    }
+    com.google.android.material.textfield.TextInputEditText input =
+      usingB ? binding.inputB : binding.inputA;
+    Editable editable = input.getText();
+    if (editable == null) {
+      input.setText(token);
+      paintPreview();
+      return;
+    }
+    int start = Math.max(input.getSelectionStart(), 0);
+    int end = Math.max(input.getSelectionEnd(), start);
+    editable.replace(start, end, token);
+    paintPreview();
   }
 
   private void paintPreview() {
     if (binding == null) {
       return;
     }
-    String filled = CaptionTemplates.apply(source(), task, series);
+    String filled = CaptionTemplates.apply(source(), task, series, extras);
     binding.previewFinal.setText(WhatsAppPreview.display(filled));
   }
 
