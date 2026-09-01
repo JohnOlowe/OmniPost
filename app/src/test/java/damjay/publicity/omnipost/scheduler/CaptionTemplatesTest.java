@@ -35,7 +35,7 @@ public class CaptionTemplatesTest {
     countdown.occurrenceKey = "COUNTDOWN|42|2026-09-09|2026-08-31";
     assertEquals(9, CaptionTemplates.countdownDays(countdown));
     assertEquals(
-      "9 DAYS TO GO / is 9 days away / 9 / this month",
+      "9 DAYS TO GO / is 9 days away / 9 / " + DateUtils.monthName(Calendar.getInstance()),
       CaptionTemplates.live(countdown, series));
 
     Task notice = new Task();
