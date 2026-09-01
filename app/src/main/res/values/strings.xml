@@ -100,8 +100,8 @@
   <string name="series_title">Name</string>
   <string name="series_caption">Caption template</string>
   <string name="series_vars">Variables (one per line: name=value)</string>
-  <string name="series_placeholders" formatted="false">Built-in: {Days} {away} {days} {month} {range} {date} {year} {weekday} {name} {start} {end}. Add your own in Variables, e.g. theme=No Cross, No Crown. then write {theme} in the template.</string>
-  <string name="pick_end" formatted="false">Pick last day (for {range})</string>
+  <string name="series_placeholders">Built-in tokens: Days, away, days, month, range, date, year, weekday, name, start, end. Add your own in Variables as name=value, then write that name in curly braces in the template.</string>
+  <string name="pick_end">Pick last day (fills the range token)</string>
   <string name="end_on">Last day · %1$s</string>
   <string name="kind_countdown">Daily until D-Day — one card, day count updates itself</string>
   <string name="kind_monthly">Last day of previous month, then the 10th and 20th — month name updates itself</string>

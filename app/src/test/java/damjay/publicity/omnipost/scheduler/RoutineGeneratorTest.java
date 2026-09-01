@@ -116,7 +116,7 @@ public class RoutineGeneratorTest {
     List<Task> tasks = RoutineGenerator.generate(
       now.getTimeInMillis(),
       utc,
-      Collections.emptyList(),
+      Collections.<Member>emptyList(),
       SeriesDefaults.builtins(),
       19);
     boolean found = false;
