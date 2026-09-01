@@ -56,20 +56,20 @@ public final class CaptionTemplates {
     if (task == null || task.type == null) {
       return "";
     }
-    Series resolved = implicit(task, series);
-    return apply(rawTemplate(task, resolved), task, resolved);
+    return apply(rawTemplate(task, series), task);
   }
 
+  /** Fill Days / away / days / month in the user's caption. Does not replace their words. */
   public static String apply(String source, Task task) {
-    return apply(source, task, null);
-  }
-
-  /** Fill placeholders in the user's caption. Does not replace their other words. */
-  public static String apply(String source, Task task, Series series) {
     if (source == null || source.isEmpty()) {
       return "";
     }
-    return fillAll(source, task, implicit(task, series));
+    int days = countdownDays(task);
+    String month = monthNameFromOccurrence(task == null ? null : task.occurrenceKey);
+    if (month == null || month.isEmpty()) {
+      month = DateUtils.monthName(Calendar.getInstance());
+    }
+    return fill(source, days, month);
   }
 
   public static String rawTemplate(Task task, Series series) {
@@ -77,112 +77,17 @@ public final class CaptionTemplates {
   }
 
   public static String fill(String template, int days, String monthName) {
-    return fillAll(template, days, monthName, null, null);
-  }
-
-  static String fillAll(String source, Task task, Series series) {
-    int days = countdownDays(task);
-    String month = monthNameFromOccurrence(task == null ? null : task.occurrenceKey);
-    if ((month == null || month.isEmpty()) && series != null && series.eventAtMillis > 0L) {
-      Calendar event = Calendar.getInstance();
-      event.setTimeInMillis(series.eventAtMillis);
-      month = DateUtils.monthName(event);
-    }
-    if (month == null || month.isEmpty()) {
-      month = DateUtils.monthName(Calendar.getInstance());
-    }
-    return fillAll(source, days, month, task, series);
-  }
-
-  static String fillAll(String template, int days, String monthName, Task task, Series series) {
     if (template == null || template.isEmpty()) {
       return "";
     }
     String month = monthName == null || monthName.isEmpty() ? "this month" : monthName;
-    String out = applyVars(template, series == null ? null : series.vars);
-    if (series != null && series.title != null && !series.title.isEmpty()) {
-      out = out.replace("{name}", series.title);
-    } else if (task != null && task.title != null && !task.title.isEmpty()
-        && TaskTypes.BIRTHDAY.equals(task.type)) {
-      out = out.replace("{name}", task.title.replace("'s Birthday", "").trim());
-    }
+    String out = template;
     out = out.replace("{Days}", daysHeadline(days));
     out = out.replace("{away}", daysAway(days));
     out = out.replace("{days}", String.valueOf(Math.max(days, 0)));
     out = out.replace("{month}", month);
     out = out.replace("{Month}", month);
-    Calendar start = startOf(series, task);
-    Calendar end = endOf(series, start);
-    if (out.contains("{range}")) {
-      out = out.replace("{range}", DateUtils.prettyRange(start, end));
-    }
-    if (out.contains("{date}")) {
-      out = out.replace("{date}", start == null ? "" : DateUtils.prettyDate(start));
-    }
-    if (out.contains("{start}")) {
-      out = out.replace("{start}", start == null ? "" : DateUtils.prettyDate(start));
-    }
-    if (out.contains("{end}")) {
-      Calendar last = end == null ? start : end;
-      out = out.replace("{end}", last == null ? "" : DateUtils.prettyDate(last));
-    }
-    if (out.contains("{year}")) {
-      Calendar yearSrc = start == null ? Calendar.getInstance() : start;
-      out = out.replace("{year}", String.valueOf(yearSrc.get(Calendar.YEAR)));
-    }
-    if (out.contains("{weekday}")) {
-      Calendar day = postDay(task, start);
-      String weekday = day == null
-        ? ""
-        : day.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.US);
-      out = out.replace("{weekday}", weekday == null ? "" : weekday);
-    }
     return out;
-  }
-
-  static String applyVars(String template, String vars) {
-    if (template == null || template.isEmpty() || vars == null || vars.isEmpty()) {
-      return template == null ? "" : template;
-    }
-    String out = template;
-    String[] lines = vars.split("\n");
-    for (String line : lines) {
-      if (line == null) {
-        continue;
-      }
-      int eq = line.indexOf('=');
-      if (eq <= 0) {
-        continue;
-      }
-      String key = line.substring(0, eq).trim();
-      String value = line.substring(eq + 1).trim();
-      if (key.isEmpty() || !isTokenName(key)) {
-        continue;
-      }
-      out = out.replace("{" + key + "}", value);
-    }
-    return out;
-  }
-
-  static boolean isTokenName(String key) {
-    if (key == null || key.isEmpty()) {
-      return false;
-    }
-    char first = key.charAt(0);
-    if (!((first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z'))) {
-      return false;
-    }
-    for (int i = 1; i < key.length(); i++) {
-      char c = key.charAt(i);
-      boolean ok = (c >= 'A' && c <= 'Z')
-        || (c >= 'a' && c <= 'z')
-        || (c >= '0' && c <= '9')
-        || c == '_';
-      if (!ok) {
-        return false;
-      }
-    }
-    return true;
   }
 
   public static String daysHeadline(int days) {
@@ -292,48 +197,5 @@ public final class CaptionTemplates {
       return SeriesDefaults.noticeCaption();
     }
     return "";
-  }
-
-  static Series implicit(Task task, Series series) {
-    if (series != null) {
-      return series;
-    }
-    if (task == null || task.type == null) {
-      return null;
-    }
-    if (TaskTypes.COUNTDOWN.equals(task.type)) {
-      return SeriesDefaults.beyondLimit();
-    }
-    if (TaskTypes.BIRTHDAY_NOTICE.equals(task.type)) {
-      return SeriesDefaults.birthdayNotice();
-    }
-    return null;
-  }
-
-  private static Calendar startOf(Series series, Task task) {
-    if (series != null && series.eventAtMillis > 0L) {
-      Calendar c = Calendar.getInstance();
-      c.setTimeInMillis(series.eventAtMillis);
-      return DateUtils.startOfDay(c);
-    }
-    return postDay(task, null);
-  }
-
-  private static Calendar endOf(Series series, Calendar start) {
-    if (series != null && series.endAtMillis > 0L) {
-      Calendar c = Calendar.getInstance();
-      c.setTimeInMillis(series.endAtMillis);
-      return DateUtils.startOfDay(c);
-    }
-    return start;
-  }
-
-  private static Calendar postDay(Task task, Calendar fallback) {
-    if (task != null && task.postAtMillis > 0L) {
-      Calendar c = Calendar.getInstance();
-      c.setTimeInMillis(task.postAtMillis);
-      return DateUtils.startOfDay(c);
-    }
-    return fallback;
   }
 }
