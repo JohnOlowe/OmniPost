@@ -203,16 +203,7 @@ public class TasksFragment extends Fragment {
     Context app = requireContext().getApplicationContext();
     AppExecutors.disk().execute(() -> {
       AppDatabase db = AppDatabase.get(app);
-      Series series = null;
-      if (task.seriesId > 0L) {
-        series = db.seriesDao().getById(task.seriesId);
-      }
-      if (series == null && TaskTypes.COUNTDOWN.equals(task.type)) {
-        series = db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN);
-      }
-      if (series == null && TaskTypes.BIRTHDAY_NOTICE.equals(task.type)) {
-        series = db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE);
-      }
+      Series series = CaptionTemplates.seriesOf(db, task);
       Series found = series;
       AppExecutors.main(() -> {
         if (!isAdded() || found == null) {

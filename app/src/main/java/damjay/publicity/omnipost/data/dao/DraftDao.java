@@ -25,6 +25,15 @@ public interface DraftDao {
   @Query("SELECT * FROM drafts WHERE taskId = :taskId LIMIT 1")
   Draft findByTaskId(long taskId);
 
+  @Query("SELECT * FROM drafts ORDER BY updatedAt DESC")
+  List<Draft> getAllSync();
+
+  @Query(
+    "SELECT drafts.* FROM drafts INNER JOIN tasks ON drafts.taskId = tasks.id "
+      + "WHERE tasks.seriesId = :seriesId AND drafts.taskId != :notTaskId "
+      + "ORDER BY drafts.updatedAt DESC LIMIT 1")
+  Draft findLatestForSeries(long seriesId, long notTaskId);
+
   @Query("DELETE FROM drafts WHERE id = :id")
   int deleteById(long id);
 }

@@ -2,6 +2,7 @@ package damjay.publicity.omnipost.scheduler;
 
 import android.content.Context;
 import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
@@ -9,7 +10,9 @@ import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 public final class ScheduleCoordinator {
@@ -28,6 +31,8 @@ public final class ScheduleCoordinator {
       }
     }
     db.taskDao().deleteStaleTests(now - 24L * 60L * 60L * 1000L);
+    Map<Long, Long> seriesSavedAt = captionSavedBySeries(db);
+    captureLiveCaptions(db);
     dropStaleCountdowns(app, db, now);
     ensureSeriesDefaults(app, db);
 
@@ -36,6 +41,7 @@ public final class ScheduleCoordinator {
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app));
     for (Task candidate : generated) {
+      inheritCaptionSaved(db, candidate, seriesSavedAt);
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
         db.taskDao().insert(candidate);
@@ -47,6 +53,9 @@ public final class ScheduleCoordinator {
       existing.title = candidate.title;
       existing.description = candidate.description;
       existing.seriesId = candidate.seriesId;
+      if (existing.captionSavedAt <= 0L && candidate.captionSavedAt > 0L) {
+        existing.captionSavedAt = candidate.captionSavedAt;
+      }
       if (!existing.timesLocked) {
         existing.draftAtMillis = candidate.draftAtMillis;
         existing.postAtMillis = candidate.postAtMillis;
@@ -126,10 +135,121 @@ public final class ScheduleCoordinator {
       Calendar post = Calendar.getInstance();
       post.setTimeInMillis(task.postAtMillis);
       if (DateUtils.dayKey(post).compareTo(todayKey) < 0) {
+        rememberTaskDraft(db, task);
         AlarmScheduler.cancelTask(app, task.id);
         NotificationHelper.cancelForTask(app, task.id);
         db.taskDao().deleteById(task.id);
       }
+    }
+  }
+
+  /**
+   * The caption written on one countdown/notice/daily day is the caption for
+   * every day. Copy a custom draft onto the series while the series still has
+   * the canned seed (including drafts whose task was already dropped).
+   */
+  static void captureLiveCaptions(AppDatabase db) {
+    if (db == null) {
+      return;
+    }
+    List<Draft> drafts = db.draftDao().getAllSync();
+    if (drafts == null) {
+      return;
+    }
+    List<Series> seriesList = db.seriesDao().getAllSync();
+    for (Draft draft : drafts) {
+      if (draft == null || CaptionTemplates.isCanned(draft.variantA)) {
+        continue;
+      }
+      Task task = draft.taskId > 0L ? db.taskDao().getById(draft.taskId) : null;
+      Series series = CaptionTemplates.seriesOf(db, task);
+      if (series == null) {
+        series = CaptionTemplates.seriesMatchingTitle(seriesList, draft.title);
+      }
+      if (series == null || !CaptionTemplates.isCanned(series.caption)) {
+        continue;
+      }
+      series.caption = draft.variantA;
+      db.seriesDao().update(series);
+    }
+  }
+
+  private static void rememberTaskDraft(AppDatabase db, Task task) {
+    if (db == null || task == null) {
+      return;
+    }
+    Draft draft = db.draftDao().findByTaskId(task.id);
+    if (draft == null || CaptionTemplates.isCanned(draft.variantA)) {
+      return;
+    }
+    Series series = CaptionTemplates.seriesOf(db, task);
+    if (series == null || !CaptionTemplates.isCanned(series.caption)) {
+      return;
+    }
+    series.caption = draft.variantA;
+    db.seriesDao().update(series);
+  }
+
+  /** Keep the user's series template. Never write the canned seed back over it. */
+  public static void rememberSeriesCaption(Context context, Task task, String template) {
+    if (context == null || task == null || !CaptionTemplates.isLive(task.type)) {
+      return;
+    }
+    if (template == null || CaptionTemplates.isCanned(template)) {
+      return;
+    }
+    AppDatabase db = AppDatabase.get(context.getApplicationContext());
+    Series series = CaptionTemplates.seriesOf(db, task);
+    if (series == null) {
+      return;
+    }
+    if (!template.equals(series.caption)) {
+      series.caption = template;
+      db.seriesDao().update(series);
+    }
+    if (task.seriesId != series.id && series.id > 0L) {
+      task.seriesId = series.id;
+      db.taskDao().update(task);
+    }
+  }
+
+  private static Map<Long, Long> captionSavedBySeries(AppDatabase db) {
+    Map<Long, Long> out = new HashMap<>();
+    List<Task> active = db.taskDao().getActiveSync();
+    if (active == null) {
+      return out;
+    }
+    for (Task task : active) {
+      if (task == null || task.seriesId <= 0L || task.captionSavedAt <= 0L) {
+        continue;
+      }
+      Long prev = out.get(task.seriesId);
+      if (prev == null || task.captionSavedAt > prev) {
+        out.put(task.seriesId, task.captionSavedAt);
+      }
+    }
+    return out;
+  }
+
+  static void inheritCaptionSaved(AppDatabase db, Task task, Map<Long, Long> captured) {
+    if (task == null || task.seriesId <= 0L || task.captionSavedAt > 0L) {
+      return;
+    }
+    if (!TaskTypes.oneCard(task.type)) {
+      return;
+    }
+    long best = 0L;
+    if (captured != null && captured.get(task.seriesId) != null) {
+      best = captured.get(task.seriesId);
+    }
+    if (db != null) {
+      Long stored = db.taskDao().maxCaptionSavedAt(task.seriesId);
+      if (stored != null && stored > best) {
+        best = stored;
+      }
+    }
+    if (best > 0L) {
+      task.captionSavedAt = best;
     }
   }
 
@@ -271,6 +391,25 @@ public final class ScheduleCoordinator {
       task.snoozeUntilMillis = 0L;
     }
     db.taskDao().update(task);
+    if (task.seriesId > 0L && TaskTypes.oneCard(task.type)) {
+      List<Task> siblings = db.taskDao().getActiveForSeries(task.seriesId);
+      if (siblings != null) {
+        long warningLead = Prefs.warningLeadMs(app);
+        for (Task sibling : siblings) {
+          if (sibling == null || sibling.id == task.id) {
+            continue;
+          }
+          sibling.captionSavedAt = now;
+          if (!(TaskStatus.SNOOZED.equals(sibling.status) && sibling.snoozeUntilMillis > now)) {
+            sibling.status = TaskStatus.dueStatus(sibling, now, warningLead);
+            sibling.snoozeUntilMillis = 0L;
+          }
+          db.taskDao().update(sibling);
+          AlarmScheduler.cancelTask(app, sibling.id);
+          AlarmScheduler.scheduleTask(app, sibling);
+        }
+      }
+    }
     NotificationHelper.hush(app, taskId);
     AlarmScheduler.cancelTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);

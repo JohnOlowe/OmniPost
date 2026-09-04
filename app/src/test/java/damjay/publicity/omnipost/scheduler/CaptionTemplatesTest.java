@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Task;
@@ -143,5 +144,73 @@ public class CaptionTemplatesTest {
     assertTrue(CaptionTemplates.countdownCaption(1).contains("is 1 day away"));
     assertEquals("Beyond Limit '26 · D-Day", CaptionTemplates.countdownTitle(0));
     assertEquals("Beyond Limit '26 · 1 day to go", CaptionTemplates.countdownTitle(1));
+  }
+
+  @Test
+  public void lingerDraftKeepsCustomAndUpgradesCanned() {
+    String custom = "*IT'S {Days}!*\n\nSee you at church.";
+    assertTrue(CaptionTemplates.isCanned(SeriesDefaults.countdownCaption()));
+    assertTrue(CaptionTemplates.isCanned(SeriesDefaults.noticeCaption()));
+    assertTrue(CaptionTemplates.isCanned(""));
+    assertFalse(CaptionTemplates.isCanned(custom));
+    assertEquals(custom, CaptionTemplates.lingerDraft(SeriesDefaults.countdownCaption(), custom));
+    assertEquals(custom, CaptionTemplates.lingerDraft(custom, SeriesDefaults.countdownCaption()));
+    assertEquals(custom, CaptionTemplates.lingerDraft("", custom));
+  }
+
+  @Test
+  public void sharedTemplatePrefersSeriesThenSiblingAndFillsEachDay() {
+    String custom = "Join us — {Days} / {away}";
+    damjay.publicity.omnipost.data.entity.Series series =
+      new damjay.publicity.omnipost.data.entity.Series();
+    series.caption = custom;
+    Task countdown = new Task();
+    countdown.type = TaskTypes.COUNTDOWN;
+    countdown.occurrenceKey = "COUNTDOWN|2026-09-09|2026-09-04";
+    assertEquals(custom, CaptionTemplates.sharedTemplate(custom, "", countdown, series));
+
+    series.caption = SeriesDefaults.countdownCaption();
+    assertEquals(
+      custom,
+      CaptionTemplates.sharedTemplate(series.caption, custom, countdown, series));
+    assertEquals(
+      SeriesDefaults.countdownCaption(),
+      CaptionTemplates.sharedTemplate(series.caption, "", countdown, series));
+
+    Task today = new Task();
+    today.type = TaskTypes.COUNTDOWN;
+    today.occurrenceKey = "COUNTDOWN|2026-09-09|2026-09-04";
+    Task tomorrow = new Task();
+    tomorrow.type = TaskTypes.COUNTDOWN;
+    tomorrow.occurrenceKey = "COUNTDOWN|2026-09-09|2026-09-05";
+    series.caption = custom;
+    String filledToday = CaptionTemplates.apply(custom, today, series);
+    String filledTomorrow = CaptionTemplates.apply(custom, tomorrow, series);
+    assertEquals("Join us — 5 DAYS TO GO / is 5 days away", filledToday);
+    assertEquals("Join us — 4 DAYS TO GO / is 4 days away", filledTomorrow);
+  }
+
+  @Test
+  public void seriesMatchingTitleFindsCountdownCard() {
+    damjay.publicity.omnipost.data.entity.Series beyond = SeriesDefaults.beyondLimit();
+    damjay.publicity.omnipost.data.entity.Series other =
+      new damjay.publicity.omnipost.data.entity.Series();
+    other.title = "Youth camp";
+    assertEquals(
+      beyond,
+      CaptionTemplates.seriesMatchingTitle(
+        java.util.Arrays.asList(other, beyond),
+        "Beyond Limit '26 · 5 days to go"));
+  }
+
+  @Test
+  public void inheritCaptionSavedCopiesOntoLaterDays() {
+    Task tomorrow = new Task();
+    tomorrow.type = TaskTypes.COUNTDOWN;
+    tomorrow.seriesId = 5L;
+    java.util.Map<Long, Long> captured = new java.util.HashMap<>();
+    captured.put(5L, 99L);
+    ScheduleCoordinator.inheritCaptionSaved(null, tomorrow, captured);
+    assertEquals(99L, tomorrow.captionSavedAt);
   }
 }

@@ -7,6 +7,7 @@ import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -88,6 +89,89 @@ public final class CaptionTemplates {
 
   public static String rawTemplate(Task task, Series series) {
     return templateFor(task, series);
+  }
+
+  /** Built-in seed / blank templates — not a caption the user wrote. */
+  public static boolean isCanned(String text) {
+    if (text == null) {
+      return true;
+    }
+    String trimmed = text.trim();
+    if (trimmed.isEmpty()) {
+      return true;
+    }
+    return trimmed.equals(SeriesDefaults.countdownCaption().trim())
+        || trimmed.equals(SeriesDefaults.noticeCaption().trim())
+        || trimmed.equals(SeriesDefaults.blankCountdownCaption().trim())
+        || trimmed.equals(SeriesDefaults.blankNoticeCaption().trim())
+        || trimmed.equals(SeriesDefaults.blankWeeklyCaption().trim())
+        || trimmed.equals(SeriesDefaults.blankDailyCaption().trim());
+  }
+
+  /**
+   * Keep a caption the user wrote. Only replace the box when it is still the
+   * canned seed and the series (or a sibling day) already has their template.
+   */
+  public static String lingerDraft(String existing, String shared) {
+    if (!isCanned(shared) && isCanned(existing)) {
+      return shared;
+    }
+    if (existing != null && !existing.trim().isEmpty()) {
+      return existing;
+    }
+    return shared == null ? "" : shared;
+  }
+
+  /**
+   * One template for every day of a live series. Prefer the series caption,
+   * then a sibling day's draft, then the built-in seed.
+   */
+  public static String sharedTemplate(
+    String seriesCaption, String siblingCaption, Task task, Series series) {
+    if (!isCanned(seriesCaption)) {
+      return seriesCaption;
+    }
+    if (!isCanned(siblingCaption)) {
+      return siblingCaption;
+    }
+    String raw = rawTemplate(task, series);
+    return raw == null ? "" : raw;
+  }
+
+  public static Series seriesOf(AppDatabase db, Task task) {
+    if (db == null || task == null) {
+      return null;
+    }
+    if (task.seriesId > 0L) {
+      Series series = db.seriesDao().getById(task.seriesId);
+      if (series != null) {
+        return series;
+      }
+    }
+    if (TaskTypes.COUNTDOWN.equals(task.type)) {
+      return db.seriesDao().findBySeed(SeriesDefaults.SEED_COUNTDOWN);
+    }
+    if (TaskTypes.BIRTHDAY_NOTICE.equals(task.type)) {
+      return db.seriesDao().findBySeed(SeriesDefaults.SEED_NOTICE);
+    }
+    return null;
+  }
+
+  public static Series seriesMatchingTitle(List<Series> seriesList, String title) {
+    if (seriesList == null || title == null || title.isEmpty()) {
+      return null;
+    }
+    Series best = null;
+    for (Series series : seriesList) {
+      if (series == null || series.title == null || series.title.isEmpty()) {
+        continue;
+      }
+      if (title.startsWith(series.title)
+          && (best == null || series.title.length() > best.title.length())) {
+        best = series;
+      }
+    }
+    return best;
   }
 
   public static String fill(String template, int days, String monthName) {
