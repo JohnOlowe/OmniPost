@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Task;
+import damjay.publicity.omnipost.notify.AlarmLaunch;
 import damjay.publicity.omnipost.notify.AlarmPulse;
 import damjay.publicity.omnipost.notify.AlertPlan;
 import damjay.publicity.omnipost.notify.NotificationHelper;
@@ -22,7 +23,6 @@ import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
-import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
@@ -94,6 +94,9 @@ public class NagForegroundService extends Service {
     final boolean pulseOnly = intent != null && intent.getBooleanExtra(ExtraKeys.PULSE, false);
     final int phase = intent == null ? 0 : intent.getIntExtra(ExtraKeys.PHASE, 0);
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
+    if (!pulseOnly && intent != null) {
+      AlarmLaunch.fromIntent(this, intent);
+    }
     if (pulseOnly) {
       keepAlive = true;
       if (!AlarmPulse.isQuiet()) {
@@ -204,22 +207,20 @@ public class NagForegroundService extends Service {
       return;
     }
     acquireBurstLock();
-    AlarmPulse.begin(this);
     Task focus = null;
     for (Task task : nagging) {
-      NotificationHelper.showNagBurst(this, task);
       if (focus == null || task.id == focusedId) {
         focus = task;
       }
     }
-    if (focus != null && Prefs.fullScreen(this)) {
-      try {
-        Intent alarm = new Intent(this, AlarmActivity.class);
-        alarm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        alarm.putExtra(ExtraKeys.TASK_ID, focus.id);
-        startActivity(alarm);
-      } catch (Exception ignored) {
+    if (focus != null) {
+      AlarmLaunch.fire(this, focus, AlarmScheduler.PHASE_NAG);
+    }
+    for (Task task : nagging) {
+      if (focus != null && task.id == focus.id) {
+        continue;
       }
+      NotificationHelper.notifyNagOnly(this, task);
     }
   }
 

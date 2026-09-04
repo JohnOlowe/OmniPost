@@ -24,6 +24,8 @@
     <item name="android:windowFullscreen">true</item>
     <item name="android:windowShowWallpaper">false</item>
     <item name="android:windowBackground">@color/alarm_start</item>
+    <item name="android:windowAnimationStyle">@null</item>
+    <item name="android:windowDisablePreview">true</item>
   </style>
 
   <style name="OmniPost.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">

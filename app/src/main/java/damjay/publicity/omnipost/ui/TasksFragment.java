@@ -68,7 +68,7 @@ public class TasksFragment extends Fragment {
 
       @Override
       public void onSnooze(Task task) {
-        SnoozeChooser.show(requireContext(), until -> applySnooze(task.id, until));
+        SnoozeChooser.show(requireContext(), task.postAtMillis, until -> applySnooze(task.id, until));
       }
 
       @Override

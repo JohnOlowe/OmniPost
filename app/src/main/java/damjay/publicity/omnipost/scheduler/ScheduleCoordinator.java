@@ -207,6 +207,9 @@ public final class ScheduleCoordinator {
     }
     if (TaskStatus.SNOOZED.equals(task.status)
       && task.snoozeUntilMillis > System.currentTimeMillis()) {
+      if (phase == AlarmScheduler.PHASE_MINUTE) {
+        NotificationHelper.showMinute(app, task);
+      }
       return;
     }
     long now = System.currentTimeMillis();

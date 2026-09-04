@@ -15,7 +15,6 @@ import damjay.publicity.omnipost.receiver.MarkPostedReceiver;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
-import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.ui.DraftActivity;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -101,52 +100,53 @@ public final class NotificationHelper {
   }
 
   public static void showDraft(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_DRAFT,
-      ctx.getString(R.string.write_caption_now),
-      ctx.getString(R.string.draft_notif_body),
-      false);
+    AlarmLaunch.fire(ctx, task, AlarmScheduler.PHASE_DRAFT);
   }
 
   public static void showWarning(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_WARNING,
-      ctx.getString(R.string.caption_ready_phase, Prefs.warningMinutes(ctx)),
-      ctx.getString(R.string.warning_notif_text),
-      false);
+    AlarmLaunch.fire(ctx, task, AlarmScheduler.PHASE_WARNING);
   }
 
   public static void showMinute(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_MINUTE,
-      ctx.getString(R.string.one_minute),
-      ctx.getString(R.string.minute_notif_text),
-      true);
+    AlarmLaunch.fire(ctx, task, AlarmScheduler.PHASE_MINUTE);
   }
 
   public static void showNagBurst(Context ctx, Task task) {
-    showCue(ctx, task, AlarmScheduler.PHASE_NAG,
-      ctx.getString(R.string.post_now),
-      ctx.getString(R.string.nag_notif_text),
-      true);
+    AlarmLaunch.fire(ctx, task, AlarmScheduler.PHASE_NAG);
   }
 
-  private static void showCue(
-    Context ctx, Task task, int phase, String title, String body, boolean loud) {
+  public static void notifyNagOnly(Context ctx, Task task) {
+    if (task == null) {
+      return;
+    }
+    notifyCue(ctx, task.id, AlarmScheduler.PHASE_NAG, task.title, task.postAtMillis, true);
+  }
+
+  static void notifyCue(
+    Context ctx, long taskId, int phase, String taskTitle, long postAt, boolean loud) {
     ensureChannels(ctx);
-    PendingIntent open = fullScreen(ctx, task.id, phase);
+    String headline = cueHeadline(ctx, phase);
+    String body = cueBody(ctx, phase);
+    String name = taskTitle == null || taskTitle.isEmpty()
+      ? ctx.getString(R.string.app_name)
+      : taskTitle;
+    String when = postAt > 0L ? DateUtils.formatStamp(postAt) : "";
+    PendingIntent open = fullScreen(ctx, taskId, phase, name, postAt);
     NotificationCompat.Builder builder = new NotificationCompat.Builder(
         ctx, loud ? CHANNEL_ALARM : CHANNEL_DRAFT)
       .setSmallIcon(R.drawable.ic_stat_omnipost)
-      .setContentTitle(title)
-      .setContentText(task.title + " · " + DateUtils.formatStamp(task.postAtMillis))
+      .setContentTitle(headline)
+      .setContentText(when.isEmpty() ? name : name + " · " + when)
       .setStyle(new NotificationCompat.BigTextStyle()
-        .bigText(task.title + "\n" + body + "\n" + DateUtils.formatStamp(task.postAtMillis)))
+        .bigText(name + "\n" + body + (when.isEmpty() ? "" : "\n" + when)))
       .setPriority(NotificationCompat.PRIORITY_HIGH)
       .setCategory(loud ? NotificationCompat.CATEGORY_ALARM : NotificationCompat.CATEGORY_REMINDER)
       .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
       .setOngoing(loud)
       .setAutoCancel(!loud)
       .setContentIntent(open)
-      .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, task.id))
-      .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, task.id))
+      .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, taskId))
+      .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, taskId))
       .setColor(loud ? 0xFFFF4D4D : 0xFFE8C36A)
       .setSilent(true)
       .setSound(null)
@@ -157,15 +157,33 @@ public final class NotificationHelper {
         builder.setFullScreenIntent(open, true);
       }
     }
-    notify(ctx, alarmId(task.id), builder.build());
-    if (AlarmPulse.isQuiet()) {
-      return;
+    notify(ctx, alarmId(taskId), builder.build());
+  }
+
+  private static String cueHeadline(Context ctx, int phase) {
+    if (phase == AlarmScheduler.PHASE_DRAFT) {
+      return ctx.getString(R.string.write_caption_now);
     }
-    if (loud) {
-      NagForegroundService.startPulse(ctx);
-    } else {
-      AlarmPulse.beginSoft(ctx);
+    if (phase == AlarmScheduler.PHASE_WARNING) {
+      return ctx.getString(R.string.caption_ready_phase, Prefs.warningMinutes(ctx));
     }
+    if (phase == AlarmScheduler.PHASE_MINUTE) {
+      return ctx.getString(R.string.one_minute);
+    }
+    return ctx.getString(R.string.post_now);
+  }
+
+  private static String cueBody(Context ctx, int phase) {
+    if (phase == AlarmScheduler.PHASE_DRAFT) {
+      return ctx.getString(R.string.draft_notif_body);
+    }
+    if (phase == AlarmScheduler.PHASE_WARNING) {
+      return ctx.getString(R.string.warning_notif_text);
+    }
+    if (phase == AlarmScheduler.PHASE_MINUTE) {
+      return ctx.getString(R.string.minute_notif_text);
+    }
+    return ctx.getString(R.string.nag_notif_text);
   }
 
   public static void hush(Context ctx, long taskId) {

@@ -17,30 +17,46 @@ public final class SnoozeChooser {
     void onChosen(int hour, int minute);
   }
 
+  public static final long THIRTY_MIN_MS = 30L * 60_000L;
+  public static final long ONE_HOUR_MS = 60L * 60_000L;
+  public static final long THREE_HOUR_MS = 3L * 60L * 60_000L;
+
   private SnoozeChooser() {}
 
   public static void show(Context context, Callback callback) {
+    show(context, System.currentTimeMillis(), callback);
+  }
+
+  public static void show(Context context, long originMillis, Callback callback) {
+    long now = System.currentTimeMillis();
+    long thirty = DateUtils.nagFromOrigin(originMillis, THIRTY_MIN_MS, now);
+    long hour = DateUtils.nagFromOrigin(originMillis, ONE_HOUR_MS, now);
+    long three = DateUtils.nagFromOrigin(originMillis, THREE_HOUR_MS, now);
     CharSequence[] items = new CharSequence[] {
-      context.getString(R.string.snooze_1h),
-      context.getString(R.string.snooze_3h),
+      context.getString(R.string.nag_by, DateUtils.prettyClock(thirty)),
+      context.getString(R.string.nag_by, DateUtils.prettyClock(hour)),
+      context.getString(R.string.nag_by, DateUtils.prettyClock(three)),
       context.getString(R.string.snooze_tonight),
       context.getString(R.string.snooze_tomorrow),
       context.getString(R.string.snooze_pick)
     };
     new MaterialAlertDialogBuilder(context)
-      .setTitle(R.string.flyer_not_ready)
+      .setTitle(R.string.nag_later)
       .setItems(items, (d, which) -> {
         switch (which) {
           case 0:
-            callback.onChosen(DateUtils.hoursFromNow(1));
+            callback.onChosen(thirty);
             break;
           case 1:
-            callback.onChosen(DateUtils.hoursFromNow(3));
+            callback.onChosen(hour);
             break;
           case 2:
-            callback.onChosen(DateUtils.nextClock(20, 0));
+            callback.onChosen(three);
             break;
           case 3:
+            callback.onChosen(DateUtils.nextClock(20, 0));
+            break;
+          case 4:
             callback.onChosen(DateUtils.nextClock(7, 0));
             break;
           default:

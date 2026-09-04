@@ -102,6 +102,10 @@ public final class TaskStatus {
       return Long.MAX_VALUE;
     }
     if (SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
+      long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
+      if (minuteAt > now) {
+        return minuteAt;
+      }
       return task.snoozeUntilMillis;
     }
     long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;

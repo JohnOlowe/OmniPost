@@ -140,8 +140,22 @@ public final class AlarmPulse {
       player.setDataSource(app, uri);
       player.setLooping(true);
       player.setVolume(1f, 1f);
-      player.prepare();
-      player.start();
+      final MediaPlayer pending = player;
+      pending.setOnPreparedListener(mp -> HANDLER.post(() -> {
+        if (gen != generation || isQuiet() || player != mp) {
+          try {
+            mp.release();
+          } catch (Exception ignored) {
+          }
+          return;
+        }
+        try {
+          mp.start();
+        } catch (Exception e) {
+          stopPlayer();
+        }
+      }));
+      pending.prepareAsync();
     } catch (Exception e) {
       stopPlayer();
     }

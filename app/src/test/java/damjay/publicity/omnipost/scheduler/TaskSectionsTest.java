@@ -106,7 +106,23 @@ public class TaskSectionsTest {
     Task next = TaskStatus.nextToRing(
       Arrays.asList(birthday, fasting), now, ScheduleTimes.WARNING_LEAD_MS);
     assertEquals(fasting.id, next.id);
-    assertEquals(fasting.snoozeUntilMillis, TaskStatus.nextRingMillis(next, now, ScheduleTimes.WARNING_LEAD_MS));
+    assertEquals(
+      fasting.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS,
+      TaskStatus.nextRingMillis(next, now, ScheduleTimes.WARNING_LEAD_MS));
+  }
+
+  @Test
+  public void snoozeStillRingsOneMinuteBefore() {
+    long now = 1_700_000_000_000L;
+    Task task = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.SNOOZED, now - 3_600_000L);
+    task.snoozeUntilMillis = now + 30L * 60_000L;
+    assertEquals(
+      task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS,
+      TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
+    task.snoozeUntilMillis = now + 30_000L;
+    assertEquals(
+      task.snoozeUntilMillis,
+      TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
   }
 
   @Test

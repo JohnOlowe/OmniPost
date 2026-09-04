@@ -6,6 +6,8 @@ public final class ExtraKeys {
   public static final String PHASE = "extra_phase";
   public static final String PULSE = "extra_pulse";
   public static final String VAR_ID = "extra_var_id";
+  public static final String TASK_TITLE = "extra_task_title";
+  public static final String POST_AT = "extra_post_at";
 
   private ExtraKeys() {}
 }

@@ -130,6 +130,27 @@ public class DateUtilsTest {
   }
 
   @Test
+  public void nagFromOriginKeepsOriginalWhenStillAhead() {
+    long origin = 1_000_000L;
+    long now = origin + 5L * 60_000L;
+    assertEquals(
+      origin + 30L * 60_000L,
+      DateUtils.nagFromOrigin(origin, 30L * 60_000L, now));
+    assertEquals(
+      origin + 60L * 60_000L,
+      DateUtils.nagFromOrigin(origin, 60L * 60_000L, now));
+  }
+
+  @Test
+  public void nagFromOriginFallsForwardWhenOriginalOffsetPassed() {
+    long origin = 1_000_000L;
+    long now = origin + 40L * 60_000L;
+    assertEquals(
+      now + 30L * 60_000L,
+      DateUtils.nagFromOrigin(origin, 30L * 60_000L, now));
+  }
+
+  @Test
   public void dayBeforeIsPreviousEvening() {
     Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
     Calendar draft = DateUtils.dayBeforeAt(post, 20, 0);

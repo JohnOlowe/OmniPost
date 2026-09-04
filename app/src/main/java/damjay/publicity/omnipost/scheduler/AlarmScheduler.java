@@ -38,23 +38,27 @@ public final class AlarmScheduler {
     long now = System.currentTimeMillis();
     cancelTask(ctx, task.id);
     if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
-      setAlarmClock(ctx, task.id, PHASE_SNOOZE, task.snoozeUntilMillis);
+      long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
+      if (minuteAt > now) {
+        setAlarmClock(ctx, task, PHASE_MINUTE, minuteAt);
+      }
+      setAlarmClock(ctx, task, PHASE_SNOOZE, task.snoozeUntilMillis);
       return;
     }
     boolean saved = TaskStatus.captionIsSaved(task);
     if (!saved && task.draftAtMillis > now) {
-      setAlarmClock(ctx, task.id, PHASE_DRAFT, task.draftAtMillis);
+      setAlarmClock(ctx, task, PHASE_DRAFT, task.draftAtMillis);
     }
     long warningAt = task.postAtMillis - Prefs.warningLeadMs(ctx);
     if (!saved && warningAt > now) {
-      setAlarmClock(ctx, task.id, PHASE_WARNING, warningAt);
+      setAlarmClock(ctx, task, PHASE_WARNING, warningAt);
     }
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
     if (minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
-      setAlarmClock(ctx, task.id, PHASE_MINUTE, minuteAt);
+      setAlarmClock(ctx, task, PHASE_MINUTE, minuteAt);
     }
     if (task.postAtMillis > now) {
-      setAlarmClock(ctx, task.id, PHASE_NAG, task.postAtMillis);
+      setAlarmClock(ctx, task, PHASE_NAG, task.postAtMillis);
     }
   }
 
@@ -89,17 +93,27 @@ public final class AlarmScheduler {
 
   public static void cancelTask(Context ctx, long taskId) {
     AlarmManager manager = am(ctx);
-    manager.cancel(broadcast(ctx, taskId, PHASE_DRAFT));
-    manager.cancel(broadcast(ctx, taskId, PHASE_WARNING));
-    manager.cancel(broadcast(ctx, taskId, PHASE_MINUTE));
-    manager.cancel(broadcast(ctx, taskId, PHASE_NAG));
-    manager.cancel(broadcast(ctx, taskId, PHASE_PULSE));
-    manager.cancel(broadcast(ctx, taskId, PHASE_SNOOZE));
+    manager.cancel(broadcast(ctx, taskId, PHASE_DRAFT, "", 0L));
+    manager.cancel(broadcast(ctx, taskId, PHASE_WARNING, "", 0L));
+    manager.cancel(broadcast(ctx, taskId, PHASE_MINUTE, "", 0L));
+    manager.cancel(broadcast(ctx, taskId, PHASE_NAG, "", 0L));
+    manager.cancel(broadcast(ctx, taskId, PHASE_PULSE, "", 0L));
+    manager.cancel(broadcast(ctx, taskId, PHASE_SNOOZE, "", 0L));
+  }
+
+  private static void setAlarmClock(Context ctx, Task task, int phase, long when) {
+    String title = task.title == null ? "" : task.title;
+    setAlarmClock(ctx, task.id, phase, when, title, task.postAtMillis);
   }
 
   private static void setAlarmClock(Context ctx, long taskId, int phase, long when) {
+    setAlarmClock(ctx, taskId, phase, when, "", 0L);
+  }
+
+  private static void setAlarmClock(
+    Context ctx, long taskId, int phase, long when, String title, long postAt) {
     AlarmManager manager = am(ctx);
-    PendingIntent pi = broadcast(ctx, taskId, phase);
+    PendingIntent pi = broadcast(ctx, taskId, phase, title, postAt);
     PendingIntent show = PendingIntent.getActivity(
       ctx,
       1,
@@ -129,13 +143,16 @@ public final class AlarmScheduler {
     }
   }
 
-  private static PendingIntent broadcast(Context ctx, long taskId, int phase) {
+  private static PendingIntent broadcast(
+    Context ctx, long taskId, int phase, String title, long postAt) {
     Intent intent = new Intent(ctx, TaskAlarmReceiver.class);
     intent.setClass(ctx, TaskAlarmReceiver.class);
     intent.setAction("damjay.publicity.omnipost.ALARM." + phase + "." + taskId);
     intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
     intent.putExtra(ExtraKeys.TASK_ID, taskId);
     intent.putExtra(ExtraKeys.PHASE, phase);
+    intent.putExtra(ExtraKeys.TASK_TITLE, title == null ? "" : title);
+    intent.putExtra(ExtraKeys.POST_AT, postAt);
     return PendingIntent.getBroadcast(
       ctx,
       requestCode(taskId, phase),

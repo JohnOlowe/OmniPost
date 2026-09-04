@@ -5,18 +5,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 import android.util.Log;
+import damjay.publicity.omnipost.notify.AlarmLaunch;
 import damjay.publicity.omnipost.service.NagForegroundService;
 
 /**
- * AlarmManager entry point. Do not touch the database here — OEM killers freeze the
- * process the moment onReceive returns. Start the foreground service on this thread
- * so the process is promoted before we go back to sleep.
+ * AlarmManager entry point. Vibrate/ring and pop the alarm screen on this
+ * thread — do not wait for Room or the foreground service. Then start FGS so
+ * the process stays promoted after onReceive returns.
  */
 public class TaskAlarmReceiver extends BroadcastReceiver {
   @Override
   public void onReceive(Context context, Intent intent) {
     Context app = context.getApplicationContext();
     hold(app);
+    try {
+      AlarmLaunch.fromIntent(app, intent);
+    } catch (Exception e) {
+      Log.e("OmniPost", "alarm UI failed", e);
+    }
     try {
       NagForegroundService.deliverAlarm(app, intent);
     } catch (Exception e) {

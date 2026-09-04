@@ -169,6 +169,24 @@ public final class DateUtils {
     return new SimpleDateFormat("h:mm a", Locale.US).format(calendar.getTime());
   }
 
+  public static String prettyClock(long millis) {
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTimeInMillis(millis);
+    return prettyClock(calendar);
+  }
+
+  /**
+   * Snooze target: {@code offset} after the original post time, or that same
+   * offset from now if the original slot has already passed.
+   */
+  public static long nagFromOrigin(long originMillis, long offsetMs, long nowMillis) {
+    long at = originMillis + offsetMs;
+    if (at < nowMillis + 60_000L) {
+      return nowMillis + offsetMs;
+    }
+    return at;
+  }
+
   /** 9th September, 2026 */
   public static String prettyDate(Calendar calendar) {
     if (calendar == null) {

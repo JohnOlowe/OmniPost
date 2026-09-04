@@ -37,6 +37,8 @@
   <string name="i_posted_it">I posted it</string>
   <string name="keep_nagging">Not yet — keep nagging</string>
   <string name="flyer_not_ready">Flyer not ready</string>
+  <string name="nag_later">Nag later</string>
+  <string name="nag_by">Nag me by %1$s</string>
   <string name="snooze_1h">Nag me in 1 hour</string>
   <string name="snooze_3h">Nag me in 3 hours</string>
   <string name="snooze_tonight">Tonight at 8:00 PM</string>
