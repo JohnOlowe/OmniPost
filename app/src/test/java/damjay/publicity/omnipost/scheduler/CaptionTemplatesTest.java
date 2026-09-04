@@ -210,7 +210,7 @@ public class CaptionTemplatesTest {
     tomorrow.seriesId = 5L;
     java.util.Map<Long, Long> captured = new java.util.HashMap<>();
     captured.put(5L, 99L);
-    ScheduleCoordinator.inheritCaptionSaved(null, tomorrow, captured);
+    ScheduleCoordinator.inheritCaptionSaved(tomorrow, captured);
     assertEquals(99L, tomorrow.captionSavedAt);
   }
 }

@@ -41,7 +41,7 @@ public final class ScheduleCoordinator {
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app));
     for (Task candidate : generated) {
-      inheritCaptionSaved(db, candidate, seriesSavedAt);
+      inheritCaptionSaved(candidate, seriesSavedAt);
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
         db.taskDao().insert(candidate);
@@ -231,25 +231,16 @@ public final class ScheduleCoordinator {
     return out;
   }
 
-  static void inheritCaptionSaved(AppDatabase db, Task task, Map<Long, Long> captured) {
+  static void inheritCaptionSaved(Task task, Map<Long, Long> captured) {
     if (task == null || task.seriesId <= 0L || task.captionSavedAt > 0L) {
       return;
     }
-    if (!TaskTypes.oneCard(task.type)) {
+    if (!TaskTypes.oneCard(task.type) || captured == null) {
       return;
     }
-    long best = 0L;
-    if (captured != null && captured.get(task.seriesId) != null) {
-      best = captured.get(task.seriesId);
-    }
-    if (db != null) {
-      Long stored = db.taskDao().maxCaptionSavedAt(task.seriesId);
-      if (stored != null && stored > best) {
-        best = stored;
-      }
-    }
-    if (best > 0L) {
-      task.captionSavedAt = best;
+    Long saved = captured.get(task.seriesId);
+    if (saved != null && saved > 0L) {
+      task.captionSavedAt = saved;
     }
   }
 

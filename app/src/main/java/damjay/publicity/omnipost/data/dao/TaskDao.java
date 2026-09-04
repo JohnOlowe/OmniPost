@@ -44,9 +44,6 @@ public interface TaskDao {
   @Query("SELECT * FROM tasks WHERE seriesId = :seriesId AND status != 'POSTED'")
   List<Task> getActiveForSeries(long seriesId);
 
-  @Query("SELECT MAX(captionSavedAt) FROM tasks WHERE seriesId = :seriesId")
-  Long maxCaptionSavedAt(long seriesId);
-
   @Query("UPDATE tasks SET status = :status WHERE id = :id")
   int updateStatus(long id, String status);
 
