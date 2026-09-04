@@ -10,9 +10,7 @@ import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 
 public final class ScheduleCoordinator {
@@ -31,7 +29,6 @@ public final class ScheduleCoordinator {
       }
     }
     db.taskDao().deleteStaleTests(now - 24L * 60L * 60L * 1000L);
-    Map<Long, Long> seriesSavedAt = captionSavedBySeries(db);
     captureLiveCaptions(db);
     dropStaleCountdowns(app, db, now);
     ensureSeriesDefaults(app, db);
@@ -41,7 +38,6 @@ public final class ScheduleCoordinator {
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app));
     for (Task candidate : generated) {
-      inheritCaptionSaved(candidate, seriesSavedAt);
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
         db.taskDao().insert(candidate);
@@ -53,9 +49,6 @@ public final class ScheduleCoordinator {
       existing.title = candidate.title;
       existing.description = candidate.description;
       existing.seriesId = candidate.seriesId;
-      if (existing.captionSavedAt <= 0L && candidate.captionSavedAt > 0L) {
-        existing.captionSavedAt = candidate.captionSavedAt;
-      }
       if (!existing.timesLocked) {
         existing.draftAtMillis = candidate.draftAtMillis;
         existing.postAtMillis = candidate.postAtMillis;
@@ -143,39 +136,18 @@ public final class ScheduleCoordinator {
     }
   }
 
-  /**
-   * The caption written on one countdown/notice/daily day is the caption for
-   * every day. Copy a custom draft onto the series while the series still has
-   * the canned seed (including drafts whose task was already dropped).
-   */
-  static void captureLiveCaptions(AppDatabase db) {
-    if (db == null) {
+  private static void captureLiveCaptions(AppDatabase db) {
+    List<Task> active = db.taskDao().getActiveSync();
+    if (active == null) {
       return;
     }
-    List<Draft> drafts = db.draftDao().getAllSync();
-    if (drafts == null) {
-      return;
-    }
-    List<Series> seriesList = db.seriesDao().getAllSync();
-    for (Draft draft : drafts) {
-      if (draft == null || CaptionTemplates.isCanned(draft.variantA)) {
-        continue;
-      }
-      Task task = draft.taskId > 0L ? db.taskDao().getById(draft.taskId) : null;
-      Series series = CaptionTemplates.seriesOf(db, task);
-      if (series == null) {
-        series = CaptionTemplates.seriesMatchingTitle(seriesList, draft.title);
-      }
-      if (series == null || !CaptionTemplates.isCanned(series.caption)) {
-        continue;
-      }
-      series.caption = draft.variantA;
-      db.seriesDao().update(series);
+    for (Task task : active) {
+      rememberTaskDraft(db, task);
     }
   }
 
   private static void rememberTaskDraft(AppDatabase db, Task task) {
-    if (db == null || task == null) {
+    if (db == null || task == null || !CaptionTemplates.isLive(task.type)) {
       return;
     }
     Draft draft = db.draftDao().findByTaskId(task.id);
@@ -190,57 +162,22 @@ public final class ScheduleCoordinator {
     db.seriesDao().update(series);
   }
 
-  /** Keep the user's series template. Never write the canned seed back over it. */
-  public static void rememberSeriesCaption(Context context, Task task, String template) {
-    if (context == null || task == null || !CaptionTemplates.isLive(task.type)) {
+  private static void inheritCaptionSaved(AppDatabase db, Task candidate) {
+    if (db == null || candidate == null || candidate.seriesId <= 0L) {
       return;
     }
-    if (template == null || CaptionTemplates.isCanned(template)) {
+    if (!TaskTypes.oneCard(candidate.type) || candidate.captionSavedAt > 0L) {
       return;
     }
-    AppDatabase db = AppDatabase.get(context.getApplicationContext());
-    Series series = CaptionTemplates.seriesOf(db, task);
-    if (series == null) {
+    List<Task> siblings = db.taskDao().getActiveForSeries(candidate.seriesId);
+    if (siblings == null) {
       return;
     }
-    if (!template.equals(series.caption)) {
-      series.caption = template;
-      db.seriesDao().update(series);
-    }
-    if (task.seriesId != series.id && series.id > 0L) {
-      task.seriesId = series.id;
-      db.taskDao().update(task);
-    }
-  }
-
-  private static Map<Long, Long> captionSavedBySeries(AppDatabase db) {
-    Map<Long, Long> out = new HashMap<>();
-    List<Task> active = db.taskDao().getActiveSync();
-    if (active == null) {
-      return out;
-    }
-    for (Task task : active) {
-      if (task == null || task.seriesId <= 0L || task.captionSavedAt <= 0L) {
-        continue;
+    for (Task sibling : siblings) {
+      if (sibling != null && sibling.captionSavedAt > 0L) {
+        candidate.captionSavedAt = sibling.captionSavedAt;
+        return;
       }
-      Long prev = out.get(task.seriesId);
-      if (prev == null || task.captionSavedAt > prev) {
-        out.put(task.seriesId, task.captionSavedAt);
-      }
-    }
-    return out;
-  }
-
-  static void inheritCaptionSaved(Task task, Map<Long, Long> captured) {
-    if (task == null || task.seriesId <= 0L || task.captionSavedAt > 0L) {
-      return;
-    }
-    if (!TaskTypes.oneCard(task.type) || captured == null) {
-      return;
-    }
-    Long saved = captured.get(task.seriesId);
-    if (saved != null && saved > 0L) {
-      task.captionSavedAt = saved;
     }
   }
 
@@ -363,6 +300,29 @@ public final class ScheduleCoordinator {
 
   public static void resurrectNags(Context context) {
     tick(context);
+  }
+
+  /** Keep the user's series template. Never write the canned seed back over it. */
+  public static void rememberSeriesCaption(Context context, Task task, String template) {
+    if (context == null || task == null || !CaptionTemplates.isLive(task.type)) {
+      return;
+    }
+    if (template == null || CaptionTemplates.isCanned(template)) {
+      return;
+    }
+    AppDatabase db = AppDatabase.get(context.getApplicationContext());
+    Series series = CaptionTemplates.seriesOf(db, task);
+    if (series == null) {
+      return;
+    }
+    if (!template.equals(series.caption)) {
+      series.caption = template;
+      db.seriesDao().update(series);
+    }
+    if (task.seriesId != series.id && series.id > 0L) {
+      task.seriesId = series.id;
+      db.taskDao().update(task);
+    }
   }
 
   public static void markCaptionSaved(Context context, long taskId) {
