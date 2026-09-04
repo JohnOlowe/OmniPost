@@ -67,9 +67,6 @@ public final class AlarmLaunch {
   }
 
   static void launchActivity(Context app, long taskId, int phase, String title, long postAt) {
-    if (!Prefs.fullScreen(app) && !loud(phase)) {
-      /* Soft write-caption still pops when fullscreen is on; otherwise the notif is enough. */
-    }
     Intent alarm = new Intent(app, AlarmActivity.class);
     alarm.addFlags(
       Intent.FLAG_ACTIVITY_NEW_TASK

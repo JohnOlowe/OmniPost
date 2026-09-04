@@ -239,11 +239,15 @@ public final class NotificationHelper {
       PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
   }
 
-  private static PendingIntent fullScreen(Context ctx, long taskId, int phase) {
+  private static PendingIntent fullScreen(
+    Context ctx, long taskId, int phase, String title, long postAt) {
     Intent intent = new Intent(ctx, AlarmActivity.class);
     intent.putExtra(ExtraKeys.TASK_ID, taskId);
     intent.putExtra(ExtraKeys.PHASE, phase);
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    intent.putExtra(ExtraKeys.TASK_TITLE, title == null ? "" : title);
+    intent.putExtra(ExtraKeys.POST_AT, postAt);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
+      | Intent.FLAG_ACTIVITY_NO_ANIMATION);
     return PendingIntent.getActivity(
       ctx,
       (int) (5000 + taskId),
