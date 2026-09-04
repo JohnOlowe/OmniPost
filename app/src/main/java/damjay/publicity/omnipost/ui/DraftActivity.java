@@ -101,7 +101,6 @@ public class DraftActivity extends AppCompatActivity {
           found.taskId = taskId;
           found.title = linked == null ? "Caption" : linked.title;
           found.variantA = seedCaption(this, db, linked);
-          found.variantB = seedVariantB(db, linked);
           found.finalizedText = "";
           found.updatedAt = System.currentTimeMillis();
           found.id = db.draftDao().insert(found);
@@ -391,20 +390,12 @@ public class DraftActivity extends AppCompatActivity {
     Series series = CaptionTemplates.seriesOf(db, task);
     if (task != null && CaptionTemplates.isLive(task.type)) {
       String shared = CaptionTemplates.sharedTemplate(
-        series == null ? "" : series.caption, siblingCaption(db, task), task, series);
+        series == null ? "" : series.caption, "", task, series);
       if (shared != null && !shared.isEmpty()) {
         return shared;
       }
     }
     return CaptionTemplates.forTask(context, task, series);
-  }
-
-  private static String seedVariantB(AppDatabase db, Task task) {
-    Draft sibling = siblingDraft(db, task);
-    if (sibling == null || sibling.variantB == null) {
-      return "";
-    }
-    return sibling.variantB;
   }
 
   private static void applyLingeredTemplate(AppDatabase db, Draft found, Task task) {
@@ -413,23 +404,8 @@ public class DraftActivity extends AppCompatActivity {
     }
     Series series = CaptionTemplates.seriesOf(db, task);
     String shared = CaptionTemplates.sharedTemplate(
-      series == null ? "" : series.caption, siblingCaption(db, task), task, series);
+      series == null ? "" : series.caption, "", task, series);
     found.variantA = CaptionTemplates.lingerDraft(found.variantA, shared);
-    if ((found.variantB == null || found.variantB.isEmpty())) {
-      found.variantB = seedVariantB(db, task);
-    }
-  }
-
-  private static String siblingCaption(AppDatabase db, Task task) {
-    Draft sibling = siblingDraft(db, task);
-    return sibling == null || sibling.variantA == null ? "" : sibling.variantA;
-  }
-
-  private static Draft siblingDraft(AppDatabase db, Task task) {
-    if (db == null || task == null || task.seriesId <= 0L) {
-      return null;
-    }
-    return db.draftDao().findLatestForSeries(task.seriesId, task.id);
   }
 
   private static String text(com.google.android.material.textfield.TextInputEditText input) {
