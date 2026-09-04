@@ -33,4 +33,7 @@ public interface SeriesDao {
 
   @Query("DELETE FROM post_series WHERE id = :id")
   int deleteById(long id);
+
+  @Query("DELETE FROM post_series")
+  int deleteAll();
 }

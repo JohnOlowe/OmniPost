@@ -31,4 +31,7 @@ public interface CaptionVarDao {
 
   @Query("DELETE FROM caption_vars WHERE id = :id")
   int deleteById(long id);
+
+  @Query("DELETE FROM caption_vars")
+  int deleteAll();
 }

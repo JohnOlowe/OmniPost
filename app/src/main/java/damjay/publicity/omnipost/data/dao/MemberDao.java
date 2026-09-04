@@ -27,4 +27,7 @@ public interface MemberDao {
 
   @Query("DELETE FROM members WHERE id = :id")
   int deleteById(long id);
+
+  @Query("DELETE FROM members")
+  int deleteAll();
 }

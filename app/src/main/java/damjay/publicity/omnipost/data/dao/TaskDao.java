@@ -59,6 +59,12 @@ public interface TaskDao {
   @Query("DELETE FROM tasks WHERE id = :id")
   int deleteById(long id);
 
+  @Query("SELECT * FROM tasks WHERE type IN ('FLEXIBLE', 'ONE_OFF') AND status != 'POSTED'")
+  List<Task> getCustomSync();
+
+  @Query("DELETE FROM tasks")
+  int deleteAll();
+
   @Query("SELECT * FROM tasks WHERE type = 'TEST' AND postAtMillis < :staleBefore")
   List<Task> staleTests(long staleBefore);
 

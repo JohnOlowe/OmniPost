@@ -93,6 +93,16 @@
   <string name="setting_desk_hint">Keeps OmniPost alive and refreshes the next item every minute, even after you leave. Leave this on for this phone.</string>
   <string name="setting_fullscreen">Full-screen alarm</string>
   <string name="setting_fullscreen_hint">Pops over the lock screen when it is time to write or post.</string>
+  <string name="backup_title">Keep a copy</string>
+  <string name="backup_body">Uninstall wipes this phone. Export the desk to Drive or Downloads first — alarm settings, repeating posts, caption variables, birthdays, and drafts. Import that same file after you reinstall.</string>
+  <string name="backup_export">Export desk</string>
+  <string name="backup_import">Import desk</string>
+  <string name="backup_exported">Desk saved. Keep that file off this phone so uninstall cannot take it.</string>
+  <string name="backup_export_failed">Could not write the file. Try Drive or Downloads.</string>
+  <string name="backup_import_confirm">This replaces alarm settings, repeating posts, caption variables, birthdays, and drafts with the backup. Continue?</string>
+  <string name="backup_restored">Desk restored. Alarms re-armed.</string>
+  <string name="backup_import_failed">Could not read that file.</string>
+  <string name="backup_not_backup">That file is not an OmniPost backup.</string>
   <string name="delete_task_title">Remove this post?</string>
   <string name="delete_task_body">Alarms for “%1$s” will stop.</string>
   <string name="post_now">POST NOW</string>

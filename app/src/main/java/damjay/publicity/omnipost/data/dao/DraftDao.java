@@ -19,6 +19,12 @@ public interface DraftDao {
   @Query("SELECT * FROM drafts ORDER BY updatedAt DESC")
   LiveData<List<Draft>> observeAll();
 
+  @Query("SELECT * FROM drafts ORDER BY updatedAt DESC")
+  List<Draft> getAllSync();
+
+  @Query("DELETE FROM drafts")
+  int deleteAll();
+
   @Query("SELECT * FROM drafts WHERE id = :id LIMIT 1")
   Draft getById(long id);
 

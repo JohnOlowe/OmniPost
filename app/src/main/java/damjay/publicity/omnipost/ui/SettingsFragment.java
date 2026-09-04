@@ -2,12 +2,15 @@ package damjay.publicity.omnipost.ui;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -28,11 +31,19 @@ import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.scheduler.Weekdays;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
+import damjay.publicity.omnipost.util.DeskBackup;
 import damjay.publicity.omnipost.util.Prefs;
 import damjay.publicity.omnipost.util.SurvivalHelper;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class SettingsFragment extends Fragment {
   private FragmentSettingsBinding binding;
+  private final ActivityResultLauncher<String> exportLauncher =
+    registerForActivityResult(
+      new ActivityResultContracts.CreateDocument("application/json"), this::onExportPicked);
+  private final ActivityResultLauncher<String[]> importLauncher =
+    registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onImportPicked);
 
   @Nullable
   @Override
@@ -43,6 +54,9 @@ public class SettingsFragment extends Fragment {
     binding = FragmentSettingsBinding.inflate(inflater, container, false);
     binding.btnTest.setOnClickListener(v -> fireTest());
     binding.btnRearm.setOnClickListener(v -> rearm());
+    binding.btnExport.setOnClickListener(v -> exportLauncher.launch(DeskBackup.fileName()));
+    binding.btnImport.setOnClickListener(v ->
+      importLauncher.launch(new String[] {"application/json", "text/*", "*/*"}));
     binding.btnAddWeekly.setOnClickListener(v -> SeriesEditor.createWeekly(requireContext()));
     binding.btnAddDaily.setOnClickListener(v -> SeriesEditor.createDaily(requireContext()));
     binding.btnAddCountdown.setOnClickListener(v -> SeriesEditor.createCountdown(requireContext()));
@@ -371,6 +385,73 @@ public class SettingsFragment extends Fragment {
         Toast.makeText(requireContext(), R.string.test_armed, Toast.LENGTH_LONG).show();
       });
     });
+  }
+
+  private void onExportPicked(Uri uri) {
+    if (uri == null || !isAdded()) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      try {
+        DeskBackup.Snapshot snap = DeskBackup.collect(app);
+        try (OutputStream out = app.getContentResolver().openOutputStream(uri, "wt")) {
+          if (out == null) {
+            throw new java.io.IOException("backup");
+          }
+          DeskBackup.write(out, snap);
+        }
+        AppExecutors.main(() -> toast(R.string.backup_exported, Toast.LENGTH_LONG));
+      } catch (Exception e) {
+        AppExecutors.main(() -> toast(R.string.backup_export_failed, Toast.LENGTH_LONG));
+      }
+    });
+  }
+
+  private void onImportPicked(Uri uri) {
+    if (uri == null || !isAdded()) {
+      return;
+    }
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.backup_import)
+      .setMessage(R.string.backup_import_confirm)
+      .setPositiveButton(R.string.backup_import, (d, w) -> importFrom(uri))
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void importFrom(Uri uri) {
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      try {
+        DeskBackup.Snapshot snap;
+        try (InputStream in = app.getContentResolver().openInputStream(uri)) {
+          if (in == null) {
+            throw new java.io.IOException("backup");
+          }
+          snap = DeskBackup.read(in);
+        }
+        DeskBackup.apply(app, snap);
+        AppExecutors.main(() -> {
+          if (!isAdded()) {
+            return;
+          }
+          bindDesk();
+          toast(R.string.backup_restored, Toast.LENGTH_LONG);
+        });
+      } catch (IllegalArgumentException e) {
+        AppExecutors.main(() -> toast(R.string.backup_not_backup, Toast.LENGTH_LONG));
+      } catch (Exception e) {
+        AppExecutors.main(() -> toast(R.string.backup_import_failed, Toast.LENGTH_LONG));
+      }
+    });
+  }
+
+  private void toast(int message, int duration) {
+    if (!isAdded()) {
+      return;
+    }
+    Toast.makeText(requireContext(), message, duration).show();
   }
 
   @Override
