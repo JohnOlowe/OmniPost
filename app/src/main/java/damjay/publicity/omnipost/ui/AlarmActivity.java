@@ -111,10 +111,16 @@ public class AlarmActivity extends AppCompatActivity {
         Prefs.escalate(this) ? R.string.alarm_subtitle_escalate : R.string.alarm_subtitle);
     }
     String title = intent.getStringExtra(ExtraKeys.TASK_TITLE);
+    if (title == null || title.isEmpty()) {
+      title = AlarmScheduler.cachedTitle(taskId);
+    }
     if (title != null && !title.isEmpty()) {
       binding.title.setText(title);
     } else if (binding.title.getText() == null || binding.title.getText().length() == 0) {
       binding.title.setText(R.string.app_name);
+    }
+    if (postAt <= 0L) {
+      postAt = AlarmScheduler.cachedPostAt(taskId);
     }
     if (postAt > 0L) {
       binding.when.setText(

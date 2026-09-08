@@ -11,7 +11,7 @@ import damjay.publicity.omnipost.util.ExtraKeys;
 
 /**
  * Fire vibrate/ring and the alarm screen immediately. Do not wait for Room —
- * title and time come from the AlarmClock extras.
+ * title and time come from the in-memory cue (AlarmClock extras stay stable).
  */
 public final class AlarmLaunch {
   private static final String TAG = "OmniPost";
@@ -40,7 +40,13 @@ public final class AlarmLaunch {
       return;
     }
     String title = source.getStringExtra(ExtraKeys.TASK_TITLE);
+    if (title == null || title.isEmpty()) {
+      title = AlarmScheduler.cachedTitle(taskId);
+    }
     long postAt = source.getLongExtra(ExtraKeys.POST_AT, 0L);
+    if (postAt <= 0L) {
+      postAt = AlarmScheduler.cachedPostAt(taskId);
+    }
     fire(ctx, taskId, phase, title, postAt);
   }
 
@@ -56,6 +62,7 @@ public final class AlarmLaunch {
       return;
     }
     Context app = ctx.getApplicationContext();
+    AlarmScheduler.rememberCue(taskId, title, postAt);
     boolean loud = loud(phase);
     if (loud) {
       AlarmPulse.begin(app);
