@@ -131,7 +131,7 @@ public final class NotificationHelper {
       ? ctx.getString(R.string.app_name)
       : taskTitle;
     String when = postAt > 0L ? DateUtils.formatStamp(postAt) : "";
-    PendingIntent open = fullScreen(ctx, taskId, phase, name, postAt);
+    PendingIntent open = fullScreen(ctx, taskId, phase);
     NotificationCompat.Builder builder = new NotificationCompat.Builder(
         ctx, loud ? CHANNEL_ALARM : CHANNEL_DRAFT)
       .setSmallIcon(R.drawable.ic_stat_omnipost)
