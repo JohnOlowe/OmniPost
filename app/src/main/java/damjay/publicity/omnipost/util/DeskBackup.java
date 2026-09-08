@@ -13,6 +13,7 @@ import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.share.InstagramStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +41,9 @@ public final class DeskBackup {
     public boolean seedCaptions;
     public boolean deskOngoing = true;
     public boolean fullScreen = true;
+    public String igBold = InstagramStyle.FACE_SANS;
+    public String igItalic = InstagramStyle.FACE_SERIF;
+    public String igBoth = InstagramStyle.FACE_SANS;
     public final List<Series> series = new ArrayList<>();
     public final List<CaptionVar> vars = new ArrayList<>();
     public final List<Member> members = new ArrayList<>();
@@ -62,6 +66,9 @@ public final class DeskBackup {
     snap.seedCaptions = Prefs.seedCaptions(app);
     snap.deskOngoing = Prefs.deskOngoing(app);
     snap.fullScreen = Prefs.fullScreen(app);
+    snap.igBold = Prefs.instagramBoldFace(app);
+    snap.igItalic = Prefs.instagramItalicFace(app);
+    snap.igBoth = Prefs.instagramBothFace(app);
     addAll(snap.series, db.seriesDao().getAllSync());
     addAll(snap.vars, db.captionVarDao().getAllSync());
     addAll(snap.members, db.memberDao().getAllSync());
@@ -101,6 +108,9 @@ public final class DeskBackup {
     Prefs.setSeedCaptions(app, snap.seedCaptions);
     Prefs.setDeskOngoing(app, snap.deskOngoing);
     Prefs.setFullScreen(app, snap.fullScreen);
+    Prefs.setInstagramBoldFace(app, snap.igBold);
+    Prefs.setInstagramItalicFace(app, snap.igItalic);
+    Prefs.setInstagramBothFace(app, snap.igBoth);
     Prefs.setSeriesDefaultsInstalled(app, true);
     ScheduleCoordinator.bootstrap(app);
   }
@@ -141,6 +151,9 @@ public final class DeskBackup {
       prefs.put("seedCaptions", src.seedCaptions);
       prefs.put("deskOngoing", src.deskOngoing);
       prefs.put("fullScreen", src.fullScreen);
+      prefs.put("igBold", src.igBold == null ? InstagramStyle.FACE_SANS : src.igBold);
+      prefs.put("igItalic", src.igItalic == null ? InstagramStyle.FACE_SERIF : src.igItalic);
+      prefs.put("igBoth", src.igBoth == null ? InstagramStyle.FACE_SANS : src.igBoth);
       root.put("prefs", prefs);
       root.put("series", encodeSeries(src.series));
       root.put("vars", encodeVars(src.vars));
@@ -175,6 +188,12 @@ public final class DeskBackup {
         snap.seedCaptions = prefs.optBoolean("seedCaptions", false);
         snap.deskOngoing = prefs.optBoolean("deskOngoing", true);
         snap.fullScreen = prefs.optBoolean("fullScreen", true);
+        snap.igBold = InstagramStyle.Faces.normalize(
+          prefs.optString("igBold", InstagramStyle.FACE_SANS), InstagramStyle.FACE_SANS);
+        snap.igItalic = InstagramStyle.Faces.normalize(
+          prefs.optString("igItalic", InstagramStyle.FACE_SERIF), InstagramStyle.FACE_SERIF);
+        snap.igBoth = InstagramStyle.Faces.normalize(
+          prefs.optString("igBoth", InstagramStyle.FACE_SANS), InstagramStyle.FACE_SANS);
       }
       decodeSeries(arr(root, "series"), snap.series);
       decodeVars(arr(root, "vars"), snap.vars);

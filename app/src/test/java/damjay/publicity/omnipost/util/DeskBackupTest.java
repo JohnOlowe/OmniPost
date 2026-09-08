@@ -11,6 +11,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.share.InstagramStyle;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.junit.Test;
@@ -33,6 +34,9 @@ public class DeskBackupTest {
     snap.seedCaptions = true;
     snap.deskOngoing = false;
     snap.fullScreen = true;
+    snap.igBold = InstagramStyle.FACE_SERIF;
+    snap.igItalic = InstagramStyle.FACE_SANS;
+    snap.igBoth = InstagramStyle.FACE_SERIF;
 
     Series series = new Series();
     series.title = "Beyond Limit";
@@ -96,6 +100,9 @@ public class DeskBackupTest {
     assertTrue(got.seedCaptions);
     assertFalse(got.deskOngoing);
     assertTrue(got.fullScreen);
+    assertEquals(InstagramStyle.FACE_SERIF, got.igBold);
+    assertEquals(InstagramStyle.FACE_SANS, got.igItalic);
+    assertEquals(InstagramStyle.FACE_SERIF, got.igBoth);
     assertEquals(1, got.series.size());
     assertEquals("Beyond Limit", got.series.get(0).title);
     assertEquals(series.caption, got.series.get(0).caption);

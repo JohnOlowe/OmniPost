@@ -19,16 +19,50 @@ public class InstagramStyleTest {
   }
 
   @Test
+  public void serifBoldIsAvailableAsAnOption() {
+    InstagramStyle.Faces serif =
+      new InstagramStyle.Faces(
+        InstagramStyle.FACE_SERIF, InstagramStyle.FACE_SERIF, InstagramStyle.FACE_SERIF);
+    assertEquals(cp(0x1D400), InstagramStyle.toUnicode("*A*", serif));
+    assertEquals(cp(0x1D468), InstagramStyle.toUnicode("*_A_*", serif));
+  }
+
+  @Test
   public void underscoresBecomeItalicLetters() {
     assertEquals(cp(0x1D434), InstagramStyle.toUnicode("_A_"));
     assertEquals("\u210E", InstagramStyle.toUnicode("_h_"));
   }
 
   @Test
-  public void nestedMarkersBecomeBoldItalic() {
+  public void nestedMarkersBecomeSansSerifBoldItalic() {
+    assertEquals(cp(0x1D63C), InstagramStyle.toUnicode("*_A_*"));
+    assertEquals(cp(0x1D656), InstagramStyle.toUnicode("*_a_*"));
     String got = InstagramStyle.toUnicode("*_No Cross_*");
     assertEquals(InstagramStyle.style("No Cross", true, true), got);
     assertEquals(InstagramStyle.style("Both", true, true), InstagramStyle.toUnicode("_*Both*_"));
+  }
+
+  @Test
+  public void markupRoundTripKeepsStarsAndUnderscores() {
+    String[] samples = new String[] {
+      "*MEET OUR GUEST MINISTER!*",
+      "_See you there._",
+      "*_No Cross, No Crown._*",
+      "Hello *bold* and _italic_ mix."
+    };
+    for (String sample : samples) {
+      assertEquals(sample, InstagramStyle.toMarkup(InstagramStyle.toUnicode(sample)));
+    }
+  }
+
+  @Test
+  public void toMarkupReadsSerifOrSansLetters() {
+    InstagramStyle.Faces serif =
+      new InstagramStyle.Faces(
+        InstagramStyle.FACE_SERIF, InstagramStyle.FACE_SERIF, InstagramStyle.FACE_SERIF);
+    assertEquals("*Hello*", InstagramStyle.toMarkup(InstagramStyle.toUnicode("*Hello*", serif)));
+    assertEquals("*Hello*", InstagramStyle.toMarkup(InstagramStyle.toUnicode("*Hello*")));
+    assertEquals("_Hi_", InstagramStyle.toMarkup(InstagramStyle.toUnicode("_Hi_")));
   }
 
   @Test

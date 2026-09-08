@@ -28,6 +28,7 @@ import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -218,7 +219,8 @@ public class DraftActivity extends AppCompatActivity {
       Toast.makeText(this, R.string.need_caption, Toast.LENGTH_SHORT).show();
       return;
     }
-    WhatsAppRouter.copyToClipboard(this, InstagramStyle.toUnicode(caption));
+    WhatsAppRouter.copyToClipboard(
+      this, InstagramStyle.toUnicode(caption, Prefs.instagramFaces(this)));
     Toast.makeText(this, R.string.instagram_copied, Toast.LENGTH_LONG).show();
   }
 

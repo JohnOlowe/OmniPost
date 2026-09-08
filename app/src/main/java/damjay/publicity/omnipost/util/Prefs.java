@@ -3,6 +3,7 @@ package damjay.publicity.omnipost.util;
 import android.content.Context;
 import android.content.SharedPreferences;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
+import damjay.publicity.omnipost.share.InstagramStyle;
 
 public final class Prefs {
   public static final String MODE_ESCALATE = "escalate";
@@ -20,6 +21,9 @@ public final class Prefs {
   private static final String FULLSCREEN = "full_screen";
   private static final String LAST_NAG = "last_nag_burst";
   private static final String SERIES_SEEDED = "series_defaults_v1";
+  private static final String IG_BOLD = "ig_bold_face";
+  private static final String IG_ITALIC = "ig_italic_face";
+  private static final String IG_BOTH = "ig_both_face";
 
   private Prefs() {}
 
@@ -124,5 +128,36 @@ public final class Prefs {
 
   public static void setSeriesDefaultsInstalled(Context ctx, boolean on) {
     sp(ctx).edit().putBoolean(SERIES_SEEDED, on).apply();
+  }
+
+  public static InstagramStyle.Faces instagramFaces(Context ctx) {
+    return new InstagramStyle.Faces(instagramBoldFace(ctx), instagramItalicFace(ctx), instagramBothFace(ctx));
+  }
+
+  public static String instagramBoldFace(Context ctx) {
+    return InstagramStyle.Faces.normalize(
+      sp(ctx).getString(IG_BOLD, InstagramStyle.FACE_SANS), InstagramStyle.FACE_SANS);
+  }
+
+  public static void setInstagramBoldFace(Context ctx, String face) {
+    sp(ctx).edit().putString(IG_BOLD, InstagramStyle.Faces.normalize(face, InstagramStyle.FACE_SANS)).apply();
+  }
+
+  public static String instagramItalicFace(Context ctx) {
+    return InstagramStyle.Faces.normalize(
+      sp(ctx).getString(IG_ITALIC, InstagramStyle.FACE_SERIF), InstagramStyle.FACE_SERIF);
+  }
+
+  public static void setInstagramItalicFace(Context ctx, String face) {
+    sp(ctx).edit().putString(IG_ITALIC, InstagramStyle.Faces.normalize(face, InstagramStyle.FACE_SERIF)).apply();
+  }
+
+  public static String instagramBothFace(Context ctx) {
+    return InstagramStyle.Faces.normalize(
+      sp(ctx).getString(IG_BOTH, InstagramStyle.FACE_SANS), InstagramStyle.FACE_SANS);
+  }
+
+  public static void setInstagramBothFace(Context ctx, String face) {
+    sp(ctx).edit().putString(IG_BOTH, InstagramStyle.Faces.normalize(face, InstagramStyle.FACE_SANS)).apply();
   }
 }
