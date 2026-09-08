@@ -31,20 +31,20 @@ public class AlarmSchedulerTest {
 
   @Test
   public void armStampStaysPutWhileTheSameAlarmsAreDue() {
-    Task task = task(1_000L, 10_000L);
-    String a = AlarmScheduler.armStamp(task, 2_000L, 3_000L);
-    String b = AlarmScheduler.armStamp(task, 2_500L, 3_000L);
+    Task task = task(100_000L, 200_000L);
+    String a = AlarmScheduler.armStamp(task, 50_000L, 30_000L);
+    String b = AlarmScheduler.armStamp(task, 60_000L, 30_000L);
     assertEquals(a, b);
-    assertEquals("arm|w7000|m9000|n10000", a);
+    assertEquals("arm|d100000|w170000|m140000|n200000", a);
   }
 
   @Test
   public void armStampChangesWhenAPhaseIsCrossed() {
-    Task task = task(1_000L, 10_000L);
-    String beforeDraft = AlarmScheduler.armStamp(task, 500L, 3_000L);
-    String afterDraft = AlarmScheduler.armStamp(task, 1_500L, 3_000L);
+    Task task = task(100_000L, 200_000L);
+    String beforeDraft = AlarmScheduler.armStamp(task, 50_000L, 30_000L);
+    String afterDraft = AlarmScheduler.armStamp(task, 120_000L, 30_000L);
     assertNotEquals(beforeDraft, afterDraft);
-    assertEquals("arm|d1000|w7000|m9000|n10000", beforeDraft);
+    assertEquals("arm|w170000|m140000|n200000", afterDraft);
   }
 
   @Test
