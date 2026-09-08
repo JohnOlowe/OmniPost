@@ -70,6 +70,13 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.InstagramConvertActivity"
+      android:exported="false"
+      android:label="@string/instagram_title"
+      android:parentActivityName=".MainActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlarmActivity"
       android:excludeFromRecents="true"
       android:exported="false"

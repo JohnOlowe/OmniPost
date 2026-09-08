@@ -116,6 +116,9 @@ public class SettingsFragment extends Fragment {
     paintChoice(binding.rowVars, R.string.variables_title, getString(R.string.variables_tagline));
     binding.rowVars.getRoot().setOnClickListener(v ->
       startActivity(new Intent(requireContext(), VariablesActivity.class)));
+    paintChoice(binding.rowInstagram, R.string.instagram_title, getString(R.string.instagram_tagline));
+    binding.rowInstagram.getRoot().setOnClickListener(v ->
+      startActivity(new Intent(requireContext(), InstagramConvertActivity.class)));
   }
 
   private void paintSeries(java.util.List<Series> series) {

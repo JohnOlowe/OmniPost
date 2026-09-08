@@ -2,7 +2,8 @@ package damjay.publicity.omnipost.share;
 
 /**
  * WhatsApp markup → Unicode letters Instagram can paste.
- * *bold*, _italic_, *_both_* (either order).
+ * *bold* is sans-serif bold (the Instagram look). _italic_ stays serif italic.
+ * *_both_* (either order) stays bold-italic.
  */
 public final class InstagramStyle {
   private InstagramStyle() {}
@@ -80,7 +81,7 @@ public final class InstagramStyle {
         return new String(Character.toChars(0x1D468 + offset));
       }
       if (bold) {
-        return new String(Character.toChars(0x1D400 + offset));
+        return new String(Character.toChars(0x1D5D4 + offset));
       }
       if (italic) {
         return new String(Character.toChars(0x1D434 + offset));
@@ -92,7 +93,7 @@ public final class InstagramStyle {
         return new String(Character.toChars(0x1D482 + offset));
       }
       if (bold) {
-        return new String(Character.toChars(0x1D41A + offset));
+        return new String(Character.toChars(0x1D5EE + offset));
       }
       if (italic) {
         if (cp == 'h') {
@@ -102,7 +103,7 @@ public final class InstagramStyle {
       }
     }
     if (bold && cp >= '0' && cp <= '9') {
-      return new String(Character.toChars(0x1D7CE + (cp - '0')));
+      return new String(Character.toChars(0x1D7EC + (cp - '0')));
     }
     return new String(Character.toChars(cp));
   }

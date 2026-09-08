@@ -60,6 +60,10 @@
       android:id="@+id/row_vars"
       layout="@layout/item_setting_row"/>
 
+    <include
+      android:id="@+id/row_instagram"
+      layout="@layout/item_setting_row"/>
+
     <TextView
       android:layout_width="match_parent"
       android:layout_height="wrap_content"

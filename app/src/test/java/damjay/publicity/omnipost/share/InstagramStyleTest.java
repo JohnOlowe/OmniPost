@@ -9,10 +9,13 @@ import org.junit.Test;
 
 public class InstagramStyleTest {
   @Test
-  public void asterisksBecomeBoldLetters() {
-    assertEquals(cp(0x1D400), InstagramStyle.toUnicode("*A*"));
-    assertEquals(cp(0x1D41A), InstagramStyle.toUnicode("*a*"));
-    assertEquals(cp(0x1D7D7), InstagramStyle.toUnicode("*9*"));
+  public void asterisksBecomeSansSerifBoldLetters() {
+    assertEquals(cp(0x1D5D4), InstagramStyle.toUnicode("*A*"));
+    assertEquals(cp(0x1D5EE), InstagramStyle.toUnicode("*a*"));
+    assertEquals(cp(0x1D7F5), InstagramStyle.toUnicode("*9*"));
+    assertEquals(
+      InstagramStyle.style("MEET OUR GUEST MINISTER", true, false) + "!",
+      InstagramStyle.toUnicode("*MEET OUR GUEST MINISTER!*"));
   }
 
   @Test

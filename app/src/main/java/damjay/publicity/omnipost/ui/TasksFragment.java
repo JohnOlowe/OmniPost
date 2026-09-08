@@ -178,7 +178,8 @@ public class TasksFragment extends Fragment {
       getString(R.string.add_daily),
       getString(R.string.add_custom),
       getString(R.string.add_countdown),
-      getString(R.string.add_monthly)
+      getString(R.string.add_monthly),
+      getString(R.string.instagram_open)
     };
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(R.string.add)
@@ -191,8 +192,10 @@ public class TasksFragment extends Fragment {
           showCustomEditor();
         } else if (which == 3) {
           SeriesEditor.createCountdown(requireContext());
-        } else {
+        } else if (which == 4) {
           SeriesEditor.createMonthly(requireContext());
+        } else {
+          startActivity(new Intent(requireContext(), InstagramConvertActivity.class));
         }
       })
       .show();
