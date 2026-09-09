@@ -28,6 +28,9 @@ public final class AlarmScheduler {
   private static final String TAG = "OmniPost";
   private static final int WATCHDOG_CODE = 0x0A11;
   private static final int GLOBAL_PULSE_CODE = 0x0A12;
+  private static final int[] TASK_PHASES = {
+    PHASE_DRAFT, PHASE_WARNING, PHASE_NAG, PHASE_PULSE, PHASE_SNOOZE, PHASE_MINUTE
+  };
   private static final Object LOCK = new Object();
   private static final SparseArray<PendingIntent> TOKENS = new SparseArray<>();
   private static final LongSparseArray<String> ARMED = new LongSparseArray<>();
@@ -111,6 +114,34 @@ public final class AlarmScheduler {
       c.add(java.util.Calendar.DAY_OF_MONTH, 1);
     }
     setAlarmClock(ctx, 0L, PHASE_WATCHDOG, c.getTimeInMillis());
+  }
+
+  /**
+   * Drop leftover tokens from older builds (FLAG_NO_CREATE only — never mint).
+   * Tecno PIRProtect kills the process once ~10,000 records exist for this UID.
+   */
+  public static void recycleStale(Context ctx, List<Task> tasks, long maxId) {
+    if (ctx == null) {
+      return;
+    }
+    if (tasks != null) {
+      for (Task task : tasks) {
+        if (task == null) {
+          continue;
+        }
+        dropLegacy(ctx, task.id, task.title, task.postAtMillis);
+      }
+    }
+    long until = Math.min(Math.max(maxId + 80L, 80L), 2_000L);
+    for (long id = 0L; id <= until; id++) {
+      dropLegacy(ctx, id, "", 0L);
+      for (int phase : TASK_PHASES) {
+        dropBroadcast(ctx, requestCode(id, phase), alarmIntent(ctx, id, phase));
+      }
+    }
+    dropBroadcast(ctx, GLOBAL_PULSE_CODE, alarmIntent(ctx, 0L, PHASE_PULSE));
+    dropBroadcast(ctx, WATCHDOG_CODE, alarmIntent(ctx, 0L, PHASE_WATCHDOG));
+    dropShow(ctx);
   }
 
   public static void cancelTask(Context ctx, long taskId) {
@@ -219,7 +250,10 @@ public final class AlarmScheduler {
         return cached;
       }
     }
-    PendingIntent pi = mint(ctx, taskId, phase, false);
+    PendingIntent pi = mint(ctx, taskId, phase, true);
+    if (pi == null) {
+      pi = mint(ctx, taskId, phase, false);
+    }
     if (pi == null) {
       recycleAll(ctx);
       pi = mint(ctx, taskId, phase, false);
@@ -230,6 +264,62 @@ public final class AlarmScheduler {
       }
     }
     return pi;
+  }
+
+  private static void dropLegacy(Context ctx, long taskId, String title, long postAt) {
+    for (int phase : TASK_PHASES) {
+      dropBroadcast(ctx, requestCode(taskId, phase), legacyAlarmIntent(ctx, taskId, phase, title, postAt));
+    }
+  }
+
+  private static Intent legacyAlarmIntent(
+    Context ctx, long taskId, int phase, String title, long postAt) {
+    Intent intent = alarmIntent(ctx, taskId, phase);
+    intent.putExtra(ExtraKeys.TASK_TITLE, title == null ? "" : title);
+    intent.putExtra(ExtraKeys.POST_AT, postAt);
+    return intent;
+  }
+
+  private static void dropBroadcast(Context ctx, int code, Intent intent) {
+    try {
+      PendingIntent pi = PendingIntent.getBroadcast(
+        ctx, code, intent, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+      if (pi == null) {
+        return;
+      }
+      am(ctx).cancel(pi);
+      pi.cancel();
+    } catch (RuntimeException ignored) {
+    }
+  }
+
+  private static void dropShow(Context ctx) {
+    PendingIntent pi;
+    synchronized (LOCK) {
+      pi = showPi;
+      showPi = null;
+    }
+    if (pi == null) {
+      try {
+        pi = PendingIntent.getActivity(
+          ctx,
+          1,
+          new Intent(ctx, MainActivity.class)
+            .setAction(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER),
+          PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+      } catch (RuntimeException e) {
+        return;
+      }
+    }
+    if (pi == null) {
+      return;
+    }
+    try {
+      am(ctx).cancel(pi);
+      pi.cancel();
+    } catch (Exception ignored) {
+    }
   }
 
   private static PendingIntent mint(Context ctx, long taskId, int phase, boolean noCreate) {

@@ -48,6 +48,11 @@ public class AlarmSchedulerTest {
   }
 
   @Test
+  public void recycleStaleIgnoresANullContext() {
+    AlarmScheduler.recycleStale(null, null, 0L);
+  }
+
+  @Test
   public void snoozeStampTracksTheQuietUntilTime() {
     Task task = task(1_000L, 10_000L);
     task.status = TaskStatus.SNOOZED;

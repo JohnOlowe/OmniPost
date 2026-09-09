@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.util.SparseArray;
 import androidx.core.app.NotificationCompat;
 import damjay.publicity.omnipost.MainActivity;
 import damjay.publicity.omnipost.R;
@@ -25,6 +26,9 @@ public final class NotificationHelper {
   public static final String CHANNEL_ALARM = "omnipost.alarm.v3";
   public static final String CHANNEL_ONGOING = "omnipost.ongoing.v2";
   public static final int FGS_ID = 42;
+  private static final int DESK_CODE = 7;
+  private static final Object LOCK = new Object();
+  private static final SparseArray<PendingIntent> TOKENS = new SparseArray<>();
 
   private NotificationHelper() {}
 
@@ -64,8 +68,7 @@ public final class NotificationHelper {
     ensureChannels(ctx);
     Intent open = new Intent(ctx, MainActivity.class);
     open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    PendingIntent content = PendingIntent.getActivity(
-      ctx, 7, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    PendingIntent content = activity(ctx, DESK_CODE, open);
     String title;
     String text;
     if (next != null) {
@@ -217,39 +220,132 @@ public final class NotificationHelper {
     }
   }
 
+  public static void recycleStale(Context ctx, long maxId) {
+    if (ctx == null) {
+      return;
+    }
+    dropActivity(ctx, DESK_CODE, deskIntent(ctx));
+    long until = Math.min(Math.max(maxId + 80L, 80L), 2_000L);
+    int[] phases = new int[] {
+      AlarmScheduler.PHASE_DRAFT,
+      AlarmScheduler.PHASE_WARNING,
+      AlarmScheduler.PHASE_NAG,
+      AlarmScheduler.PHASE_MINUTE,
+      AlarmScheduler.PHASE_SNOOZE
+    };
+    for (long id = 0L; id <= until; id++) {
+      dropActivity(ctx, (int) (3000 + id), draftIntent(ctx, id));
+      dropBroadcast(ctx, (int) (4000 + id), postedIntent(ctx, id));
+      for (int phase : phases) {
+        dropActivity(ctx, (int) (5000 + id), alarmIntent(ctx, id, phase));
+        Intent legacy = alarmIntent(ctx, id, phase);
+        legacy.putExtra(ExtraKeys.TASK_TITLE, "");
+        legacy.putExtra(ExtraKeys.POST_AT, 0L);
+        dropActivity(ctx, (int) (5000 + id), legacy);
+      }
+    }
+  }
+
   private static PendingIntent openDraft(Context ctx, long taskId) {
-    Intent intent = new Intent(ctx, DraftActivity.class);
-    intent.putExtra(ExtraKeys.TASK_ID, taskId);
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-    return PendingIntent.getActivity(
-      ctx,
-      (int) (3000 + taskId),
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    return activity(ctx, (int) (3000 + taskId), draftIntent(ctx, taskId));
   }
 
   private static PendingIntent markPosted(Context ctx, long taskId) {
-    Intent intent = new Intent(ctx, MarkPostedReceiver.class);
-    intent.setAction(MarkPostedReceiver.ACTION);
-    intent.putExtra(ExtraKeys.TASK_ID, taskId);
-    return PendingIntent.getBroadcast(
-      ctx,
-      (int) (4000 + taskId),
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    return broadcast(ctx, (int) (4000 + taskId), postedIntent(ctx, taskId));
   }
 
   private static PendingIntent fullScreen(Context ctx, long taskId, int phase) {
+    return activity(ctx, (int) (5000 + taskId), alarmIntent(ctx, taskId, phase));
+  }
+
+  private static Intent deskIntent(Context ctx) {
+    Intent open = new Intent(ctx, MainActivity.class);
+    open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    return open;
+  }
+
+  private static Intent draftIntent(Context ctx, long taskId) {
+    Intent intent = new Intent(ctx, DraftActivity.class);
+    intent.putExtra(ExtraKeys.TASK_ID, taskId);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    return intent;
+  }
+
+  private static Intent postedIntent(Context ctx, long taskId) {
+    Intent intent = new Intent(ctx, MarkPostedReceiver.class);
+    intent.setAction(MarkPostedReceiver.ACTION);
+    intent.putExtra(ExtraKeys.TASK_ID, taskId);
+    return intent;
+  }
+
+  private static Intent alarmIntent(Context ctx, long taskId, int phase) {
     Intent intent = new Intent(ctx, AlarmActivity.class);
     intent.putExtra(ExtraKeys.TASK_ID, taskId);
     intent.putExtra(ExtraKeys.PHASE, phase);
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP
       | Intent.FLAG_ACTIVITY_NO_ANIMATION);
-    return PendingIntent.getActivity(
-      ctx,
-      (int) (5000 + taskId),
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    return intent;
+  }
+
+  private static PendingIntent activity(Context ctx, int code, Intent intent) {
+    return token(ctx, code, intent, true);
+  }
+
+  private static PendingIntent broadcast(Context ctx, int code, Intent intent) {
+    return token(ctx, code, intent, false);
+  }
+
+  private static PendingIntent token(Context ctx, int code, Intent intent, boolean activity) {
+    synchronized (LOCK) {
+      PendingIntent cached = TOKENS.get(code);
+      if (cached != null) {
+        return cached;
+      }
+    }
+    PendingIntent pi = mint(ctx, code, intent, activity, true);
+    if (pi == null) {
+      pi = mint(ctx, code, intent, activity, false);
+    }
+    if (pi != null) {
+      synchronized (LOCK) {
+        TOKENS.put(code, pi);
+      }
+    }
+    return pi;
+  }
+
+  private static PendingIntent mint(
+    Context ctx, int code, Intent intent, boolean activity, boolean noCreate) {
+    int flags = PendingIntent.FLAG_IMMUTABLE
+      | (noCreate ? PendingIntent.FLAG_NO_CREATE : PendingIntent.FLAG_UPDATE_CURRENT);
+    try {
+      return activity
+        ? PendingIntent.getActivity(ctx, code, intent, flags)
+        : PendingIntent.getBroadcast(ctx, code, intent, flags);
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  private static void dropActivity(Context ctx, int code, Intent intent) {
+    drop(ctx, code, intent, true);
+  }
+
+  private static void dropBroadcast(Context ctx, int code, Intent intent) {
+    drop(ctx, code, intent, false);
+  }
+
+  private static void drop(Context ctx, int code, Intent intent, boolean activity) {
+    synchronized (LOCK) {
+      TOKENS.remove(code);
+    }
+    try {
+      PendingIntent pi = mint(ctx, code, intent, activity, true);
+      if (pi != null) {
+        pi.cancel();
+      }
+    } catch (RuntimeException ignored) {
+    }
   }
 
   private static int draftId(long taskId) {
