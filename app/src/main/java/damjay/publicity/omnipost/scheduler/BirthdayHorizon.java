@@ -36,6 +36,11 @@ public final class BirthdayHorizon {
     if (member == null || now == null) {
       return null;
     }
+    Calendar today = DateUtils.startOfDay(now);
+    if (today.get(Calendar.MONTH) + 1 == member.birthMonth
+      && today.get(Calendar.DAY_OF_MONTH) == member.birthDay) {
+      return DateUtils.sameDayAt(now, 7, 0);
+    }
     return DateUtils.nextBirthdayAt(now, member.birthMonth, member.birthDay, 7, 0);
   }
 

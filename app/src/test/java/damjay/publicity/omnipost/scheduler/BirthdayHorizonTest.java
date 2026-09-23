@@ -63,4 +63,14 @@ public class BirthdayHorizonTest {
     assertEquals(2, everyone.get(0).members.size());
     assertEquals("September", everyone.get(1).title);
   }
+
+  @Test
+  public void todayStillCountsAfterTheMorningNag() {
+    Calendar noon = utc(2026, Calendar.AUGUST, 26);
+    noon.set(Calendar.HOUR_OF_DAY, 12);
+    Member bob = person("Bob", 8, 26);
+    assertTrue(BirthdayHorizon.inWindow(bob, noon, BirthdayHorizon.TODAY));
+    assertEquals("Today", BirthdayHorizon.group(
+      java.util.Collections.singletonList(bob), noon, BirthdayHorizon.TODAY).get(0).title);
+  }
 }
