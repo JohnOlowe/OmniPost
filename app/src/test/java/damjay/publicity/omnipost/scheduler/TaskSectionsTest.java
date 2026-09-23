@@ -252,6 +252,9 @@ public class TaskSectionsTest {
     assertEquals(
       TaskStatus.DRAFTING,
       TaskStatus.dueStatus(now - 1, now + lead + 60_000L, now, lead));
+    assertEquals(
+      TaskStatus.DRAFTING,
+      TaskStatus.dueStatus(now - 1, now + lead / 2, now, 0L));
   }
 
   private static Task task(long id, String type, String status, long postAt) {

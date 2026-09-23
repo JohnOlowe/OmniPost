@@ -28,4 +28,14 @@ public class AlertPlanTest {
     assertFalse(AlertPlan.ring(Prefs.MODE_VIBRATE));
     assertEquals(ScheduleTimes.BURST_MS, AlertPlan.totalMs(Prefs.MODE_VIBRATE));
   }
+
+  @Test
+  public void escalateUsesTheChosenVibrateAndRingLengths() {
+    assertEquals(60_000L, AlertPlan.ringDelayMs(Prefs.MODE_ESCALATE, 60_000L));
+    assertEquals(10L * 60_000L, AlertPlan.ringMs(Prefs.MODE_ESCALATE, 10L * 60_000L));
+    assertEquals(
+      60_000L + 10L * 60_000L,
+      AlertPlan.totalMs(Prefs.MODE_ESCALATE, 60_000L, 10L * 60_000L));
+    assertEquals(0L, AlertPlan.ringDelayMs(Prefs.MODE_BOTH, 60_000L));
+  }
 }

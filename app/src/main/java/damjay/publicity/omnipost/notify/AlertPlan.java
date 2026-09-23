@@ -21,21 +21,36 @@ public final class AlertPlan {
 
   /** Wait this long, vibrating, before the ring. Zero means ring at once. */
   public static long ringDelayMs(String mode) {
-    return escalate(mode) ? ScheduleTimes.ESCALATE_VIBRATE_MS : 0L;
+    return ringDelayMs(mode, ScheduleTimes.ESCALATE_VIBRATE_MS);
+  }
+
+  public static long ringDelayMs(String mode, long vibrateMs) {
+    if (!escalate(mode)) {
+      return 0L;
+    }
+    return Math.max(0L, vibrateMs);
   }
 
   public static long ringMs(String mode) {
+    return ringMs(mode, ScheduleTimes.ESCALATE_RING_MS);
+  }
+
+  public static long ringMs(String mode, long customRingMs) {
     if (!ring(mode)) {
       return 0L;
     }
     if (escalate(mode)) {
-      return ScheduleTimes.ESCALATE_RING_MS;
+      return Math.max(0L, customRingMs);
     }
     return ScheduleTimes.BURST_MS;
   }
 
   public static long totalMs(String mode) {
-    long ring = ringDelayMs(mode) + ringMs(mode);
+    return totalMs(mode, ScheduleTimes.ESCALATE_VIBRATE_MS, ScheduleTimes.ESCALATE_RING_MS);
+  }
+
+  public static long totalMs(String mode, long vibrateMs, long customRingMs) {
+    long ring = ringDelayMs(mode, vibrateMs) + ringMs(mode, customRingMs);
     if (ring > 0L) {
       return ring;
     }

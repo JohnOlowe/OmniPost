@@ -70,10 +70,23 @@ public final class DateUtils {
   }
 
   public static Calendar dayBeforeAt(Calendar event, int hour, int minute) {
+    return draftAt(event, 1, hour, minute);
+  }
+
+  /**
+   * When to nag to write the caption: {@code leadDays} before the post, at
+   * {@code hour}:{@code minute}. Zero means the same calendar day. If that
+   * lands at or after the post, it falls back to the previous day.
+   */
+  public static Calendar draftAt(Calendar event, int leadDays, int hour, int minute) {
+    int lead = Math.max(0, leadDays);
     Calendar c = strip(event);
-    c.add(Calendar.DAY_OF_MONTH, -1);
+    c.add(Calendar.DAY_OF_MONTH, -lead);
     c.set(Calendar.HOUR_OF_DAY, hour);
     c.set(Calendar.MINUTE, minute);
+    if (!c.before(event)) {
+      c.add(Calendar.DAY_OF_MONTH, -1);
+    }
     return c;
   }
 

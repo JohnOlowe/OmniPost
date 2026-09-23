@@ -37,7 +37,7 @@ public final class ScheduleCoordinator {
     List<Member> members = db.memberDao().getAllSync();
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(
-      now, TimeZone.getDefault(), members, series, Prefs.draftHour(app));
+      now, TimeZone.getDefault(), members, series, Prefs.draftHour(app), Prefs.draftLeadDays(app));
     for (Task candidate : generated) {
       Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
       if (existing == null) {
@@ -109,11 +109,14 @@ public final class ScheduleCoordinator {
     if (Prefs.alumniRosterInstalled(app)) {
       return;
     }
+    boolean skip = Prefs.alumniSkipCaption(app);
     List<Member> roster = AlumniRoster.members();
     for (Member member : roster) {
-      if (member != null) {
-        db.memberDao().insert(member);
+      if (member == null) {
+        continue;
       }
+      member.skipCaption = skip;
+      db.memberDao().insert(member);
     }
     Prefs.setAlumniRosterInstalled(app, true);
   }
@@ -431,7 +434,8 @@ public final class ScheduleCoordinator {
     task.postAtMillis = postAt;
     Calendar postCal = Calendar.getInstance();
     postCal.setTimeInMillis(postAt);
-    Calendar draftCal = DateUtils.dayBeforeAt(postCal, Prefs.draftHour(app), 0);
+    Calendar draftCal = DateUtils.draftAt(
+      postCal, Prefs.draftLeadDays(app), Prefs.draftHour(app), 0);
     task.draftAtMillis = Math.max(now, draftCal.getTimeInMillis());
     task.timesLocked = true;
     task.postedAtMillis = 0L;
@@ -502,7 +506,8 @@ public final class ScheduleCoordinator {
     task.postAtMillis = postAt;
     Calendar postCal = Calendar.getInstance();
     postCal.setTimeInMillis(postAt);
-    Calendar draftCal = DateUtils.dayBeforeAt(postCal, Prefs.draftHour(app), 0);
+    Calendar draftCal = DateUtils.draftAt(
+      postCal, Prefs.draftLeadDays(app), Prefs.draftHour(app), 0);
     task.draftAtMillis = Math.max(now, draftCal.getTimeInMillis());
     task.timesLocked = true;
     task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
@@ -569,6 +574,52 @@ public final class ScheduleCoordinator {
     }
     AlarmScheduler.cancelTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
+    AlarmScheduler.scheduleHeartbeat(app);
+    NagForegroundService.refresh(app);
+  }
+
+  public static void setAlumniSkipCaption(Context context, boolean skip) {
+    if (context == null) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    Prefs.setAlumniSkipCaption(app, skip);
+    AppDatabase db = AppDatabase.get(app);
+    List<Member> members = db.memberDao().getAllSync();
+    if (members == null) {
+      return;
+    }
+    long now = System.currentTimeMillis();
+    long warningLead = Prefs.warningLeadMs(app);
+    for (Member member : members) {
+      if (!Member.isAlumni(member)) {
+        continue;
+      }
+      member.skipCaption = skip;
+      db.memberDao().update(member);
+      List<Task> tasks = db.taskDao().getActiveForMember(member.id);
+      if (tasks == null) {
+        continue;
+      }
+      for (Task task : tasks) {
+        if (task == null || TaskStatus.POSTED.equals(task.status)) {
+          continue;
+        }
+        task.skipCaption = skip;
+        if (skip) {
+          task.description = "No caption — open WhatsApp and forward.";
+        } else if (task.description != null && task.description.startsWith("No caption")) {
+          task.description = "Write the greeting. OmniPost will nag you when it is time.";
+        }
+        if (!(TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now)) {
+          task.status = TaskStatus.dueStatus(task, now, warningLead);
+          task.snoozeUntilMillis = 0L;
+        }
+        db.taskDao().update(task);
+        AlarmScheduler.cancelTask(app, task.id);
+        AlarmScheduler.scheduleTask(app, task);
+      }
+    }
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.refresh(app);
   }

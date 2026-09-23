@@ -28,7 +28,6 @@ import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
-import damjay.publicity.omnipost.scheduler.Weekdays;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.DeskBackup;
@@ -83,10 +82,16 @@ public class SettingsFragment extends Fragment {
     Context ctx = requireContext();
     paintChoice(binding.rowAlert, R.string.setting_alert, alertLabel(Prefs.alertMode(ctx)));
     binding.rowAlert.getRoot().setOnClickListener(v -> pickAlert());
+    paintChoice(binding.rowVibrate, R.string.setting_vibrate, vibrateLabel(Prefs.vibrateSeconds(ctx)));
+    binding.rowVibrate.getRoot().setOnClickListener(v -> pickVibrate());
+    paintChoice(binding.rowRing, R.string.setting_ring, ringLabel(Prefs.ringMinutes(ctx)));
+    binding.rowRing.getRoot().setOnClickListener(v -> pickRing());
     paintChoice(binding.rowNag, R.string.setting_nag, nagLabel(Prefs.nagMinutes(ctx)));
     binding.rowNag.getRoot().setOnClickListener(v -> pickNag());
     paintChoice(binding.rowWarning, R.string.setting_warning, warningLabel(Prefs.warningMinutes(ctx)));
     binding.rowWarning.getRoot().setOnClickListener(v -> pickWarning());
+    paintChoice(binding.rowDraftLead, R.string.setting_draft_lead, draftLeadLabel(Prefs.draftLeadDays(ctx)));
+    binding.rowDraftLead.getRoot().setOnClickListener(v -> pickDraftLead());
     paintChoice(binding.rowDraft, R.string.setting_draft, draftLabel(Prefs.draftHour(ctx)));
     binding.rowDraft.getRoot().setOnClickListener(v -> pickDraftHour());
     paintSwitch(
@@ -205,9 +210,9 @@ public class SettingsFragment extends Fragment {
   }
 
   private void pickNag() {
-    int[] values = new int[] {2, 5, 10, 15};
+    int[] values = new int[] {2, 5, 10, 15, 30};
     String[] labels = new String[] {
-      nagLabel(2), nagLabel(5), nagLabel(10), nagLabel(15)
+      nagLabel(2), nagLabel(5), nagLabel(10), nagLabel(15), nagLabel(30)
     };
     int selected = indexOf(values, Prefs.nagMinutes(requireContext()));
     new MaterialAlertDialogBuilder(requireContext())
@@ -223,9 +228,10 @@ public class SettingsFragment extends Fragment {
   }
 
   private void pickDraftHour() {
-    int[] values = new int[] {20, 19, 21, 10};
+    int[] values = new int[] {7, 8, 9, 10, 18, 19, 20, 21};
     String[] labels = new String[] {
-      draftLabel(20), draftLabel(19), draftLabel(21), draftLabel(10)
+      draftLabel(7), draftLabel(8), draftLabel(9), draftLabel(10),
+      draftLabel(18), draftLabel(19), draftLabel(20), draftLabel(21)
     };
     int selected = indexOf(values, Prefs.draftHour(requireContext()));
     new MaterialAlertDialogBuilder(requireContext())
@@ -240,10 +246,63 @@ public class SettingsFragment extends Fragment {
       .show();
   }
 
-  private void pickWarning() {
-    int[] values = new int[] {15, 30, 60};
+  private void pickDraftLead() {
+    int[] values = new int[] {0, 1, 2};
     String[] labels = new String[] {
-      warningLabel(15), warningLabel(30), warningLabel(60)
+      draftLeadLabel(0), draftLeadLabel(1), draftLeadLabel(2)
+    };
+    int selected = indexOf(values, Prefs.draftLeadDays(requireContext()));
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.setting_draft_lead)
+      .setSingleChoiceItems(labels, selected, (d, which) -> {
+        Prefs.setDraftLeadDays(requireContext(), values[which]);
+        d.dismiss();
+        bindDesk();
+        rearmQuiet();
+      })
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void pickVibrate() {
+    int[] values = new int[] {10, 20, 30, 45, 60};
+    String[] labels = new String[] {
+      vibrateLabel(10), vibrateLabel(20), vibrateLabel(30), vibrateLabel(45), vibrateLabel(60)
+    };
+    int selected = indexOf(values, Prefs.vibrateSeconds(requireContext()));
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.setting_vibrate)
+      .setSingleChoiceItems(labels, selected, (d, which) -> {
+        Prefs.setVibrateSeconds(requireContext(), values[which]);
+        d.dismiss();
+        bindDesk();
+      })
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void pickRing() {
+    int[] values = new int[] {1, 2, 3, 5, 10};
+    String[] labels = new String[] {
+      ringLabel(1), ringLabel(2), ringLabel(3), ringLabel(5), ringLabel(10)
+    };
+    int selected = indexOf(values, Prefs.ringMinutes(requireContext()));
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.setting_ring)
+      .setSingleChoiceItems(labels, selected, (d, which) -> {
+        Prefs.setRingMinutes(requireContext(), values[which]);
+        d.dismiss();
+        bindDesk();
+      })
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void pickWarning() {
+    int[] values = new int[] {0, 15, 30, 45, 60, 90};
+    String[] labels = new String[] {
+      warningLabel(0), warningLabel(15), warningLabel(30),
+      warningLabel(45), warningLabel(60), warningLabel(90)
     };
     int selected = indexOf(values, Prefs.warningMinutes(requireContext()));
     new MaterialAlertDialogBuilder(requireContext())
@@ -276,7 +335,28 @@ public class SettingsFragment extends Fragment {
   }
 
   private String warningLabel(int minutes) {
+    if (minutes <= 0) {
+      return getString(R.string.warning_off);
+    }
     return getString(R.string.warning_every, minutes);
+  }
+
+  private String draftLeadLabel(int days) {
+    if (days <= 0) {
+      return getString(R.string.draft_lead_same);
+    }
+    if (days >= 2) {
+      return getString(R.string.draft_lead_two);
+    }
+    return getString(R.string.draft_lead_before);
+  }
+
+  private String vibrateLabel(int seconds) {
+    return getString(R.string.vibrate_for, seconds);
+  }
+
+  private String ringLabel(int minutes) {
+    return getString(R.string.ring_for, minutes);
   }
 
   private String draftLabel(int hour) {

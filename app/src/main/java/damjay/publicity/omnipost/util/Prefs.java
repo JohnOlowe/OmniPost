@@ -16,6 +16,10 @@ public final class Prefs {
   private static final String NAG_MIN = "nag_minutes";
   private static final String WARN_MIN = "warning_minutes";
   private static final String DRAFT_HOUR = "draft_hour";
+  private static final String DRAFT_LEAD = "draft_lead_days";
+  private static final String VIBRATE_SEC = "vibrate_seconds";
+  private static final String RING_MIN = "ring_minutes";
+  private static final String ALUMNI_SKIP = "alumni_skip_caption";
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
@@ -75,7 +79,11 @@ public final class Prefs {
   }
 
   public static long warningLeadMs(Context ctx) {
-    return warningMinutes(ctx) * 60_000L;
+    int minutes = warningMinutes(ctx);
+    if (minutes <= 0) {
+      return 0L;
+    }
+    return minutes * 60_000L;
   }
 
   /** Hour (0–23) the day before the post when OmniPost nudges you to write the caption. */
@@ -85,6 +93,82 @@ public final class Prefs {
 
   public static void setDraftHour(Context ctx, int hour) {
     sp(ctx).edit().putInt(DRAFT_HOUR, hour).apply();
+  }
+
+  /** 0 = morning of the post, 1 = evening before, 2 = two evenings before. */
+  public static int draftLeadDays(Context ctx) {
+    return sp(ctx).getInt(DRAFT_LEAD, 1);
+  }
+
+  public static void setDraftLeadDays(Context ctx, int days) {
+    int lead = days;
+    if (lead < 0) {
+      lead = 0;
+    }
+    if (lead > 7) {
+      lead = 7;
+    }
+    sp(ctx).edit().putInt(DRAFT_LEAD, lead).apply();
+  }
+
+  public static int vibrateSeconds(Context ctx) {
+    int seconds = sp(ctx).getInt(VIBRATE_SEC, 30);
+    if (seconds < 10) {
+      return 10;
+    }
+    if (seconds > 120) {
+      return 120;
+    }
+    return seconds;
+  }
+
+  public static void setVibrateSeconds(Context ctx, int seconds) {
+    int value = seconds;
+    if (value < 10) {
+      value = 10;
+    }
+    if (value > 120) {
+      value = 120;
+    }
+    sp(ctx).edit().putInt(VIBRATE_SEC, value).apply();
+  }
+
+  public static long vibrateMs(Context ctx) {
+    return vibrateSeconds(ctx) * 1000L;
+  }
+
+  public static int ringMinutes(Context ctx) {
+    int minutes = sp(ctx).getInt(RING_MIN, 5);
+    if (minutes < 1) {
+      return 1;
+    }
+    if (minutes > 15) {
+      return 15;
+    }
+    return minutes;
+  }
+
+  public static void setRingMinutes(Context ctx, int minutes) {
+    int value = minutes;
+    if (value < 1) {
+      value = 1;
+    }
+    if (value > 15) {
+      value = 15;
+    }
+    sp(ctx).edit().putInt(RING_MIN, value).apply();
+  }
+
+  public static long ringMs(Context ctx) {
+    return ringMinutes(ctx) * 60_000L;
+  }
+
+  public static boolean alumniSkipCaption(Context ctx) {
+    return sp(ctx).getBoolean(ALUMNI_SKIP, true);
+  }
+
+  public static void setAlumniSkipCaption(Context ctx, boolean skip) {
+    sp(ctx).edit().putBoolean(ALUMNI_SKIP, skip).apply();
   }
 
   public static boolean seedCaptions(Context ctx) {

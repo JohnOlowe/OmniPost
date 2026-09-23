@@ -33,11 +33,23 @@
       layout="@layout/item_setting_row"/>
 
     <include
+      android:id="@+id/row_vibrate"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_ring"
+      layout="@layout/item_setting_row"/>
+
+    <include
       android:id="@+id/row_nag"
       layout="@layout/item_setting_row"/>
 
     <include
       android:id="@+id/row_warning"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_draft_lead"
       layout="@layout/item_setting_row"/>
 
     <include

@@ -74,7 +74,7 @@ public final class AlarmScheduler {
       setAlarmClock(ctx, task, PHASE_DRAFT, task.draftAtMillis);
     }
     long warningAt = task.postAtMillis - warningLead;
-    if (!saved && warningAt > now) {
+    if (!saved && warningLead > 0L && warningAt > now) {
       setAlarmClock(ctx, task, PHASE_WARNING, warningAt);
     }
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
@@ -446,7 +446,7 @@ public final class AlarmScheduler {
       out.append("|d").append(task.draftAtMillis);
     }
     long warningAt = task.postAtMillis - warningLeadMs;
-    if (!saved && warningAt > now) {
+    if (!saved && warningLeadMs > 0L && warningAt > now) {
       out.append("|w").append(warningAt);
     }
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;

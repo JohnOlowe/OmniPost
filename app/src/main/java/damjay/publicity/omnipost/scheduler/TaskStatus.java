@@ -88,8 +88,7 @@ public final class TaskStatus {
     if (captionSaved) {
       return READY;
     }
-    long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
-    if (postAtMillis - lead <= now) {
+    if (warningLeadMs > 0L && postAtMillis - warningLeadMs <= now) {
       return WARNING;
     }
     if (draftAtMillis <= now) {
@@ -123,7 +122,7 @@ public final class TaskStatus {
       }
       return task.snoozeUntilMillis;
     }
-    long lead = warningLeadMs > 0L ? warningLeadMs : ScheduleTimes.WARNING_LEAD_MS;
+    long lead = warningLeadMs;
     long warningAt = task.postAtMillis - lead;
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
     long next = Long.MAX_VALUE;
@@ -131,7 +130,7 @@ public final class TaskStatus {
     if (!saved && task.draftAtMillis > now) {
       next = Math.min(next, task.draftAtMillis);
     }
-    if (!saved && warningAt > now) {
+    if (!saved && lead > 0L && warningAt > now) {
       next = Math.min(next, warningAt);
     }
     if (minuteAt > now && minuteAt < task.postAtMillis) {

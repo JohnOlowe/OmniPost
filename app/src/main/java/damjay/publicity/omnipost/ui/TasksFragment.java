@@ -137,6 +137,11 @@ public class TasksFragment extends Fragment {
       public void onOptions(Task task) {
         showTaskOptions(task);
       }
+
+      @Override
+      public void onCaptionReady(Task task) {
+        markCaptionReady(task);
+      }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
@@ -236,6 +241,10 @@ public class TasksFragment extends Fragment {
     ArrayList<String> labels = new ArrayList<>();
     labels.add(getString(R.string.rename_post));
     boolean posted = TaskStatus.POSTED.equals(task.status);
+    boolean pending = !posted && TaskStatus.captionWorkPending(task);
+    if (pending) {
+      labels.add(getString(R.string.caption_ready_action));
+    }
     if (!posted) {
       labels.add(getString(task.skipCaption ? R.string.turn_captions_on : R.string.turn_captions_off));
     }
@@ -256,6 +265,13 @@ public class TasksFragment extends Fragment {
           return;
         }
         int index = 1;
+        if (pending) {
+          if (which == index) {
+            markCaptionReady(task);
+            return;
+          }
+          index++;
+        }
         if (!posted) {
           if (which == index) {
             toggleCaptions(task);
@@ -272,6 +288,22 @@ public class TasksFragment extends Fragment {
         }
       })
       .show();
+  }
+
+  private void markCaptionReady(Task task) {
+    if (task == null) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.markCaptionSaved(app, task.id);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(requireContext(), R.string.caption_ready_toast, Toast.LENGTH_SHORT).show();
+      });
+    });
   }
 
   private void adapterListenerDelete(Task task) {

@@ -7,7 +7,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.Spinner;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -19,8 +21,10 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
+import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -30,6 +34,8 @@ public class BirthdaysFragment extends Fragment {
   private MemberAdapter adapter;
   private final List<Member> all = new ArrayList<>();
   private String kind = Member.KIND_MEMBER;
+  private int memberHorizon = BirthdayHorizon.ALL;
+  private int alumniHorizon = BirthdayHorizon.WEEK;
 
   @Nullable
   @Override
@@ -68,6 +74,7 @@ public class BirthdaysFragment extends Fragment {
       @Override
       public void onTabSelected(TabLayout.Tab tab) {
         kind = tab.getPosition() == 1 ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
+        syncHorizonChip();
         render();
       }
 
@@ -77,6 +84,19 @@ public class BirthdaysFragment extends Fragment {
       @Override
       public void onTabReselected(TabLayout.Tab tab) {}
     });
+    binding.horizon.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
+      if (!isChecked) {
+        return;
+      }
+      int horizon = horizonOf(checkedId);
+      if (Member.KIND_ALUMNI.equals(kind)) {
+        alumniHorizon = horizon;
+      } else {
+        memberHorizon = horizon;
+      }
+      render();
+    });
+    paintAlumniSwitch();
     AppDatabase.get(requireContext())
       .memberDao()
       .observeAll()
@@ -88,7 +108,71 @@ public class BirthdaysFragment extends Fragment {
         render();
       });
     binding.fab.setOnClickListener(v -> showEditor(null));
+    syncHorizonChip();
     return binding.getRoot();
+  }
+
+  private void paintAlumniSwitch() {
+    if (binding == null) {
+      return;
+    }
+    Context ctx = requireContext();
+    binding.rowAlumniCaptions.title.setText(R.string.alumni_captions);
+    binding.rowAlumniCaptions.hint.setText(R.string.alumni_captions_hint);
+    binding.rowAlumniCaptions.toggle.setOnCheckedChangeListener(null);
+    binding.rowAlumniCaptions.toggle.setChecked(!Prefs.alumniSkipCaption(ctx));
+    binding.rowAlumniCaptions.toggle.setOnCheckedChangeListener(this::onAlumniCaptionsToggled);
+  }
+
+  private void onAlumniCaptionsToggled(CompoundButton button, boolean wantCaptions) {
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.setAlumniSkipCaption(app, !wantCaptions);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(
+          requireContext(),
+          wantCaptions ? R.string.alumni_captions_on : R.string.alumni_captions_off,
+          Toast.LENGTH_SHORT)
+          .show();
+      });
+    });
+  }
+
+  private void syncHorizonChip() {
+    if (binding == null) {
+      return;
+    }
+    int horizon = Member.KIND_ALUMNI.equals(kind) ? alumniHorizon : memberHorizon;
+    int id = R.id.chip_all;
+    if (horizon == BirthdayHorizon.TODAY) {
+      id = R.id.chip_today;
+    } else if (horizon == BirthdayHorizon.WEEK) {
+      id = R.id.chip_week;
+    } else if (horizon == BirthdayHorizon.TWO_WEEKS) {
+      id = R.id.chip_fortnight;
+    } else if (horizon == BirthdayHorizon.MONTH) {
+      id = R.id.chip_month;
+    }
+    binding.horizon.check(id);
+  }
+
+  private static int horizonOf(int checkedId) {
+    if (checkedId == R.id.chip_today) {
+      return BirthdayHorizon.TODAY;
+    }
+    if (checkedId == R.id.chip_week) {
+      return BirthdayHorizon.WEEK;
+    }
+    if (checkedId == R.id.chip_fortnight) {
+      return BirthdayHorizon.TWO_WEEKS;
+    }
+    if (checkedId == R.id.chip_month) {
+      return BirthdayHorizon.MONTH;
+    }
+    return BirthdayHorizon.ALL;
   }
 
   private void render() {
@@ -101,10 +185,18 @@ public class BirthdaysFragment extends Fragment {
         filtered.add(member);
       }
     }
-    adapter.submit(filtered);
     boolean alumni = Member.KIND_ALUMNI.equals(kind);
-    binding.empty.setText(alumni ? R.string.empty_alumni : R.string.empty_birthdays);
-    binding.empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+    int horizon = alumni ? alumniHorizon : memberHorizon;
+    List<BirthdayHorizon.Section> sections =
+      BirthdayHorizon.group(filtered, Calendar.getInstance(), horizon);
+    adapter.submit(sections);
+    boolean empty = sections.isEmpty();
+    binding.empty.setText(
+      empty && filtered.isEmpty()
+        ? (alumni ? R.string.empty_alumni : R.string.empty_birthdays)
+        : R.string.empty_horizon);
+    binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
+    binding.rowAlumniCaptions.getRoot().setVisibility(alumni ? View.VISIBLE : View.GONE);
     binding.fab.setContentDescription(getString(alumni ? R.string.add_alumni : R.string.add_member));
   }
 
@@ -133,7 +225,7 @@ public class BirthdaysFragment extends Fragment {
       day.setSelection(Math.max(0, existing.birthDay - 1));
       skipCaption.setChecked(existing.skipCaption);
     } else {
-      skipCaption.setChecked(alumniTab);
+      skipCaption.setChecked(alumniTab && Prefs.alumniSkipCaption(requireContext()));
     }
     boolean alumni = existing != null ? Member.isAlumni(existing) : alumniTab;
     new MaterialAlertDialogBuilder(requireContext())

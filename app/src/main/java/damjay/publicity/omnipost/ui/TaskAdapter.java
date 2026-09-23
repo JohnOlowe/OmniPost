@@ -39,6 +39,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void onForward(Task task);
 
     void onOptions(Task task);
+
+    void onCaptionReady(Task task);
   }
 
   static final class Row {
@@ -159,6 +161,9 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         binding.btnDraft.setText(
           TaskStatus.captionIsSaved(task) ? R.string.open_caption : R.string.write_caption);
       }
+      boolean pending = TaskStatus.captionWorkPending(task) && !TaskStatus.POSTED.equals(task.status);
+      binding.btnReady.setVisibility(pending ? View.VISIBLE : View.GONE);
+      binding.btnReady.setOnClickListener(v -> listener.onCaptionReady(task));
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
         binding.when.setText(
           itemView.getContext().getString(

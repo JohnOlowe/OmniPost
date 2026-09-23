@@ -106,7 +106,7 @@
   <string name="settings_title">The desk</string>
   <string name="settings_body">You write every caption. Writing gets a short vibrate. Sending the flyer uses the loud ring, plus a 1-minute warning so it goes out on time.</string>
   <string name="setting_alert">Alarm and vibration</string>
-  <string name="alert_escalate">Vibrate 30 seconds, then ring 5 minutes</string>
+  <string name="alert_escalate">Vibrate first, then ring</string>
   <string name="alert_both">Alarm sound and vibration</string>
   <string name="alert_sound">Alarm sound only</string>
   <string name="alert_vibrate">Vibration only</string>
@@ -117,9 +117,30 @@
   <string name="nag_every">Every %1$d minutes</string>
   <string name="setting_warning">Caption-ready warning</string>
   <string name="warning_every">%1$d minutes before the post</string>
-  <string name="setting_draft">Write the caption</string>
-  <string name="draft_evening">%1$d:00 PM the evening before</string>
-  <string name="draft_morning">%1$d:00 AM the morning before</string>
+  <string name="warning_off">Off — only the write nag and the 1-minute ring</string>
+  <string name="setting_draft">Write-caption clock</string>
+  <string name="setting_draft_lead">When to nag to write the caption</string>
+  <string name="draft_lead_same">The morning of the post</string>
+  <string name="draft_lead_before">The evening before</string>
+  <string name="draft_lead_two">Two evenings before</string>
+  <string name="draft_evening">%1$d:00 PM</string>
+  <string name="draft_morning">%1$d:00 AM</string>
+  <string name="setting_vibrate">Vibrate first</string>
+  <string name="vibrate_for">%1$d seconds</string>
+  <string name="setting_ring">Then ring</string>
+  <string name="ring_for">%1$d minutes</string>
+  <string name="caption_ready_action">I\'ve got the caption</string>
+  <string name="caption_ready_toast">Caption marked ready. OmniPost will only nag to send.</string>
+  <string name="alumni_captions">Captions for alumni</string>
+  <string name="alumni_captions_hint">Off = just forward in WhatsApp. On = nag to write a greeting. You can still change one person.</string>
+  <string name="alumni_captions_on">Alumni will get write-caption nags. Turn one person off from their card.</string>
+  <string name="alumni_captions_off">Alumni skip captions. Open WhatsApp and forward.</string>
+  <string name="horizon_today">Today</string>
+  <string name="horizon_week">This week</string>
+  <string name="horizon_fortnight">2 weeks</string>
+  <string name="horizon_month">This month</string>
+  <string name="horizon_all">All</string>
+  <string name="empty_horizon">Nobody in this window.</string>
   <string name="alarm_subtitle_soft">A nudge to write the caption — not the loud ring. That is for sending the flyer, plus a 1-minute warning so it goes out on time.</string>
   <string name="minute_notif_text">One minute. Send it now so it goes out on time.</string>
   <string name="setting_seed">Fill starter captions</string>
@@ -274,3 +295,4 @@
     <item>December</item>
   </string-array>
 </resources>
+>

@@ -96,7 +96,9 @@ public final class AlarmPulse {
       HANDLER.postDelayed(() -> finish(gen), ScheduleTimes.GENTLE_MS);
       return;
     }
-    long delay = AlertPlan.ringDelayMs(mode);
+    long vibeMs = Prefs.vibrateMs(app);
+    long ringLen = Prefs.ringMs(app);
+    long delay = AlertPlan.ringDelayMs(mode, vibeMs);
     if (AlertPlan.vibrate(mode)) {
       state = delay > 0L ? VIBRATING : RINGING;
       startVibrate(app, true);
@@ -108,7 +110,7 @@ public final class AlarmPulse {
         HANDLER.postDelayed(() -> startRingOnMain(app, gen), delay);
       }
     }
-    long total = AlertPlan.totalMs(mode);
+    long total = AlertPlan.totalMs(mode, vibeMs, ringLen);
     if (total > 0L) {
       HANDLER.postDelayed(() -> finish(gen), total);
     }

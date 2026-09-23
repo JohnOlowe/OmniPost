@@ -48,6 +48,12 @@ public class AlarmSchedulerTest {
   }
 
   @Test
+  public void warningOffOmitsTheCaptionReadyArm() {
+    Task task = task(100_000L, 200_000L);
+    assertEquals("arm|d100000|m140000|n200000", AlarmScheduler.armStamp(task, 50_000L, 0L));
+  }
+
+  @Test
   public void skipCaptionOmitsDraftAndWarningArms() {
     Task task = task(100_000L, 200_000L);
     task.skipCaption = true;

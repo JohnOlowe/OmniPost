@@ -22,6 +22,7 @@ import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
+import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -56,6 +57,17 @@ public class AlarmActivity extends AppCompatActivity {
       intent.putExtra(ExtraKeys.TASK_ID, taskId);
       startActivity(intent);
       finish();
+    });
+    binding.btnReady.setOnClickListener(v -> {
+      acknowledge();
+      final long id = taskId;
+      AppExecutors.disk().execute(() -> {
+        ScheduleCoordinator.markCaptionSaved(this, id);
+        AppExecutors.main(() -> {
+          Toast.makeText(this, R.string.caption_ready_toast, Toast.LENGTH_SHORT).show();
+          finish();
+        });
+      });
     });
     binding.btnPosted.setOnClickListener(v -> {
       acknowledge();
@@ -104,6 +116,9 @@ public class AlarmActivity extends AppCompatActivity {
     taskId = intent.getLongExtra(ExtraKeys.TASK_ID, taskId);
     postAt = intent.getLongExtra(ExtraKeys.POST_AT, postAt);
     int phase = phaseOf(intent);
+    boolean writePhase =
+      phase == AlarmScheduler.PHASE_DRAFT || phase == AlarmScheduler.PHASE_WARNING;
+    binding.btnReady.setVisibility(writePhase && !skipCaption ? View.VISIBLE : View.GONE);
     if (phase == AlarmScheduler.PHASE_DRAFT) {
       binding.phase.setText(R.string.write_caption_now);
       binding.subtitle.setText(R.string.alarm_subtitle_soft);
@@ -180,6 +195,8 @@ public class AlarmActivity extends AppCompatActivity {
         binding.title.setText(task.title);
         postAt = task.postAtMillis;
         skipCaption = task.skipCaption;
+        boolean pending = TaskStatus.captionWorkPending(task);
+        binding.btnReady.setVisibility(pending ? View.VISIBLE : View.GONE);
         if (skipCaption) {
           binding.btnDraft.setText(R.string.open_whatsapp);
           binding.subtitle.setText(R.string.no_caption_post);

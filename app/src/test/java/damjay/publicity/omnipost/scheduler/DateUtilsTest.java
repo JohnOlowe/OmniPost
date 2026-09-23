@@ -158,4 +158,29 @@ public class DateUtilsTest {
     assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
     assertTrue(draft.before(post));
   }
+
+  @Test
+  public void draftAtSameMorningStaysOnPostDayWhenClockIsEarlier() {
+    Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
+    Calendar draft = DateUtils.draftAt(post, 0, 8, 0);
+    assertEquals(29, draft.get(Calendar.DAY_OF_MONTH));
+    assertEquals(8, draft.get(Calendar.HOUR_OF_DAY));
+    assertTrue(draft.before(post));
+  }
+
+  @Test
+  public void draftAtSameDayAfterThePostFallsBackADay() {
+    Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
+    Calendar draft = DateUtils.draftAt(post, 0, 20, 0);
+    assertEquals(28, draft.get(Calendar.DAY_OF_MONTH));
+    assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
+  }
+
+  @Test
+  public void draftAtTwoEveningsBefore() {
+    Calendar post = utc(2026, Calendar.AUGUST, 29, 10, 0);
+    Calendar draft = DateUtils.draftAt(post, 2, 20, 0);
+    assertEquals(27, draft.get(Calendar.DAY_OF_MONTH));
+    assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
+  }
 }

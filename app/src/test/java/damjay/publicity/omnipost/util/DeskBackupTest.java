@@ -31,6 +31,10 @@ public class DeskBackupTest {
     snap.nagMinutes = 10;
     snap.warningMinutes = 15;
     snap.draftHour = 19;
+    snap.draftLeadDays = 2;
+    snap.vibrateSeconds = 45;
+    snap.ringMinutes = 3;
+    snap.alumniSkipCaption = false;
     snap.seedCaptions = true;
     snap.deskOngoing = false;
     snap.fullScreen = true;
@@ -97,6 +101,10 @@ public class DeskBackupTest {
     assertEquals(10, got.nagMinutes);
     assertEquals(15, got.warningMinutes);
     assertEquals(19, got.draftHour);
+    assertEquals(2, got.draftLeadDays);
+    assertEquals(45, got.vibrateSeconds);
+    assertEquals(3, got.ringMinutes);
+    assertFalse(got.alumniSkipCaption);
     assertTrue(got.seedCaptions);
     assertFalse(got.deskOngoing);
     assertTrue(got.fullScreen);

@@ -38,6 +38,10 @@ public final class DeskBackup {
     public int nagMinutes = 5;
     public int warningMinutes = 30;
     public int draftHour = 20;
+    public int draftLeadDays = 1;
+    public int vibrateSeconds = 30;
+    public int ringMinutes = 5;
+    public boolean alumniSkipCaption = true;
     public boolean seedCaptions;
     public boolean deskOngoing = true;
     public boolean fullScreen = true;
@@ -63,6 +67,10 @@ public final class DeskBackup {
     snap.nagMinutes = Prefs.nagMinutes(app);
     snap.warningMinutes = Prefs.warningMinutes(app);
     snap.draftHour = Prefs.draftHour(app);
+    snap.draftLeadDays = Prefs.draftLeadDays(app);
+    snap.vibrateSeconds = Prefs.vibrateSeconds(app);
+    snap.ringMinutes = Prefs.ringMinutes(app);
+    snap.alumniSkipCaption = Prefs.alumniSkipCaption(app);
     snap.seedCaptions = Prefs.seedCaptions(app);
     snap.deskOngoing = Prefs.deskOngoing(app);
     snap.fullScreen = Prefs.fullScreen(app);
@@ -103,8 +111,12 @@ public final class DeskBackup {
     db.runInTransaction(() -> replaceAll(db, snap));
     Prefs.setAlertMode(app, normalizeMode(snap.alertMode));
     Prefs.setNagMinutes(app, clamp(snap.nagMinutes, 1, 60, 5));
-    Prefs.setWarningMinutes(app, clamp(snap.warningMinutes, 1, 180, 30));
+    Prefs.setWarningMinutes(app, clamp(snap.warningMinutes, 0, 180, 30));
     Prefs.setDraftHour(app, clamp(snap.draftHour, 0, 23, 20));
+    Prefs.setDraftLeadDays(app, clamp(snap.draftLeadDays, 0, 7, 1));
+    Prefs.setVibrateSeconds(app, clamp(snap.vibrateSeconds, 10, 120, 30));
+    Prefs.setRingMinutes(app, clamp(snap.ringMinutes, 1, 15, 5));
+    Prefs.setAlumniSkipCaption(app, snap.alumniSkipCaption);
     Prefs.setSeedCaptions(app, snap.seedCaptions);
     Prefs.setDeskOngoing(app, snap.deskOngoing);
     Prefs.setFullScreen(app, snap.fullScreen);
@@ -161,6 +173,10 @@ public final class DeskBackup {
       prefs.put("nagMinutes", src.nagMinutes);
       prefs.put("warningMinutes", src.warningMinutes);
       prefs.put("draftHour", src.draftHour);
+      prefs.put("draftLeadDays", src.draftLeadDays);
+      prefs.put("vibrateSeconds", src.vibrateSeconds);
+      prefs.put("ringMinutes", src.ringMinutes);
+      prefs.put("alumniSkipCaption", src.alumniSkipCaption);
       prefs.put("seedCaptions", src.seedCaptions);
       prefs.put("deskOngoing", src.deskOngoing);
       prefs.put("fullScreen", src.fullScreen);
@@ -198,6 +214,10 @@ public final class DeskBackup {
         snap.nagMinutes = prefs.optInt("nagMinutes", 5);
         snap.warningMinutes = prefs.optInt("warningMinutes", 30);
         snap.draftHour = prefs.optInt("draftHour", 20);
+        snap.draftLeadDays = prefs.optInt("draftLeadDays", 1);
+        snap.vibrateSeconds = prefs.optInt("vibrateSeconds", 30);
+        snap.ringMinutes = prefs.optInt("ringMinutes", 5);
+        snap.alumniSkipCaption = prefs.optBoolean("alumniSkipCaption", true);
         snap.seedCaptions = prefs.optBoolean("seedCaptions", false);
         snap.deskOngoing = prefs.optBoolean("deskOngoing", true);
         snap.fullScreen = prefs.optBoolean("fullScreen", true);
