@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Member;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
@@ -72,5 +73,29 @@ public class BirthdayHorizonTest {
     assertTrue(BirthdayHorizon.inWindow(bob, noon, BirthdayHorizon.TODAY));
     assertEquals("Today", BirthdayHorizon.group(
       java.util.Collections.singletonList(bob), noon, BirthdayHorizon.TODAY).get(0).title);
+  }
+
+  @Test
+  public void groupingAFullRosterKeepsWeekAndAll() {
+    Calendar now = utc(2026, Calendar.AUGUST, 26);
+    List<Member> roster = new ArrayList<>();
+    for (int i = 0; i < 250; i++) {
+      roster.add(person("P" + i, (i % 12) + 1, (i % 28) + 1));
+    }
+    List<BirthdayHorizon.Section> week =
+      BirthdayHorizon.group(roster, now, BirthdayHorizon.WEEK);
+    List<BirthdayHorizon.Section> everyone =
+      BirthdayHorizon.group(roster, now, BirthdayHorizon.ALL);
+    int weekPeople = 0;
+    for (BirthdayHorizon.Section section : week) {
+      weekPeople += section.members.size();
+    }
+    int allPeople = 0;
+    for (BirthdayHorizon.Section section : everyone) {
+      allPeople += section.members.size();
+    }
+    assertEquals(250, allPeople);
+    assertTrue(weekPeople <= 250);
+    assertTrue(weekPeople < allPeople);
   }
 }

@@ -107,6 +107,14 @@ public class DateUtilsTest {
   }
 
   @Test
+  public void calendarDaysAcrossAYearDoesNotWalkDayByDay() {
+    Calendar from = utc(2026, Calendar.JANUARY, 1, 0, 0);
+    Calendar to = utc(2027, Calendar.JANUARY, 1, 0, 0);
+    assertEquals(365, DateUtils.calendarDaysBetween(from, to));
+    assertEquals(366, DateUtils.daysBetweenKeys("2024-01-01", "2025-01-01"));
+  }
+
+  @Test
   public void inMonthThirdsAreEquallySpaced() {
     assertEquals(10, DateUtils.inMonthThirds(31)[0]);
     assertEquals(20, DateUtils.inMonthThirds(31)[1]);

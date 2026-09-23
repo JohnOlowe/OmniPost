@@ -122,15 +122,28 @@ public final class DateUtils {
 
   /** Whole calendar days from {@code from} to {@code to} (negative if {@code to} is earlier). */
   public static int calendarDaysBetween(Calendar from, Calendar to) {
-    Calendar a = startOfDay(from);
-    Calendar b = startOfDay(to);
-    int days = 0;
-    int step = a.after(b) ? -1 : 1;
-    while (!dayKey(a).equals(dayKey(b)) && Math.abs(days) < 4000) {
-      a.add(Calendar.DAY_OF_MONTH, step);
-      days += step;
+    if (from == null || to == null) {
+      return 0;
     }
-    return days;
+    return julianDay(to) - julianDay(from);
+  }
+
+  /** Proleptic Gregorian day number — date only, ignores clock and zone. */
+  public static int julianDay(Calendar calendar) {
+    if (calendar == null) {
+      return 0;
+    }
+    return julianDay(
+      calendar.get(Calendar.YEAR),
+      calendar.get(Calendar.MONTH) + 1,
+      calendar.get(Calendar.DAY_OF_MONTH));
+  }
+
+  public static int julianDay(int year, int month1to12, int day) {
+    int a = (14 - month1to12) / 12;
+    int y = year + 4800 - a;
+    int m = month1to12 + 12 * a - 3;
+    return day + (153 * m + 2) / 5 + 365 * y + y / 4 - y / 100 + y / 400 - 32045;
   }
 
   public static Calendar parseDayKey(String key, TimeZone zone) {
@@ -353,12 +366,14 @@ public final class DateUtils {
   }
 
   public static String monthDayLabel(int month1to12, int day) {
-    Calendar c = Calendar.getInstance();
-    c.set(Calendar.MONTH, month1to12 - 1);
-    c.set(Calendar.DAY_OF_MONTH, 1);
-    String month = new SimpleDateFormat("MMMM", Locale.getDefault()).format(c.getTime());
-    return day + " " + month;
+    if (month1to12 < 1 || month1to12 > 12) {
+      return String.valueOf(day);
+    }
+    return day + " " + MONTH_NAMES[month1to12 - 1];
   }
+
+  private static final String[] MONTH_NAMES =
+    new java.text.DateFormatSymbols(Locale.getDefault()).getMonths();
 
   private static Calendar strip(Calendar now) {
     Calendar c = (Calendar) now.clone();

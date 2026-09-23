@@ -27,15 +27,23 @@ import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BirthdaysFragment extends Fragment {
   private FragmentBirthdaysBinding binding;
   private MemberAdapter adapter;
   private final List<Member> all = new ArrayList<>();
+  private final Map<Integer, List<BirthdayHorizon.Section>> memberByHorizon = new HashMap<>();
+  private final Map<Integer, List<BirthdayHorizon.Section>> alumniByHorizon = new HashMap<>();
   private String kind = Member.KIND_MEMBER;
   private int memberHorizon = BirthdayHorizon.ALL;
   private int alumniHorizon = BirthdayHorizon.WEEK;
+  private int memberCount;
+  private int alumniCount;
+  private boolean ignoreChip;
 
   @Nullable
   @Override
@@ -68,6 +76,8 @@ public class BirthdaysFragment extends Fragment {
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
+    binding.list.setHasFixedSize(true);
+    binding.list.setItemAnimator(null);
     binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_members));
     binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
     binding.tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
@@ -75,7 +85,7 @@ public class BirthdaysFragment extends Fragment {
       public void onTabSelected(TabLayout.Tab tab) {
         kind = tab.getPosition() == 1 ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
         syncHorizonChip();
-        render();
+        paint();
       }
 
       @Override
@@ -85,7 +95,7 @@ public class BirthdaysFragment extends Fragment {
       public void onTabReselected(TabLayout.Tab tab) {}
     });
     binding.horizon.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
-      if (!isChecked) {
+      if (ignoreChip || !isChecked) {
         return;
       }
       int horizon = horizonOf(checkedId);
@@ -94,7 +104,7 @@ public class BirthdaysFragment extends Fragment {
       } else {
         memberHorizon = horizon;
       }
-      render();
+      paint();
     });
     paintAlumniSwitch();
     AppDatabase.get(requireContext())
@@ -105,7 +115,8 @@ public class BirthdaysFragment extends Fragment {
         if (members != null) {
           all.addAll(members);
         }
-        render();
+        rebuildCaches();
+        paint();
       });
     binding.fab.setOnClickListener(v -> showEditor(null));
     syncHorizonChip();
@@ -156,7 +167,12 @@ public class BirthdaysFragment extends Fragment {
     } else if (horizon == BirthdayHorizon.MONTH) {
       id = R.id.chip_month;
     }
+    if (binding.horizon.getCheckedButtonId() == id) {
+      return;
+    }
+    ignoreChip = true;
     binding.horizon.check(id);
+    ignoreChip = false;
   }
 
   private static int horizonOf(int checkedId) {
@@ -175,24 +191,43 @@ public class BirthdaysFragment extends Fragment {
     return BirthdayHorizon.ALL;
   }
 
-  private void render() {
+  private void rebuildCaches() {
+    List<Member> members = new ArrayList<>();
+    List<Member> alumni = new ArrayList<>();
+    for (Member member : all) {
+      if (Member.KIND_ALUMNI.equals(Member.kindOf(member))) {
+        alumni.add(member);
+      } else {
+        members.add(member);
+      }
+    }
+    memberCount = members.size();
+    alumniCount = alumni.size();
+    Calendar now = Calendar.getInstance();
+    memberByHorizon.clear();
+    alumniByHorizon.clear();
+    for (int horizon : BirthdayHorizon.HORIZONS) {
+      memberByHorizon.put(horizon, BirthdayHorizon.group(members, now, horizon));
+      alumniByHorizon.put(horizon, BirthdayHorizon.group(alumni, now, horizon));
+    }
+  }
+
+  private void paint() {
     if (binding == null) {
       return;
-    }
-    List<Member> filtered = new ArrayList<>();
-    for (Member member : all) {
-      if (kind.equals(Member.kindOf(member))) {
-        filtered.add(member);
-      }
     }
     boolean alumni = Member.KIND_ALUMNI.equals(kind);
     int horizon = alumni ? alumniHorizon : memberHorizon;
     List<BirthdayHorizon.Section> sections =
-      BirthdayHorizon.group(filtered, Calendar.getInstance(), horizon);
+      (alumni ? alumniByHorizon : memberByHorizon).get(horizon);
+    if (sections == null) {
+      sections = Collections.emptyList();
+    }
     adapter.submit(sections);
+    int roster = alumni ? alumniCount : memberCount;
     boolean empty = sections.isEmpty();
     binding.empty.setText(
-      empty && filtered.isEmpty()
+      empty && roster == 0
         ? (alumni ? R.string.empty_alumni : R.string.empty_birthdays)
         : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);

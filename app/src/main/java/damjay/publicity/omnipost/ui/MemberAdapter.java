@@ -49,6 +49,7 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
   public MemberAdapter(Listener listener) {
     this.listener = listener;
+    setHasStableIds(true);
   }
 
   public void submit(List<BirthdayHorizon.Section> sections) {
@@ -92,6 +93,17 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
   @Override
   public int getItemCount() {
     return rows.size();
+  }
+
+  @Override
+  public long getItemId(int position) {
+    Row row = rows.get(position);
+    if (row.kind == TYPE_HEADER) {
+      String header = row.header == null ? "" : row.header;
+      return (long) TYPE_HEADER << 32 | (header.hashCode() & 0xffffffffL);
+    }
+    long id = row.member == null ? 0L : row.member.id;
+    return (long) TYPE_MEMBER << 32 | (id & 0xffffffffL);
   }
 
   static class HeaderHolder extends RecyclerView.ViewHolder {
