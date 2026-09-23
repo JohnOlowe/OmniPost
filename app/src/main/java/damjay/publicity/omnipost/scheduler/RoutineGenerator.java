@@ -429,6 +429,17 @@ public final class RoutineGenerator {
       0L), member.skipCaption));
   }
 
+  private static Task withSkip(Task task, boolean skip) {
+    if (task == null) {
+      return null;
+    }
+    task.skipCaption = skip;
+    if (skip) {
+      task.description = "No caption — open WhatsApp and forward.";
+    }
+    return task;
+  }
+
   private static Task build(
     String type,
     String title,

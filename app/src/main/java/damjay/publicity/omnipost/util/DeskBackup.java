@@ -116,6 +116,18 @@ public final class DeskBackup {
     ScheduleCoordinator.bootstrap(app);
   }
 
+  private static boolean hasAlumni(Snapshot snap) {
+    if (snap == null || snap.members == null) {
+      return false;
+    }
+    for (Member member : snap.members) {
+      if (Member.isAlumni(member)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static void write(OutputStream out, Snapshot snap) throws IOException {
     if (out == null) {
       throw new IOException("backup");
