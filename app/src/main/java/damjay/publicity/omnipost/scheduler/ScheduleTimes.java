@@ -27,6 +27,8 @@ public final class ScheduleTimes {
   public static final int GENERATE_MONTH_COUNT = 2;
   /** Rolling window so the next dawn is ready without dumping every day until D-Day. */
   public static final int GENERATE_COUNTDOWN_DAYS = 3;
+  /** Only mint birthday cards that are actually coming up, so a 200-name roster cannot flood AMS. */
+  public static final int GENERATE_BIRTHDAY_DAYS = 21;
 
   private ScheduleTimes() {}
 }

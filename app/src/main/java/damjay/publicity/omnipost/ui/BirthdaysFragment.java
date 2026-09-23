@@ -6,12 +6,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.Spinner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputEditText;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
@@ -19,10 +21,15 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class BirthdaysFragment extends Fragment {
   private FragmentBirthdaysBinding binding;
+  private MemberAdapter adapter;
+  private final List<Member> all = new ArrayList<>();
+  private String kind = Member.KIND_MEMBER;
 
   @Nullable
   @Override
@@ -31,7 +38,7 @@ public class BirthdaysFragment extends Fragment {
     @Nullable ViewGroup container,
     @Nullable Bundle savedInstanceState) {
     binding = FragmentBirthdaysBinding.inflate(inflater, container, false);
-    MemberAdapter adapter = new MemberAdapter(new MemberAdapter.Listener() {
+    adapter = new MemberAdapter(new MemberAdapter.Listener() {
       @Override
       public void onEdit(Member member) {
         showEditor(member);
@@ -55,15 +62,50 @@ public class BirthdaysFragment extends Fragment {
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
+    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_members));
+    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
+    binding.tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+      @Override
+      public void onTabSelected(TabLayout.Tab tab) {
+        kind = tab.getPosition() == 1 ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
+        render();
+      }
+
+      @Override
+      public void onTabUnselected(TabLayout.Tab tab) {}
+
+      @Override
+      public void onTabReselected(TabLayout.Tab tab) {}
+    });
     AppDatabase.get(requireContext())
       .memberDao()
       .observeAll()
       .observe(getViewLifecycleOwner(), members -> {
-        adapter.submit(members);
-        binding.empty.setVisibility(members == null || members.isEmpty() ? View.VISIBLE : View.GONE);
+        all.clear();
+        if (members != null) {
+          all.addAll(members);
+        }
+        render();
       });
     binding.fab.setOnClickListener(v -> showEditor(null));
     return binding.getRoot();
+  }
+
+  private void render() {
+    if (binding == null) {
+      return;
+    }
+    List<Member> filtered = new ArrayList<>();
+    for (Member member : all) {
+      if (kind.equals(Member.kindOf(member))) {
+        filtered.add(member);
+      }
+    }
+    adapter.submit(filtered);
+    boolean alumni = Member.KIND_ALUMNI.equals(kind);
+    binding.empty.setText(alumni ? R.string.empty_alumni : R.string.empty_birthdays);
+    binding.empty.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);
+    binding.fab.setContentDescription(getString(alumni ? R.string.add_alumni : R.string.add_member));
   }
 
   private void showEditor(@Nullable Member existing) {
@@ -71,6 +113,7 @@ public class BirthdaysFragment extends Fragment {
     TextInputEditText name = view.findViewById(R.id.input_name);
     Spinner month = view.findViewById(R.id.spinner_month);
     Spinner day = view.findViewById(R.id.spinner_day);
+    CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);
     months.setDropDownViewResource(R.layout.spinner_item);
@@ -83,15 +126,23 @@ public class BirthdaysFragment extends Fragment {
       new ArrayAdapter<>(requireContext(), R.layout.spinner_item, days);
     dayAdapter.setDropDownViewResource(R.layout.spinner_item);
     day.setAdapter(dayAdapter);
+    boolean alumniTab = Member.KIND_ALUMNI.equals(kind);
     if (existing != null) {
       name.setText(existing.name);
       month.setSelection(Math.max(0, existing.birthMonth - 1));
       day.setSelection(Math.max(0, existing.birthDay - 1));
+      skipCaption.setChecked(existing.skipCaption);
+    } else {
+      skipCaption.setChecked(alumniTab);
     }
+    boolean alumni = existing != null ? Member.isAlumni(existing) : alumniTab;
     new MaterialAlertDialogBuilder(requireContext())
-      .setTitle(existing == null ? R.string.add_member : R.string.edit_member)
+      .setTitle(
+        existing == null
+          ? (alumni ? R.string.add_alumni : R.string.add_member)
+          : (alumni ? R.string.edit_alumni : R.string.edit_member))
       .setView(view)
-      .setPositiveButton(R.string.save_member, (d, w) -> {
+      .setPositiveButton(alumni ? R.string.save_alumni : R.string.save_member, (d, w) -> {
         String value = name.getText() == null ? "" : name.getText().toString().trim();
         if (value.isEmpty()) {
           return;
@@ -106,6 +157,8 @@ public class BirthdaysFragment extends Fragment {
         member.name = value;
         member.birthMonth = month1;
         member.birthDay = dayOfMonth;
+        member.kind = alumni ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
+        member.skipCaption = skipCaption.isChecked();
         AppExecutors.disk().execute(() -> {
           AppDatabase db = AppDatabase.get(requireContext());
           if (member.id == 0L) {

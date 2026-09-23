@@ -52,4 +52,7 @@ public class Series {
 
   @NonNull
   public String seedKey = "";
+
+  /** New cards of this series skip the write-caption nags. */
+  public boolean skipCaption;
 }

@@ -19,6 +19,14 @@ public final class WhatsAppRouter {
     }
   }
 
+  /** Opens WhatsApp itself so the user can forward a chat — no caption attached. */
+  public static boolean openApp(Context context) {
+    if (launchMain(context, PACKAGE_WHATSAPP)) {
+      return true;
+    }
+    return launchMain(context, PACKAGE_WHATSAPP_BUSINESS);
+  }
+
   /**
    * Copies the caption, then launches WhatsApp with an explicit package (never the system
    * share sheet). WhatsApp's own chat picker is the only UI that should appear.
@@ -34,6 +42,23 @@ public final class WhatsAppRouter {
       return true;
     }
     return launch(context, send, PACKAGE_WHATSAPP_BUSINESS);
+  }
+
+  private static boolean launchMain(Context context, String pkg) {
+    if (context == null || pkg == null) {
+      return false;
+    }
+    try {
+      Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkg);
+      if (intent == null) {
+        return false;
+      }
+      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      context.startActivity(intent);
+      return true;
+    } catch (Exception ignored) {
+      return false;
+    }
   }
 
   private static boolean launch(Context context, Intent template, String pkg) {

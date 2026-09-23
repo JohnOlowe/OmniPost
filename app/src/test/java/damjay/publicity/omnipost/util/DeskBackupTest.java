@@ -112,6 +112,11 @@ public class DeskBackupTest {
     assertEquals("Grace\nand peace", got.vars.get(0).value);
     assertEquals("Ada", got.members.get(0).name);
     assertEquals(3, got.members.get(0).birthMonth);
+    assertEquals(Member.KIND_MEMBER, got.members.get(0).kind);
+    assertFalse(got.members.get(0).skipCaption);
+    assertFalse(got.customTasks.get(0).skipCaption);
+    assertFalse(got.customTasks.get(0).titleLocked);
+    assertFalse(got.series.get(0).skipCaption);
     assertEquals("*Come and worship*", got.drafts.get(0).variantA);
     assertEquals(99L, got.drafts.get(0).updatedAt);
     assertEquals(TaskTypes.ONE_OFF, got.customTasks.get(0).type);

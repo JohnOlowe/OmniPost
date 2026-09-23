@@ -69,7 +69,7 @@ public final class AlarmScheduler {
       markArmed(task.id, stamp);
       return;
     }
-    boolean saved = TaskStatus.captionIsSaved(task);
+    boolean saved = !TaskStatus.captionWorkPending(task);
     if (!saved && task.draftAtMillis > now) {
       setAlarmClock(ctx, task, PHASE_DRAFT, task.draftAtMillis);
     }
@@ -440,7 +440,7 @@ public final class AlarmScheduler {
       long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
       return "snooze|" + (minuteAt > now ? minuteAt : 0L) + "|" + task.snoozeUntilMillis;
     }
-    boolean saved = TaskStatus.captionIsSaved(task);
+    boolean saved = !TaskStatus.captionWorkPending(task);
     StringBuilder out = new StringBuilder("arm");
     if (!saved && task.draftAtMillis > now) {
       out.append("|d").append(task.draftAtMillis);

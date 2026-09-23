@@ -112,6 +112,7 @@ public final class DeskBackup {
     Prefs.setInstagramItalicFace(app, snap.igItalic);
     Prefs.setInstagramBothFace(app, snap.igBoth);
     Prefs.setSeriesDefaultsInstalled(app, true);
+    Prefs.setAlumniRosterInstalled(app, hasAlumni(snap));
     ScheduleCoordinator.bootstrap(app);
   }
 
@@ -282,6 +283,7 @@ public final class DeskBackup {
       o.put("twentieth", series.twentieth);
       o.put("enabled", series.enabled);
       o.put("seedKey", nz(series.seedKey));
+      o.put("skipCaption", series.skipCaption);
       out.put(o);
     }
     return out;
@@ -319,6 +321,8 @@ public final class DeskBackup {
       o.put("birthMonth", member.birthMonth);
       o.put("birthDay", member.birthDay);
       o.put("notes", nz(member.notes));
+      o.put("kind", nz(member.kind));
+      o.put("skipCaption", member.skipCaption);
       out.put(o);
     }
     return out;
@@ -365,6 +369,8 @@ public final class DeskBackup {
       o.put("snoozeUntilMillis", task.snoozeUntilMillis);
       o.put("captionSavedAt", task.captionSavedAt);
       o.put("timesLocked", task.timesLocked);
+      o.put("titleLocked", task.titleLocked);
+      o.put("skipCaption", task.skipCaption);
       out.put(o);
     }
     return out;
@@ -394,6 +400,7 @@ public final class DeskBackup {
       series.twentieth = o.optBoolean("twentieth", true);
       series.enabled = o.optBoolean("enabled", true);
       series.seedKey = str(o, "seedKey");
+      series.skipCaption = o.optBoolean("skipCaption", false);
       out.add(series);
     }
   }
@@ -423,6 +430,11 @@ public final class DeskBackup {
       member.birthMonth = o.optInt("birthMonth", 0);
       member.birthDay = o.optInt("birthDay", 0);
       member.notes = str(o, "notes");
+      member.kind = str(o, "kind");
+      if (member.kind.isEmpty()) {
+        member.kind = Member.KIND_MEMBER;
+      }
+      member.skipCaption = o.optBoolean("skipCaption", false);
       out.add(member);
     }
   }
@@ -464,6 +476,8 @@ public final class DeskBackup {
       task.snoozeUntilMillis = o.optLong("snoozeUntilMillis", 0L);
       task.captionSavedAt = o.optLong("captionSavedAt", 0L);
       task.timesLocked = o.optBoolean("timesLocked", false);
+      task.titleLocked = o.optBoolean("titleLocked", false);
+      task.skipCaption = o.optBoolean("skipCaption", false);
       out.add(task);
     }
   }

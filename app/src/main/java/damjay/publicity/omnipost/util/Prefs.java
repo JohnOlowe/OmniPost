@@ -21,6 +21,7 @@ public final class Prefs {
   private static final String FULLSCREEN = "full_screen";
   private static final String LAST_NAG = "last_nag_burst";
   private static final String SERIES_SEEDED = "series_defaults_v1";
+  private static final String ALUMNI_SEEDED = "alumni_roster_v1";
   private static final String IG_BOLD = "ig_bold_face";
   private static final String IG_ITALIC = "ig_italic_face";
   private static final String IG_BOTH = "ig_both_face";
@@ -128,6 +129,14 @@ public final class Prefs {
 
   public static void setSeriesDefaultsInstalled(Context ctx, boolean on) {
     sp(ctx).edit().putBoolean(SERIES_SEEDED, on).apply();
+  }
+
+  public static boolean alumniRosterInstalled(Context ctx) {
+    return sp(ctx).getBoolean(ALUMNI_SEEDED, false);
+  }
+
+  public static void setAlumniRosterInstalled(Context ctx, boolean on) {
+    sp(ctx).edit().putBoolean(ALUMNI_SEEDED, on).apply();
   }
 
   public static InstagramStyle.Faces instagramFaces(Context ctx) {

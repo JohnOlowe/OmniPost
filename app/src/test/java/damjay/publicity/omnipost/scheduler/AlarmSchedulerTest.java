@@ -48,6 +48,13 @@ public class AlarmSchedulerTest {
   }
 
   @Test
+  public void skipCaptionOmitsDraftAndWarningArms() {
+    Task task = task(100_000L, 200_000L);
+    task.skipCaption = true;
+    assertEquals("arm|m140000|n200000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+  }
+
+  @Test
   public void recycleStaleIgnoresANullContext() {
     AlarmScheduler.recycleStale(null, null, 0L);
   }

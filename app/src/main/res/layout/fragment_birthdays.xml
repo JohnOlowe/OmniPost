@@ -5,26 +5,48 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
 
-  <androidx.recyclerview.widget.RecyclerView
-    android:id="@+id/list"
+  <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:clipToPadding="false"
-    android:padding="16dp"
-    android:paddingBottom="88dp"
-    tools:listitem="@layout/item_member"/>
+    android:orientation="vertical">
 
-  <TextView
-    android:id="@+id/empty"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:layout_margin="32dp"
-    android:gravity="center"
-    android:text="@string/empty_birthdays"
-    android:textColor="@color/text_muted"
-    android:textSize="15sp"
-    android:visibility="gone"/>
+    <com.google.android.material.tabs.TabLayout
+      android:id="@+id/tabs"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="@color/navy_950"
+      app:tabIndicatorColor="@color/gold"
+      app:tabMode="fixed"
+      app:tabSelectedTextColor="@color/gold"
+      app:tabTextColor="@color/text_muted"/>
+
+    <FrameLayout
+      android:layout_width="match_parent"
+      android:layout_height="0dp"
+      android:layout_weight="1">
+
+      <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:padding="16dp"
+        android:paddingBottom="88dp"
+        tools:listitem="@layout/item_member"/>
+
+      <TextView
+        android:id="@+id/empty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="32dp"
+        android:gravity="center"
+        android:text="@string/empty_birthdays"
+        android:textColor="@color/text_muted"
+        android:textSize="15sp"
+        android:visibility="gone"/>
+    </FrameLayout>
+  </LinearLayout>
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/fab"

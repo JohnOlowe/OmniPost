@@ -7,6 +7,7 @@ public final class TaskTypes {
   public static final String WEDNESDAY_BIBLE_STUDY = "WEDNESDAY_BIBLE_STUDY";
   public static final String FRIDAY_PRAYER = "FRIDAY_PRAYER";
   public static final String BIRTHDAY = "BIRTHDAY";
+  public static final String ALUMNI_BIRTHDAY = "ALUMNI_BIRTHDAY";
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
   public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
@@ -24,6 +25,7 @@ public final class TaskTypes {
   public static final String SECTION_MONTHLY = "Monthly";
   public static final String SECTION_CAMPAIGN = "Campaign";
   public static final String SECTION_FLEXIBLE = "Flexible";
+  public static final String SECTION_ALUMNI = "Alumni";
   public static final String SECTION_ONCE = "One-off";
 
   private TaskTypes() {}
@@ -41,6 +43,8 @@ public final class TaskTypes {
         return "Friday Prayer Meeting";
       case BIRTHDAY:
         return "Birthday";
+      case ALUMNI_BIRTHDAY:
+        return "Alumni birthday";
       case NEW_MONTH_FASTING:
         return "Fasting tomorrow";
       case FASTING_DAY:
@@ -86,6 +90,7 @@ public final class TaskTypes {
       case COUNTDOWN:
         return "Daily";
       case BIRTHDAY:
+      case ALUMNI_BIRTHDAY:
         return "Yearly";
       case FLEXIBLE:
         return "Flexible";
@@ -116,6 +121,8 @@ public final class TaskTypes {
       case BIRTHDAY:
       case FLEXIBLE:
         return SECTION_FLEXIBLE;
+      case ALUMNI_BIRTHDAY:
+        return SECTION_ALUMNI;
       default:
         return SECTION_ONCE;
     }

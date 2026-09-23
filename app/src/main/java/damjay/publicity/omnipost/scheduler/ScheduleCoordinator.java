@@ -32,6 +32,7 @@ public final class ScheduleCoordinator {
     captureLiveCaptions(db);
     dropStaleCountdowns(app, db, now);
     ensureSeriesDefaults(app, db);
+    ensureAlumni(app, db);
 
     List<Member> members = db.memberDao().getAllSync();
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
@@ -46,8 +47,15 @@ public final class ScheduleCoordinator {
       if (TaskStatus.POSTED.equals(existing.status)) {
         continue;
       }
-      existing.title = candidate.title;
-      existing.description = candidate.description;
+      if (!existing.titleLocked) {
+        existing.title = candidate.title;
+      }
+      if (existing.skipCaption) {
+        existing.description = "No caption — open WhatsApp and forward.";
+      } else {
+        existing.description = candidate.description;
+      }
+      existing.type = candidate.type;
       existing.seriesId = candidate.seriesId;
       if (!existing.timesLocked) {
         existing.draftAtMillis = candidate.draftAtMillis;
@@ -95,6 +103,19 @@ public final class ScheduleCoordinator {
       backfillVars(db, notice, SeriesDefaults.noticeVars(), 0L);
     }
     Prefs.setSeriesDefaultsInstalled(app, true);
+  }
+
+  private static void ensureAlumni(Context app, AppDatabase db) {
+    if (Prefs.alumniRosterInstalled(app)) {
+      return;
+    }
+    List<Member> roster = AlumniRoster.members();
+    for (Member member : roster) {
+      if (member != null) {
+        db.memberDao().insert(member);
+      }
+    }
+    Prefs.setAlumniRosterInstalled(app, true);
   }
 
   private static void backfillVars(AppDatabase db, Series series, String vars, long endAt) {
@@ -263,7 +284,7 @@ public final class ScheduleCoordinator {
     long now = System.currentTimeMillis();
     switch (phase) {
       case AlarmScheduler.PHASE_DRAFT:
-        if (TaskStatus.captionIsSaved(task)) {
+        if (!TaskStatus.captionWorkPending(task)) {
           AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.READY);
           task.status = TaskStatus.READY;
           break;
@@ -273,7 +294,7 @@ public final class ScheduleCoordinator {
         NotificationHelper.showDraft(app, task);
         break;
       case AlarmScheduler.PHASE_WARNING:
-        if (TaskStatus.captionIsSaved(task)) {
+        if (!TaskStatus.captionWorkPending(task)) {
           AppDatabase.get(app).taskDao().updateStatus(taskId, TaskStatus.READY);
           task.status = TaskStatus.READY;
           break;
@@ -459,17 +480,25 @@ public final class ScheduleCoordinator {
   }
 
   public static void addCustom(Context context, String title, long postAt, boolean flexible) {
+    addCustom(context, title, postAt, flexible, false);
+  }
+
+  public static void addCustom(
+    Context context, String title, long postAt, boolean flexible, boolean skipCaption) {
     Context app = context.getApplicationContext();
     long now = System.currentTimeMillis();
     int warn = Prefs.warningMinutes(app);
     Task task = new Task();
     task.type = flexible ? TaskTypes.FLEXIBLE : TaskTypes.ONE_OFF;
     task.title = title;
-    task.description = flexible
-      ? "Flexible — you pick the next time. Write the caption. Ready "
-        + warn
-        + " minutes before."
-      : "One-off. Write the caption. Ready " + warn + " minutes before.";
+    task.skipCaption = skipCaption;
+    task.description = skipCaption
+      ? "No caption — open WhatsApp and forward."
+      : flexible
+        ? "Flexible — you pick the next time. Write the caption. Ready "
+          + warn
+          + " minutes before."
+        : "One-off. Write the caption. Ready " + warn + " minutes before.";
     task.postAtMillis = postAt;
     Calendar postCal = Calendar.getInstance();
     postCal.setTimeInMillis(postAt);
@@ -486,6 +515,62 @@ public final class ScheduleCoordinator {
       AlarmScheduler.scheduleHeartbeat(app);
       NagForegroundService.refresh(app);
     }
+  }
+
+  public static void rename(Context context, long taskId, String title) {
+    if (context == null || taskId <= 0L) {
+      return;
+    }
+    String name = title == null ? "" : title.trim();
+    if (name.isEmpty()) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Task task = db.taskDao().getById(taskId);
+    if (task == null) {
+      return;
+    }
+    task.title = name;
+    task.titleLocked = true;
+    db.taskDao().update(task);
+    AlarmScheduler.rememberCue(task.id, task.title, task.postAtMillis);
+    NagForegroundService.refresh(app);
+  }
+
+  public static void setSkipCaption(Context context, long taskId, boolean skip) {
+    if (context == null || taskId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Task task = db.taskDao().getById(taskId);
+    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+      return;
+    }
+    task.skipCaption = skip;
+    if (skip) {
+      task.description = "No caption — open WhatsApp and forward.";
+    } else if (task.description != null && task.description.startsWith("No caption")) {
+      task.description = "Write the caption. OmniPost will nag you when it is time.";
+    }
+    long now = System.currentTimeMillis();
+    if (!(TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now)) {
+      task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
+      task.snoozeUntilMillis = 0L;
+    }
+    db.taskDao().update(task);
+    if (task.memberId > 0L) {
+      Member member = db.memberDao().getById(task.memberId);
+      if (member != null) {
+        member.skipCaption = skip;
+        db.memberDao().update(member);
+      }
+    }
+    AlarmScheduler.cancelTask(app, taskId);
+    AlarmScheduler.scheduleTask(app, task);
+    AlarmScheduler.scheduleHeartbeat(app);
+    NagForegroundService.refresh(app);
   }
 
   public static void deleteCustom(Context context, long taskId) {

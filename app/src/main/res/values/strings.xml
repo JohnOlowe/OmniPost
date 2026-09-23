@@ -14,6 +14,24 @@
   <string name="empty_posted">No completed posts yet.</string>
   <string name="empty_drafts">No drafts yet. Open a task or start a blank caption.</string>
   <string name="empty_birthdays">Add fellowship members and OmniPost will nag you at 7:00 AM on the day.</string>
+  <string name="empty_alumni">Alumni birthdays from the roster live here. Add more, or open WhatsApp and forward a greeting when OmniPost nags.</string>
+  <string name="tab_members">Members</string>
+  <string name="tab_alumni">Alumni</string>
+  <string name="add_alumni">Add alumni</string>
+  <string name="edit_alumni">Edit alumni</string>
+  <string name="save_alumni">Save alumni</string>
+  <string name="skip_caption">No caption — just forward in WhatsApp</string>
+  <string name="rename_post">Rename this post</string>
+  <string name="rename_hint">Post name</string>
+  <string name="turn_captions_off">Turn captions off</string>
+  <string name="turn_captions_on">Turn captions on</string>
+  <string name="open_whatsapp">Open WhatsApp</string>
+  <string name="no_caption_waiting">No caption. Open WhatsApp and forward when it is time.</string>
+  <string name="no_caption_post">No caption. Open WhatsApp and forward now.</string>
+  <string name="renamed">Post renamed.</string>
+  <string name="captions_off_toast">Captions off. OmniPost will only nag to send.</string>
+  <string name="captions_on_toast">Captions on. Write and save before posting.</string>
+  <string name="post_options">This post</string>
   <string name="tinker_title">Tinker</string>
   <string name="compare">Compare variations</string>
   <string name="compare_hint">Swipe right to see the other caption. Rotate the phone to see both at once.</string>
@@ -133,7 +151,7 @@
   <string name="add_countdown">Daily countdown until D-Day</string>
   <string name="add_monthly">Monthly notice (end of last month, 10th, 20th)</string>
   <string name="series_section">Repeating templates</string>
-  <string name="series_section_body">Sunday Service is already weekly. Add more weeklies or a daily post and choose the days and the exact time. Countdowns and monthly notices still live here. Caption variables work in every post. Long-press a card on Tasks to edit.</string>
+  <string name="series_section_body">Sunday Service is already weekly. Add more weeklies or a daily post and choose the days and the exact time. Countdowns and monthly notices still live here. Caption variables work in every post. Long-press a card on Tasks to rename it, turn captions off, or edit.</string>
   <string name="series_title">Name</string>
   <string name="series_caption">Caption template</string>
   <string name="series_vars">Extra tokens for this post only (optional, one per line: name=value)</string>

@@ -30,6 +30,9 @@ public final class CaptionTemplates {
     if (task == null || task.type == null) {
       return "";
     }
+    if (task.skipCaption) {
+      return "";
+    }
     if (isLive(task.type)) {
       return live(task, series, extrasFrom(context));
     }

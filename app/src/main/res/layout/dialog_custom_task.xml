@@ -57,4 +57,12 @@
       android:text="@string/kind_once"
       android:textColor="@color/cream"/>
   </RadioGroup>
+
+  <CheckBox
+    android:id="@+id/skip_caption"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/skip_caption"
+    android:textColor="@color/cream"/>
 </LinearLayout>

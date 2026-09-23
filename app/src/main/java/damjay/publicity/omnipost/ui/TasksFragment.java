@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.RadioButton;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
@@ -23,6 +24,9 @@ import damjay.publicity.omnipost.databinding.FragmentTasksBinding;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import java.util.ArrayList;
@@ -121,6 +125,18 @@ public class TasksFragment extends Fragment {
       public void onEditSeries(Task task) {
         openSeriesEditor(task);
       }
+
+      @Override
+      public void onForward(Task task) {
+        if (!WhatsAppRouter.openApp(requireContext())) {
+          Toast.makeText(requireContext(), R.string.whatsapp_missing, Toast.LENGTH_LONG).show();
+        }
+      }
+
+      @Override
+      public void onOptions(Task task) {
+        showTaskOptions(task);
+      }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
@@ -216,12 +232,116 @@ public class TasksFragment extends Fragment {
     });
   }
 
+  private void showTaskOptions(Task task) {
+    ArrayList<String> labels = new ArrayList<>();
+    labels.add(getString(R.string.rename_post));
+    boolean posted = TaskStatus.POSTED.equals(task.status);
+    if (!posted) {
+      labels.add(getString(task.skipCaption ? R.string.turn_captions_on : R.string.turn_captions_off));
+    }
+    boolean series = !posted && (task.seriesId > 0L || TaskTypes.oneCard(task.type));
+    if (series) {
+      labels.add(getString(R.string.edit_series));
+    }
+    boolean custom = !posted && TaskTypes.isCustom(task.type);
+    if (custom) {
+      labels.add(getString(R.string.delete));
+    }
+    CharSequence[] items = labels.toArray(new CharSequence[0]);
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(task.title)
+      .setItems(items, (d, which) -> {
+        if (which == 0) {
+          showRename(task);
+          return;
+        }
+        int index = 1;
+        if (!posted) {
+          if (which == index) {
+            toggleCaptions(task);
+            return;
+          }
+          index++;
+        }
+        if (series && which == index) {
+          openSeriesEditor(task);
+          return;
+        }
+        if (custom) {
+          adapterListenerDelete(task);
+        }
+      })
+      .show();
+  }
+
+  private void adapterListenerDelete(Task task) {
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.delete_task_title)
+      .setMessage(getString(R.string.delete_task_body, task.title))
+      .setPositiveButton(R.string.delete, (d, w) -> {
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> ScheduleCoordinator.deleteCustom(app, task.id));
+      })
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void showRename(Task task) {
+    View view = getLayoutInflater().inflate(R.layout.dialog_rename, null, false);
+    TextInputEditText input = view.findViewById(R.id.input_title);
+    input.setText(task.title);
+    if (task.title != null) {
+      input.setSelection(task.title.length());
+    }
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(R.string.rename_post)
+      .setView(view)
+      .setPositiveButton(R.string.save, (d, w) -> {
+        String value = input.getText() == null ? "" : input.getText().toString().trim();
+        if (value.isEmpty()) {
+          Toast.makeText(requireContext(), R.string.need_title, Toast.LENGTH_SHORT).show();
+          return;
+        }
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> {
+          ScheduleCoordinator.rename(app, task.id, value);
+          AppExecutors.main(() -> {
+            if (!isAdded()) {
+              return;
+            }
+            Toast.makeText(requireContext(), R.string.renamed, Toast.LENGTH_SHORT).show();
+          });
+        });
+      })
+      .setNegativeButton(android.R.string.cancel, null)
+      .show();
+  }
+
+  private void toggleCaptions(Task task) {
+    boolean skip = !task.skipCaption;
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.setSkipCaption(app, task.id, skip);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(
+          requireContext(),
+          skip ? R.string.captions_off_toast : R.string.captions_on_toast,
+          Toast.LENGTH_SHORT)
+          .show();
+      });
+    });
+  }
+
   private void showCustomEditor() {
     View view = getLayoutInflater().inflate(R.layout.dialog_custom_task, null, false);
     TextInputEditText title = view.findViewById(R.id.input_title);
     MaterialButton whenBtn = view.findViewById(R.id.btn_when);
     android.widget.TextView until = view.findViewById(R.id.until);
     RadioButton flexible = view.findViewById(R.id.kind_flexible);
+    CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     AtomicLong when = new AtomicLong(DateUtils.nextClock(10, 0));
     Runnable paint = () -> {
       whenBtn.setText(DateUtils.formatStamp(when.get()));
@@ -246,9 +366,10 @@ public class TasksFragment extends Fragment {
           return;
         }
         boolean isFlexible = flexible.isChecked();
+        boolean skip = skipCaption.isChecked();
         Context app = requireContext().getApplicationContext();
         AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.addCustom(app, value, when.get(), isFlexible);
+          ScheduleCoordinator.addCustom(app, value, when.get(), isFlexible, skip);
           AppExecutors.main(() -> {
             if (!isAdded()) {
               return;

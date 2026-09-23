@@ -185,7 +185,7 @@ public final class RoutineGenerator {
       Calendar post = DateUtils.nextWeekdayAt(now, day, hour, minute);
       for (int i = 0; i < ScheduleTimes.GENERATE_WEEKLY_COUNT; i++) {
         Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
-        out.add(build(
+        out.add(withSkip(build(
           TaskTypes.WEEKLY,
           series.title,
           description,
@@ -193,7 +193,7 @@ public final class RoutineGenerator {
           post.getTimeInMillis(),
           TaskTypes.WEEKLY + "|" + series.id + "|" + DateUtils.dayKey(post),
           0L,
-          series.id));
+          series.id), series.skipCaption));
         post.add(Calendar.DAY_OF_MONTH, 7);
       }
     }
@@ -214,7 +214,7 @@ public final class RoutineGenerator {
         continue;
       }
       Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
-      out.add(build(
+      out.add(withSkip(build(
         TaskTypes.DAILY,
         series.title,
         description,
@@ -222,7 +222,7 @@ public final class RoutineGenerator {
         post.getTimeInMillis(),
         TaskTypes.DAILY + "|" + series.id + "|" + DateUtils.dayKey(post),
         0L,
-        series.id));
+        series.id), series.skipCaption));
     }
   }
 
@@ -259,7 +259,7 @@ public final class RoutineGenerator {
       int days = DateUtils.calendarDaysBetween(postDay, event);
       Calendar post = DateUtils.sameDayAt(postDay, hour, series.postMinute);
       Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
-      out.add(build(
+      out.add(withSkip(build(
         TaskTypes.COUNTDOWN,
         CaptionTemplates.countdownTitle(series.title, days),
         "Daily until "
@@ -269,7 +269,7 @@ public final class RoutineGenerator {
         post.getTimeInMillis(),
         countdownKey(series, eventKey, DateUtils.dayKey(post)),
         0L,
-        series.id));
+        series.id), series.skipCaption));
     }
   }
 
@@ -341,7 +341,7 @@ public final class RoutineGenerator {
       return;
     }
     Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
-    out.add(build(
+    out.add(withSkip(build(
       TaskTypes.BIRTHDAY_NOTICE,
       CaptionTemplates.monthlyTitle(series.title, monthName),
       monthlyDescription(series),
@@ -349,7 +349,7 @@ public final class RoutineGenerator {
       post.getTimeInMillis(),
       monthlyKey(series, monthKey, slot, DateUtils.dayKey(post)),
       0L,
-      series.id));
+      series.id), series.skipCaption));
   }
 
   private static String monthlyDescription(Series series) {
@@ -406,17 +406,27 @@ public final class RoutineGenerator {
       member.birthDay,
       ScheduleTimes.BIRTHDAY_POST_HOUR,
       0);
+    long horizon = now.getTimeInMillis()
+      + ScheduleTimes.GENERATE_BIRTHDAY_DAYS * 24L * 60L * 60L * 1000L;
+    if (post.getTimeInMillis() > horizon) {
+      return;
+    }
     Calendar draft = DateUtils.dayBeforeAt(post, draftHour, 0);
+    boolean alumni = Member.isAlumni(member);
+    String type = alumni ? TaskTypes.ALUMNI_BIRTHDAY : TaskTypes.BIRTHDAY;
     String title = member.name + "'s Birthday";
-    out.add(build(
-      TaskTypes.BIRTHDAY,
+    String description = alumni
+      ? "Alumni birthday. Write a greeting if you want one, or turn captions off and forward in WhatsApp."
+      : "Write the greeting the evening before. Caption ready by 6:30 AM. Post at 7:00 AM.";
+    out.add(withSkip(build(
+      type,
       title,
-      "Write the greeting the evening before. Caption ready by 6:30 AM. Post at 7:00 AM.",
+      description,
       draft.getTimeInMillis(),
       post.getTimeInMillis(),
-      TaskTypes.BIRTHDAY + "|" + member.id + "|" + DateUtils.dayKey(post),
+      type + "|" + member.id + "|" + DateUtils.dayKey(post),
       member.id,
-      0L));
+      0L), member.skipCaption));
   }
 
   private static Task build(

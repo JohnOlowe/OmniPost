@@ -91,6 +91,7 @@ public final class SeriesEditor {
     MaterialButton endBtn = view.findViewById(R.id.btn_end);
     MaterialButton timeBtn = view.findViewById(R.id.btn_post_time);
     MaterialButton varsBtn = view.findViewById(R.id.btn_vars);
+    CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     CheckBox optEve = view.findViewById(R.id.opt_eve);
     CheckBox opt10 = view.findViewById(R.id.opt_tenth);
     CheckBox opt20 = view.findViewById(R.id.opt_twentieth);
@@ -122,6 +123,7 @@ public final class SeriesEditor {
     caption.setText(source.caption);
     vars.setText(source.vars);
     checkKind(source.kind, kindWeekly, kindDaily, kindCountdown, kindMonthly);
+    skipCaption.setChecked(source.skipCaption);
     optEve.setChecked(source.lastOfPrevMonth);
     opt10.setChecked(source.tenth);
     opt20.setChecked(source.twentieth);
@@ -185,6 +187,7 @@ public final class SeriesEditor {
         optEve.isChecked(),
         opt10.isChecked(),
         opt20.isChecked(),
+        skipCaption.isChecked(),
         readDays(dayBoxes)))
       .setNegativeButton(android.R.string.cancel, null);
     if (editing) {
@@ -299,6 +302,7 @@ public final class SeriesEditor {
     boolean lastOfPrev,
     boolean day10,
     boolean day20,
+    boolean skipCaption,
     int weekdays) {
     String name = title.getText() == null ? "" : title.getText().toString().trim();
     if (name.isEmpty()) {
@@ -327,6 +331,7 @@ public final class SeriesEditor {
     series.tenth = day10;
     series.twentieth = day20;
     series.weekdays = Series.KIND_WEEKLY.equals(kind) ? weekdays : Weekdays.NONE;
+    series.skipCaption = skipCaption;
     series.enabled = true;
     Context app = context.getApplicationContext();
     AppExecutors.disk().execute(() -> {

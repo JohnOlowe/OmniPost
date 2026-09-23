@@ -42,4 +42,8 @@ public class Task {
   public long snoozeUntilMillis;
   public long captionSavedAt;
   public boolean timesLocked;
+  /** When true, bootstrap will not overwrite {@link #title}. */
+  public boolean titleLocked;
+  /** Forward inside WhatsApp — no write-caption nags. */
+  public boolean skipCaption;
 }

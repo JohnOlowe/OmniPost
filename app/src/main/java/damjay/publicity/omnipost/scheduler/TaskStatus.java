@@ -54,6 +54,16 @@ public final class TaskStatus {
     return dueStatus(draftAtMillis, postAtMillis, now, warningLeadMs, false);
   }
 
+  public static String label(Task task) {
+    if (task == null) {
+      return "";
+    }
+    if (task.skipCaption && READY.equals(task.status)) {
+      return "Forward";
+    }
+    return label(task.status);
+  }
+
   public static String dueStatus(Task task, long now, long warningLeadMs) {
     if (task == null) {
       return SCHEDULED;
@@ -63,7 +73,7 @@ public final class TaskStatus {
       task.postAtMillis,
       now,
       warningLeadMs,
-      captionIsSaved(task));
+      !captionWorkPending(task));
   }
 
   public static String dueStatus(
@@ -92,6 +102,11 @@ public final class TaskStatus {
     return task != null && task.captionSavedAt > 0L;
   }
 
+  /** Write-caption nags only when the post still needs a caption. */
+  public static boolean captionWorkPending(Task task) {
+    return task != null && !task.skipCaption && task.captionSavedAt <= 0L;
+  }
+
   /**
    * When this task's next AlarmClock actually fires. Snooze wins while quiet;
    * otherwise the earliest of draft / caption-ready / post still in the future.
@@ -112,7 +127,7 @@ public final class TaskStatus {
     long warningAt = task.postAtMillis - lead;
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
     long next = Long.MAX_VALUE;
-    boolean saved = captionIsSaved(task);
+    boolean saved = !captionWorkPending(task);
     if (!saved && task.draftAtMillis > now) {
       next = Math.min(next, task.draftAtMillis);
     }

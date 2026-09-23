@@ -30,4 +30,7 @@ public interface MemberDao {
 
   @Query("DELETE FROM members")
   int deleteAll();
+
+  @Query("SELECT COUNT(*) FROM members WHERE kind = :kind")
+  int countByKind(String kind);
 }

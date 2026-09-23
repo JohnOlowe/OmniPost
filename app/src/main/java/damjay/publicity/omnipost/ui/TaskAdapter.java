@@ -35,6 +35,10 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void onDelete(Task task);
 
     void onEditSeries(Task task);
+
+    void onForward(Task task);
+
+    void onOptions(Task task);
   }
 
   static final class Row {
@@ -136,7 +140,12 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     void bind(Task task, Listener listener) {
       binding.title.setText(task.title);
-      if (TaskStatus.captionIsSaved(task) && !TaskStatus.POSTED.equals(task.status)) {
+      if (task.skipCaption && !TaskStatus.POSTED.equals(task.status)) {
+        binding.description.setText(
+          TaskStatus.NAGGING.equals(task.status)
+            ? itemView.getContext().getString(R.string.no_caption_post)
+            : itemView.getContext().getString(R.string.no_caption_waiting));
+      } else if (TaskStatus.captionIsSaved(task) && !TaskStatus.POSTED.equals(task.status)) {
         binding.description.setText(
           TaskStatus.NAGGING.equals(task.status)
             ? itemView.getContext().getString(R.string.caption_saved_post)
@@ -144,8 +153,12 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.description.setText(task.description);
       }
-      binding.btnDraft.setText(
-        TaskStatus.captionIsSaved(task) ? R.string.open_caption : R.string.write_caption);
+      if (task.skipCaption) {
+        binding.btnDraft.setText(R.string.open_whatsapp);
+      } else {
+        binding.btnDraft.setText(
+          TaskStatus.captionIsSaved(task) ? R.string.open_caption : R.string.write_caption);
+      }
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
         binding.when.setText(
           itemView.getContext().getString(
@@ -153,32 +166,34 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.when.setText(DateUtils.relativeOrStamp(task.postAtMillis));
       }
-      binding.status.setText(TaskStatus.label(task.status));
+      binding.status.setText(TaskStatus.label(task));
       binding.cadence.setText(TaskTypes.cadence(task.type));
       style(task);
       boolean posted = TaskStatus.POSTED.equals(task.status);
       binding.btnPosted.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.btnReopen.setVisibility(posted ? View.VISIBLE : View.GONE);
       binding.btnSnooze.setVisibility(posted ? View.GONE : View.VISIBLE);
-      binding.getRoot().setOnClickListener(v -> listener.onOpen(task));
-      binding.btnDraft.setOnClickListener(v -> listener.onOpen(task));
+      binding.getRoot().setOnClickListener(v -> {
+        if (task.skipCaption) {
+          listener.onForward(task);
+        } else {
+          listener.onOpen(task);
+        }
+      });
+      binding.btnDraft.setOnClickListener(v -> {
+        if (task.skipCaption) {
+          listener.onForward(task);
+        } else {
+          listener.onOpen(task);
+        }
+      });
       binding.btnPosted.setOnClickListener(v -> listener.onMarkPosted(task));
       binding.btnReopen.setOnClickListener(v -> listener.onReopen(task));
       binding.btnSnooze.setOnClickListener(v -> listener.onSnooze(task));
       binding.btnShift.setOnClickListener(v -> listener.onShift(task));
       binding.getRoot().setOnLongClickListener(v -> {
-        if (posted) {
-          return false;
-        }
-        if (task.seriesId > 0L || TaskTypes.oneCard(task.type)) {
-          listener.onEditSeries(task);
-          return true;
-        }
-        if (TaskTypes.isCustom(task.type)) {
-          listener.onDelete(task);
-          return true;
-        }
-        return false;
+        listener.onOptions(task);
+        return true;
       });
     }
 

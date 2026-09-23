@@ -22,6 +22,7 @@ import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
+import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
@@ -33,6 +34,7 @@ public class AlarmActivity extends AppCompatActivity {
   private long taskId;
   private long postAt;
   private boolean selected;
+  private boolean skipCaption;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -43,6 +45,13 @@ public class AlarmActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
     binding.btnDraft.setOnClickListener(v -> {
       acknowledge();
+      if (skipCaption) {
+        if (!WhatsAppRouter.openApp(this)) {
+          Toast.makeText(this, R.string.whatsapp_missing, Toast.LENGTH_LONG).show();
+        }
+        finish();
+        return;
+      }
       Intent intent = new Intent(this, DraftActivity.class);
       intent.putExtra(ExtraKeys.TASK_ID, taskId);
       startActivity(intent);
@@ -170,6 +179,11 @@ public class AlarmActivity extends AppCompatActivity {
         }
         binding.title.setText(task.title);
         postAt = task.postAtMillis;
+        skipCaption = task.skipCaption;
+        if (skipCaption) {
+          binding.btnDraft.setText(R.string.open_whatsapp);
+          binding.subtitle.setText(R.string.no_caption_post);
+        }
         binding.when.setText(
           DateUtils.formatStamp(task.postAtMillis) + " · " + DateUtils.formatUntil(task.postAtMillis));
         paintNagButtons();

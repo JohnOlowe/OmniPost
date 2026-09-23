@@ -64,6 +64,7 @@ public class RoutineGeneratorTest {
         found = true;
         assertEquals("Ada's Birthday", task.title);
         assertEquals("Yearly", TaskTypes.cadence(task.type));
+        assertEquals(TaskTypes.BIRTHDAY, task.type);
         Calendar post = Calendar.getInstance(utc);
         post.setTimeInMillis(task.postAtMillis);
         assertEquals(7, post.get(Calendar.HOUR_OF_DAY));
@@ -110,6 +111,7 @@ public class RoutineGeneratorTest {
     assertEquals("Weekly", TaskTypes.cadence(TaskTypes.FRIDAY_PRAYER));
     assertEquals("Once", TaskTypes.cadence(TaskTypes.TEST));
     assertEquals("Flexible", TaskTypes.cadence(TaskTypes.FLEXIBLE));
+    assertEquals("Yearly", TaskTypes.cadence(TaskTypes.ALUMNI_BIRTHDAY));
     assertEquals("Once", TaskTypes.cadence(TaskTypes.ONE_OFF));
     assertEquals("Daily", TaskTypes.cadence(TaskTypes.COUNTDOWN));
     assertEquals("Monthly", TaskTypes.cadence(TaskTypes.BIRTHDAY_NOTICE));
@@ -122,6 +124,7 @@ public class RoutineGeneratorTest {
     assertEquals(TaskTypes.SECTION_MONTHLY, TaskTypes.section(TaskTypes.BIRTHDAY_NOTICE));
     assertEquals(TaskTypes.SECTION_CAMPAIGN, TaskTypes.section(TaskTypes.COUNTDOWN));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.BIRTHDAY));
+    assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_BIRTHDAY));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.FLEXIBLE));
     assertEquals(TaskTypes.SECTION_ONCE, TaskTypes.section(TaskTypes.ONE_OFF));
   }
@@ -368,6 +371,60 @@ public class RoutineGeneratorTest {
     }
     assertTrue(today);
     assertTrue(tomorrow);
+  }
+
+  @Test
+  public void alumniBirthdaySkipsCaptionAndStaysOffTheMemberList() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Member member = new Member();
+    member.id = 9;
+    member.name = "Ada";
+    member.birthMonth = 8;
+    member.birthDay = 31;
+    member.kind = Member.KIND_ALUMNI;
+    member.skipCaption = true;
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(member));
+    boolean found = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.ALUMNI_BIRTHDAY + "|9|2026-08-31").equals(task.occurrenceKey)) {
+        found = true;
+        assertEquals(TaskTypes.ALUMNI_BIRTHDAY, task.type);
+        assertTrue(task.skipCaption);
+        assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(task.type));
+        task.status = TaskStatus.dueStatus(task, now.getTimeInMillis(), ScheduleTimes.WARNING_LEAD_MS);
+        assertEquals(TaskStatus.READY, task.status);
+        assertEquals("Forward", TaskStatus.label(task));
+        assertEquals("", CaptionTemplates.forTask(null, task));
+      }
+    }
+    assertTrue(found);
+  }
+
+  @Test
+  public void birthdayMonthsAwayAreNotMinted() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Member member = new Member();
+    member.id = 3;
+    member.name = "Far";
+    member.birthMonth = 1;
+    member.birthDay = 2;
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(member));
+    for (Task task : tasks) {
+      assertFalse(TaskTypes.BIRTHDAY.equals(task.type));
+      assertFalse(TaskTypes.ALUMNI_BIRTHDAY.equals(task.type));
+    }
   }
 
   @Test

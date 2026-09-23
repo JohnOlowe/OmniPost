@@ -15,6 +15,7 @@ public final class TaskSections {
   public static final String SUB_MONTHLY = "Does not change — next fasting / new month / birthday notice.";
   public static final String SUB_CAMPAIGN = "One card. The day count updates itself.";
   public static final String SUB_FLEXIBLE = "Birthdays and posts you time yourself.";
+  public static final String SUB_ALUMNI = "Forward a greeting in WhatsApp. No caption to write.";
   public static final String SUB_ONCE = "Happens once.";
 
   public static final long NEXT_WINDOW_MS = 48L * 60L * 60L * 1000L;
@@ -51,6 +52,7 @@ public final class TaskSections {
       add(out, TaskTypes.SECTION_MONTHLY, SUB_MONTHLY, filterSection(source, TaskTypes.SECTION_MONTHLY));
       add(out, TaskTypes.SECTION_CAMPAIGN, SUB_CAMPAIGN, filterSection(source, TaskTypes.SECTION_CAMPAIGN));
       add(out, TaskTypes.SECTION_FLEXIBLE, SUB_FLEXIBLE, filterSection(source, TaskTypes.SECTION_FLEXIBLE));
+      add(out, TaskTypes.SECTION_ALUMNI, SUB_ALUMNI, filterSection(source, TaskTypes.SECTION_ALUMNI));
       add(out, TaskTypes.SECTION_ONCE, SUB_ONCE, filterSection(source, TaskTypes.SECTION_ONCE));
       return out;
     }
@@ -74,6 +76,7 @@ public final class TaskSections {
     add(out, TaskTypes.SECTION_MONTHLY, SUB_MONTHLY, nextOfEach(rest, TaskTypes.SECTION_MONTHLY, now, warningLeadMs));
     add(out, TaskTypes.SECTION_CAMPAIGN, SUB_CAMPAIGN, nextOfEach(rest, TaskTypes.SECTION_CAMPAIGN, now, warningLeadMs));
     add(out, TaskTypes.SECTION_FLEXIBLE, SUB_FLEXIBLE, filterSection(rest, TaskTypes.SECTION_FLEXIBLE, now, warningLeadMs));
+    add(out, TaskTypes.SECTION_ALUMNI, SUB_ALUMNI, filterSection(rest, TaskTypes.SECTION_ALUMNI, now, warningLeadMs));
     add(out, TaskTypes.SECTION_ONCE, SUB_ONCE, filterSection(rest, TaskTypes.SECTION_ONCE, now, warningLeadMs));
     return out;
   }

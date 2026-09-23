@@ -153,6 +153,35 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void alumniSitInTheirOwnSection() {
+    long now = 1_700_000_000_000L;
+    Task alumni = task(11, TaskTypes.ALUMNI_BIRTHDAY, TaskStatus.READY, now + 86_400_000L);
+    alumni.skipCaption = true;
+    List<TaskSections.Section> sections =
+      TaskSections.group(java.util.Collections.singletonList(alumni), false, now);
+    assertEquals(1, sections.size());
+    assertEquals(TaskTypes.SECTION_ALUMNI, sections.get(0).title);
+    assertEquals(alumni.id, sections.get(0).tasks.get(0).id);
+  }
+
+  @Test
+  public void skipCaptionLeavesWriteCaptionAndTheThirtyMinuteRing() {
+    long now = 1_000_000L;
+    long post = now + 3L * 60L * 60L * 1000L;
+    Task task = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.SCHEDULED, post);
+    task.draftAtMillis = now - 10_000L;
+    task.skipCaption = true;
+    assertEquals(
+      TaskStatus.READY,
+      TaskStatus.dueStatus(task, now, ScheduleTimes.WARNING_LEAD_MS));
+    task.status = TaskStatus.READY;
+    assertEquals("Forward", TaskStatus.label(task));
+    assertEquals(
+      post - ScheduleTimes.MINUTE_LEAD_MS,
+      TaskStatus.nextRingMillis(task, now, ScheduleTimes.WARNING_LEAD_MS));
+  }
+
+  @Test
   public void postedDoesNotCollapseAndSkipsNeedsYou() {
     Task postedSunday = task(1, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 100);
     Task postedSunday2 = task(2, TaskTypes.SUNDAY_SERVICE, TaskStatus.POSTED, 200);
