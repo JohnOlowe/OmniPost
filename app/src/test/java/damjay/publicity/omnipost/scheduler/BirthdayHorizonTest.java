@@ -122,20 +122,47 @@ public class BirthdayHorizonTest {
   public void searchStaysOnTheCurrentPeopleTab() {
     Member alum = person("Ada Okafor", 5, 31);
     alum.kind = Member.KIND_ALUMNI;
+    alum.phone = "2348031234567";
     Member pastor = person("Pastor Ada", 6, 1);
     pastor.kind = Member.KIND_ALUMNI;
     pastor.desk = Member.DESK_PASTOR;
+    pastor.phone = "2348011111111";
+    Member none = person("Ada None", 8, 2);
+    none.kind = Member.KIND_ALUMNI;
     Member fellow = person("Ada Fellow", 7, 2);
-    List<Member> all = Arrays.asList(alum, pastor, fellow);
-    List<Member> alumniHits = BirthdayHorizon.searchHits(all, "Ada", true, false);
+    List<Member> all = Arrays.asList(alum, pastor, none, fellow);
+    List<Member> alumniHits = BirthdayHorizon.searchHits(all, "Ada", true, false, false);
     assertEquals(1, alumniHits.size());
     assertEquals("Ada Okafor", alumniHits.get(0).name);
-    List<Member> pastorHits = BirthdayHorizon.searchHits(all, "Ada", true, true);
+    List<Member> pastorHits = BirthdayHorizon.searchHits(all, "Ada", true, true, false);
     assertEquals(1, pastorHits.size());
     assertEquals("Pastor Ada", pastorHits.get(0).name);
+    List<Member> noNumber = BirthdayHorizon.searchHits(all, "Ada", true, false, true);
+    assertEquals(1, noNumber.size());
+    assertEquals("Ada None", noNumber.get(0).name);
     List<Member> memberHits = BirthdayHorizon.searchHits(all, "Ada", false, false);
     assertEquals(1, memberHits.size());
     assertEquals("Ada Fellow", memberHits.get(0).name);
+  }
+
+  @Test
+  public void allPeopleIncludesThoseWithNoBirthday() {
+    Calendar now = utc(2026, Calendar.OCTOBER, 1);
+    Member dated = person("Ada Okafor", 5, 31);
+    Member undated = person("Wave Pastor", 0, 0);
+    undated.kind = Member.KIND_ALUMNI;
+    List<BirthdayHorizon.Section> all =
+      BirthdayHorizon.group(Arrays.asList(dated, undated), now, BirthdayHorizon.ALL);
+    assertEquals(2, all.size());
+    assertEquals("No date yet", all.get(0).title);
+    assertEquals("Wave Pastor", all.get(0).members.get(0).name);
+    List<BirthdayHorizon.Section> week =
+      BirthdayHorizon.group(Arrays.asList(dated, undated), now, BirthdayHorizon.WEEK);
+    for (BirthdayHorizon.Section section : week) {
+      for (Member member : section.members) {
+        assertFalse("Wave Pastor".equals(member.name));
+      }
+    }
   }
 
   @Test

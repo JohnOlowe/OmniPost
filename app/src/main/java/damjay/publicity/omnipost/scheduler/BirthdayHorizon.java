@@ -74,6 +74,15 @@ public final class BirthdayHorizon {
    */
   public static List<Member> searchHits(
       List<Member> all, String query, boolean alumniHome, boolean pastorsTab) {
+    return searchHits(all, query, alumniHome, pastorsTab, false);
+  }
+
+  public static List<Member> searchHits(
+      List<Member> all,
+      String query,
+      boolean alumniHome,
+      boolean pastorsTab,
+      boolean noNumberTab) {
     List<Member> hits = new ArrayList<>();
     if (all == null) {
       return hits;
@@ -82,23 +91,37 @@ public final class BirthdayHorizon {
       if (member == null || !nameMatches(member, query)) {
         continue;
       }
-      if (alumniHome) {
-        if (!Member.isAlumni(member)) {
-          continue;
-        }
-        if (pastorsTab) {
-          if (!Member.isPastor(member)) {
-            continue;
-          }
-        } else if (Member.isPastor(member)) {
-          continue;
-        }
-      } else if (Member.isAlumni(member)) {
+      if (!onPeopleTab(member, alumniHome, pastorsTab, noNumberTab)) {
         continue;
       }
       hits.add(member);
     }
     return hits;
+  }
+
+  /** Alumni / pastors with a number stay on those tabs. No number is its own roster. */
+  public static boolean onPeopleTab(
+      Member member, boolean alumniHome, boolean pastorsTab, boolean noNumberTab) {
+    if (member == null) {
+      return false;
+    }
+    if (!alumniHome) {
+      return !Member.isAlumni(member);
+    }
+    if (!Member.isAlumni(member)) {
+      return false;
+    }
+    boolean numbered = AlumniDesk.hasPhone(member);
+    if (noNumberTab) {
+      return !numbered;
+    }
+    if (!numbered) {
+      return false;
+    }
+    if (pastorsTab) {
+      return Member.isPastor(member);
+    }
+    return !Member.isPastor(member);
   }
 
   public static boolean sheetMatches(AlumniSheet.Row row, String query) {
@@ -164,6 +187,7 @@ public final class BirthdayHorizon {
 
   public static List<Section> group(List<Member> members, Calendar now, int horizon) {
     List<Hit> hits = new ArrayList<>();
+    List<Member> undated = new ArrayList<>();
     if (now != null && members != null) {
       int todayY = now.get(Calendar.YEAR);
       int todayM = now.get(Calendar.MONTH) + 1;
@@ -174,7 +198,13 @@ public final class BirthdayHorizon {
           continue;
         }
         int[] next = nextYmd(todayY, todayM, todayD, member.birthMonth, member.birthDay);
-        if (next == null || !accepts(horizon, next, todayY, todayM, todayD)) {
+        if (next == null) {
+          if (horizon == ALL) {
+            undated.add(member);
+          }
+          continue;
+        }
+        if (!accepts(horizon, next, todayY, todayM, todayD)) {
           continue;
         }
         int jd = DateUtils.julianDay(next[0], next[1], next[2]);
@@ -211,7 +241,16 @@ public final class BirthdayHorizon {
       }
       bucket.add(hit.member);
     }
-    List<Section> out = new ArrayList<>(buckets.size());
+    List<Section> out = new ArrayList<>(buckets.size() + (undated.isEmpty() ? 0 : 1));
+    if (!undated.isEmpty()) {
+      Collections.sort(undated, (a, b) -> {
+        String an = a.name == null ? "" : a.name;
+        String bn = b.name == null ? "" : b.name;
+        return an.compareToIgnoreCase(bn);
+      });
+      String subtitle = undated.size() == 1 ? "1 person" : undated.size() + " people";
+      out.add(new Section("No date yet", subtitle, undated));
+    }
     for (Map.Entry<String, List<Member>> entry : buckets.entrySet()) {
       List<Member> group = entry.getValue();
       String subtitle = group.size() == 1 ? "1 person" : group.size() + " people";
