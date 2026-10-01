@@ -10,6 +10,7 @@ import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemAlumniDmBinding;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
+import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import java.util.ArrayList;
@@ -29,6 +30,8 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     void onWhatsApp(Member member, String caption);
 
     void onMarkSent(Member member, String kind, boolean sent);
+
+    void onEditCaption(Member member, String kind);
   }
 
   static final class Row {
@@ -59,6 +62,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
   private final List<Row> rows = new ArrayList<>();
   private Set<String> sent = new HashSet<>();
   private Map<String, String> bag;
+  private List<AlumniAddress> addresses = new ArrayList<>();
   private int month;
 
   AlumniMonthAdapter(Listener listener) {
@@ -74,12 +78,14 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     List<Member> wave,
     Set<String> sentKeys,
     Map<String, String> bag,
+    List<AlumniAddress> addresses,
     int month,
     String birthdayTitle,
     String birthdaySub,
     String waveTitle,
     String waveSub) {
     this.bag = bag;
+    this.addresses = addresses == null ? new ArrayList<>() : addresses;
     this.month = month;
     this.sent = sentKeys == null ? new HashSet<>() : sentKeys;
     rows.clear();
@@ -120,7 +126,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
       ((Header) holder).bind(row);
       return;
     }
-    ((Person) holder).bind(row, month, bag, sent, listener);
+      ((Person) holder).bind(row, month, bag, addresses, sent, listener);
   }
 
   @Override
@@ -154,6 +160,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
       Row row,
       int month,
       Map<String, String> bag,
+      List<AlumniAddress> addresses,
       Set<String> sent,
       Listener listener) {
       Member member = row.member;
@@ -173,24 +180,31 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         member,
         row.birthday ? AlumniCopy.KIND_BIRTHDAY : AlumniCopy.KIND_WAVE);
       if (showHnm) {
-        String hnm = AlumniCopy.hnm(member, month, now, bag);
+        String hnm = AlumniCopy.hnm(member, month, now, bag, addresses);
         boolean done = sent.contains(key(member.id, AlumniSend.HNM));
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_hnm_label);
         binding.preview.setText(hnm);
         binding.btnCopy.setOnClickListener(v -> listener.onCopy(member, hnm));
         binding.btnWhatsapp.setOnClickListener(v -> listener.onWhatsApp(member, hnm));
+        if (binding.btnEditHnm != null) {
+          binding.btnEditHnm.setOnClickListener(v -> listener.onEditCaption(member, AlumniSend.HNM));
+        }
         paintSent(binding.btnSentHnm, done, v -> listener.onMarkSent(member, AlumniSend.HNM, !done));
       } else {
         binding.blockHnm.setVisibility(View.GONE);
       }
       if (row.birthday) {
-        String details = AlumniCopy.details(member, month, now, bag);
+        String details = AlumniCopy.details(member, month, now, bag, addresses);
         boolean done = sent.contains(key(member.id, AlumniSend.DETAILS));
         binding.blockDetails.setVisibility(View.VISIBLE);
         binding.previewDetails.setText(details);
         binding.btnCopyDetails.setOnClickListener(v -> listener.onCopy(member, details));
         binding.btnWhatsappDetails.setOnClickListener(v -> listener.onWhatsApp(member, details));
+        if (binding.btnEditDetails != null) {
+          binding.btnEditDetails.setOnClickListener(
+            v -> listener.onEditCaption(member, AlumniSend.DETAILS));
+        }
         paintSent(
           binding.btnSentDetails,
           done,

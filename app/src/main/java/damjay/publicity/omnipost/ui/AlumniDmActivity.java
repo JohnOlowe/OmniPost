@@ -13,6 +13,7 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ActivityAlumniDmBinding;
+import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
@@ -75,8 +76,9 @@ public class AlumniDmActivity extends AppCompatActivity {
       }
       List<Member> loaded = pick(db.memberDao().getAllSync(), mode, memberId, month);
       Map<String, String> bag = Prefs.alumniCaptionBag(this);
+      List<AlumniAddress> addresses = Prefs.alumniAddresses(this);
       String group = AlumniCopy.KIND_BIRTHDAY.equals(mode)
-        ? AlumniCopy.group(month, Calendar.getInstance(), bag)
+        ? AlumniCopy.group(month, Calendar.getInstance(), bag, addresses)
         : "";
       int monthNow = month;
       String title;
@@ -105,7 +107,7 @@ public class AlumniDmActivity extends AppCompatActivity {
         }
         people.clear();
         people.addAll(loaded);
-        adapter.submit(people, mode, monthNow, bag);
+        adapter.submit(people, mode, monthNow, bag, addresses);
         binding.empty.setVisibility(people.isEmpty() ? View.VISIBLE : View.GONE);
       });
     });
@@ -118,9 +120,10 @@ public class AlumniDmActivity extends AppCompatActivity {
       return;
     }
     Map<String, String> bag = Prefs.alumniCaptionBag(this);
-    adapter.submit(people, mode, month, bag);
+    List<AlumniAddress> addresses = Prefs.alumniAddresses(this);
+    adapter.submit(people, mode, month, bag, addresses);
     if (AlumniCopy.KIND_BIRTHDAY.equals(mode) && memberId <= 0L && binding != null) {
-      binding.groupPreview.setText(AlumniCopy.group(month, Calendar.getInstance(), bag));
+      binding.groupPreview.setText(AlumniCopy.group(month, Calendar.getInstance(), bag, addresses));
     }
   }
 

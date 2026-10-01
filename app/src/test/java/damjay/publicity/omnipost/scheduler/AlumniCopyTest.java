@@ -1,10 +1,13 @@
 package damjay.publicity.omnipost.scheduler;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Member;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.TimeZone;
 import org.junit.Test;
 
@@ -89,6 +92,27 @@ public class AlumniCopyTest {
     ada.captionHnm = "Ping {who} only.";
     Calendar oct = cal(2026, Calendar.OCTOBER, 1);
     assertTrue(AlumniCopy.hnm(ada, 10, oct, null).equals("Ping Ma Ada Okafor only."));
+  }
+
+  @Test
+  public void addressStylesGenderAndNest() {
+    Member ada = person("Ada Okwuoma", Member.GENDER_FEMALE, 10, 2);
+    Member tobi = person("Tobi Ade", Member.GENDER_MALE, 3, 4);
+    Calendar oct = cal(2026, Calendar.OCTOBER, 1);
+    assertEquals("ma, Ada", AlumniTemplates.fill("{dear}", ada, 10, oct, null));
+    assertEquals("Mr Tobi", AlumniTemplates.fill("{dear}", tobi, 10, oct, null));
+    assertEquals("ma, Ada Okwuoma", AlumniTemplates.fill("{formal}", ada, 10, oct, null));
+    assertEquals("Mr Tobi Ade", AlumniTemplates.fill("{formal}", tobi, 10, oct, null));
+    assertEquals("Ma Ada", AlumniTemplates.fill("{titled}", ada, 10, oct, null));
+    assertEquals("Mr", AlumniTemplates.fill("{title_only}", tobi, 10, oct, null));
+    assertEquals("ma,", AlumniTemplates.fill("{title_only}", ada, 10, oct, null));
+    List<AlumniAddress> extra = new ArrayList<>(AlumniAddress.defaults());
+    extra.add(new AlumniAddress("line", "Line", "Mr {first}", "new month to you {dear}"));
+    assertEquals(
+      "new month to you ma, Ada",
+      AlumniTemplates.fill("{line}", ada, 10, oct, null, extra));
+    ada.honorific = "Dr";
+    assertEquals("Dr Ada", AlumniTemplates.fill("{title} {first}", ada, 10, oct, null));
   }
 
   private static Member person(String name, String gender, int month, int day) {

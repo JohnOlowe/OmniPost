@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,13 +18,16 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentAlumniMonthBinding;
+import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniMonth;
+import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
+import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -70,6 +74,19 @@ public class AlumniMonthFragment extends Fragment {
       @Override
       public void onMarkSent(Member member, String kind, boolean sent) {
         mark(member, kind, sent);
+      }
+
+      @Override
+      public void onEditCaption(Member member, String kind) {
+        if (member == null) {
+          return;
+        }
+        Intent intent = new Intent(requireContext(), AlumniCaptionEditActivity.class);
+        intent.putExtra(ExtraKeys.MEMBER_ID, member.id);
+        intent.putExtra(
+          ExtraKeys.CAPTION_KEY,
+          AlumniSend.DETAILS.equals(kind) ? AlumniTemplates.DETAILS : AlumniTemplates.HNM);
+        startActivity(intent);
       }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
@@ -170,6 +187,7 @@ public class AlumniMonthFragment extends Fragment {
       return;
     }
     bag = Prefs.alumniCaptionBag(requireContext());
+    List<AlumniAddress> addresses = Prefs.alumniAddresses(requireContext());
     int left = AlumniMonth.peopleLeft(birthday, wave, sends);
     binding.leftover.setText(
       left == 0
@@ -197,6 +215,7 @@ public class AlumniMonthFragment extends Fragment {
       waveView,
       sentKeys,
       bag,
+      addresses,
       month,
       getString(R.string.alumni_section_birthday),
       getString(R.string.alumni_section_birthday_sub),

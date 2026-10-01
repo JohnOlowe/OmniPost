@@ -120,6 +120,13 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.AlumniAddressEditActivity"
+      android:exported="false"
+      android:label="@string/alumni_address_new"
+      android:parentActivityName=".ui.AlumniHomeActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlumniMatchActivity"
       android:exported="false"
       android:label="@string/alumni_pair_title"

@@ -2,11 +2,15 @@ package damjay.publicity.omnipost.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.share.InstagramStyle;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public final class Prefs {
@@ -270,6 +274,25 @@ public final class Prefs {
       out.put(key, alumniCaption(ctx, key));
     }
     return out;
+  }
+
+  public static List<AlumniAddress> alumniAddresses(Context ctx) {
+    JSONObject o = alumniCaptionObject(ctx);
+    if (!o.has(AlumniAddress.JSON_KEY)) {
+      return AlumniAddress.defaults();
+    }
+    JSONArray arr = o.optJSONArray(AlumniAddress.JSON_KEY);
+    return AlumniAddress.fromJson(arr);
+  }
+
+  public static void setAlumniAddresses(Context ctx, List<AlumniAddress> list) {
+    JSONObject o = alumniCaptionObject(ctx);
+    try {
+      o.put(AlumniAddress.JSON_KEY, AlumniAddress.toJson(list == null ? new ArrayList<>() : list));
+    } catch (Exception ignored) {
+      return;
+    }
+    setAlumniCaptionsJson(ctx, o.length() == 0 ? "" : o.toString());
   }
 
   private static String alumniCaptionRaw(Context ctx, String key) {

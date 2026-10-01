@@ -3,6 +3,7 @@ package damjay.publicity.omnipost.scheduler;
 import damjay.publicity.omnipost.data.entity.Member;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -81,7 +82,7 @@ public final class AlumniTemplates {
     if (GROUP.equals(key)) {
       return "{independence} becomes the Independence Day line in October, or a full stop.";
     }
-    return "{who} {first} {month} {nth} {officer} {role} {intro} {birthday} {independence}";
+    return "{who} {dear} {formal} {titled} {title_only} {first} {last} {full} {title} {title_lc} {month} {nth} {officer} {role} {intro} {birthday} {independence}";
   }
 
   public static String fallback(String key) {
@@ -179,69 +180,44 @@ public final class AlumniTemplates {
     int month1to12,
     Calendar now,
     Map<String, String> bag) {
+    return fill(template, member, month1to12, now, bag, null);
+  }
+
+  public static String fill(
+    String template,
+    Member member,
+    int month1to12,
+    Calendar now,
+    Map<String, String> bag,
+    List<AlumniAddress> addresses) {
     if (template == null || template.isEmpty()) {
       return "";
     }
-    String officer = pick(bag, OFFICER);
-    String role = pick(bag, ROLE);
-    String who = AlumniCopy.greetingName(member, bag);
-    if (who.isEmpty()) {
-      who = "friend";
+    Map<String, String> tokens = AlumniCopy.personTokens(member, bag, addresses);
+    String who = tokens.get("who");
+    if (who == null || who.isEmpty()) {
+      tokens.put("who", "friend");
     }
-    String first = AlumniCopy.firstName(member);
-    String month = AlumniCopy.monthName(month1to12, now);
-    String nth = DateUtils.ordinal(month1to12);
-    String independence = month1to12 == 10
+    tokens.put("month", AlumniCopy.monthName(month1to12, now));
+    tokens.put("nth", DateUtils.ordinal(month1to12));
+    tokens.put("independence", month1to12 == 10
       ? ", and happy Independence Day to us all. 🇳🇬"
-      : ".";
-    String birthday = member != null && member.birthMonth == month1to12
+      : ".");
+    tokens.put("birthday", member != null && member.birthMonth == month1to12
       ? "And what a month to start with: it's your birthday month! 🎉✨"
-      : "";
+      : "");
+    tokens.put("intro", "");
     String intro = "";
     if (member != null && !member.introduced) {
-      intro = apply(
-        pick(bag, INTRO),
-        who,
-        first,
-        month,
-        nth,
-        officer,
-        role,
-        independence,
-        birthday,
-        "");
+      intro = CaptionVars.expand(pick(bag, INTRO), tokens, now, now, now, now);
+      intro = squeeze(intro);
     }
-    return squeeze(apply(
-      template, who, first, month, nth, officer, role, independence, birthday, intro));
-  }
-
-  private static String apply(
-    String template,
-    String who,
-    String first,
-    String month,
-    String nth,
-    String officer,
-    String role,
-    String independence,
-    String birthday,
-    String intro) {
-    String out = template == null ? "" : template;
-    out = out.replace("{who}", who == null ? "" : who);
-    out = out.replace("{first}", first == null ? "" : first);
-    out = out.replace("{month}", month == null ? "" : month);
-    out = out.replace("{nth}", nth == null ? "" : nth);
-    out = out.replace("{officer}", officer == null ? "" : officer);
-    out = out.replace("{role}", role == null ? "" : role);
-    out = out.replace("{independence}", independence == null ? "" : independence);
-    out = out.replace("{birthday}", birthday == null ? "" : birthday);
-    String introText = intro == null ? "" : intro.trim();
-    if (introText.isEmpty()) {
-      out = out.replace("{intro}", "");
+    if (intro.isEmpty()) {
+      tokens.put("intro", "");
     } else {
-      out = out.replace("{intro}", introText + "\n\n");
+      tokens.put("intro", intro + "\n\n");
     }
-    return out;
+    return squeeze(CaptionVars.expand(template, tokens, now, now, now, now));
   }
 
   static String squeeze(String text) {

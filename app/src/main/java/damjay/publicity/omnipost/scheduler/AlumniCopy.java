@@ -2,6 +2,8 @@ package damjay.publicity.omnipost.scheduler;
 
 import damjay.publicity.omnipost.data.entity.Member;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -56,13 +58,77 @@ public final class AlumniCopy {
     return name.substring(0, space).trim();
   }
 
+  public static String lastName(Member member) {
+    if (member == null) {
+      return "";
+    }
+    if (member.lastName != null && !member.lastName.trim().isEmpty()) {
+      return member.lastName.trim();
+    }
+    String name = member.name == null ? "" : member.name.trim();
+    int space = name.lastIndexOf(' ');
+    if (space <= 0) {
+      return "";
+    }
+    return name.substring(space + 1).trim();
+  }
+
+  public static String fullName(Member member) {
+    if (member == null) {
+      return "";
+    }
+    if (member.name != null && !member.name.trim().isEmpty()) {
+      return member.name.trim();
+    }
+    String first = firstName(member);
+    String last = lastName(member);
+    if (first.isEmpty()) {
+      return last;
+    }
+    if (last.isEmpty()) {
+      return first;
+    }
+    return first + " " + last;
+  }
+
+  public static Map<String, String> personTokens(
+    Member member, Map<String, String> bag, List<AlumniAddress> addresses) {
+    Map<String, String> out = new LinkedHashMap<>();
+    String title = honorific(member, bag);
+    out.put("title", title);
+    out.put("title_lc", title.toLowerCase(Locale.ROOT));
+    out.put("first", firstName(member));
+    out.put("last", lastName(member));
+    String full = fullName(member);
+    out.put("full", full);
+    out.put("name", full);
+    out.put("who", greetingName(member, bag));
+    out.put("officer", AlumniTemplates.pick(bag, AlumniTemplates.OFFICER));
+    out.put("role", AlumniTemplates.pick(bag, AlumniTemplates.ROLE));
+    out.put("male_title", AlumniTemplates.pick(bag, AlumniTemplates.MALE_TITLE));
+    out.put("female_title", AlumniTemplates.pick(bag, AlumniTemplates.FEMALE_TITLE));
+    List<AlumniAddress> styles = addresses == null || addresses.isEmpty()
+      ? AlumniAddress.defaults()
+      : addresses;
+    for (AlumniAddress style : styles) {
+      if (style == null || style.name == null || style.name.isEmpty()) {
+        continue;
+      }
+      if (AlumniAddress.reserved(style.name)) {
+        continue;
+      }
+      out.put(style.name, style.pick(member));
+    }
+    return out;
+  }
+
   public static String greetingName(Member member) {
     return greetingName(member, null);
   }
 
   public static String greetingName(Member member, Map<String, String> bag) {
     String title = honorific(member, bag);
-    String full = member == null || member.name == null ? "" : member.name.trim();
+    String full = fullName(member);
     if (full.isEmpty()) {
       full = firstName(member);
     }
@@ -137,10 +203,19 @@ public final class AlumniCopy {
   }
 
   public static String hnm(Member member, int month1to12, Calendar now, Map<String, String> bag) {
+    return hnm(member, month1to12, now, bag, null);
+  }
+
+  public static String hnm(
+    Member member,
+    int month1to12,
+    Calendar now,
+    Map<String, String> bag,
+    List<AlumniAddress> addresses) {
     String template = member != null && member.captionHnm != null && !member.captionHnm.trim().isEmpty()
       ? member.captionHnm
       : AlumniTemplates.pick(bag, AlumniTemplates.hnmKey(member));
-    return AlumniTemplates.fill(template, member, month1to12, now, bag);
+    return AlumniTemplates.fill(template, member, month1to12, now, bag, addresses);
   }
 
   public static String details(Member member, int month1to12) {
@@ -148,10 +223,19 @@ public final class AlumniCopy {
   }
 
   public static String details(Member member, int month1to12, Calendar now, Map<String, String> bag) {
+    return details(member, month1to12, now, bag, null);
+  }
+
+  public static String details(
+    Member member,
+    int month1to12,
+    Calendar now,
+    Map<String, String> bag,
+    List<AlumniAddress> addresses) {
     String template = member != null && member.captionDetails != null && !member.captionDetails.trim().isEmpty()
       ? member.captionDetails
       : AlumniTemplates.pick(bag, AlumniTemplates.DETAILS);
-    return AlumniTemplates.fill(template, member, month1to12, now, bag);
+    return AlumniTemplates.fill(template, member, month1to12, now, bag, addresses);
   }
 
   public static String photo(Member member) {
@@ -159,13 +243,19 @@ public final class AlumniCopy {
   }
 
   public static String photo(Member member, Calendar now, Map<String, String> bag) {
+    return photo(member, now, bag, null);
+  }
+
+  public static String photo(
+    Member member, Calendar now, Map<String, String> bag, List<AlumniAddress> addresses) {
     int month = member == null ? 1 : Math.max(1, member.birthMonth);
     return AlumniTemplates.fill(
       AlumniTemplates.pick(bag, AlumniTemplates.PHOTO),
       member,
       month,
       now,
-      bag);
+      bag,
+      addresses);
   }
 
   public static String group(int month1to12, Calendar now) {
@@ -173,12 +263,18 @@ public final class AlumniCopy {
   }
 
   public static String group(int month1to12, Calendar now, Map<String, String> bag) {
+    return group(month1to12, now, bag, null);
+  }
+
+  public static String group(
+    int month1to12, Calendar now, Map<String, String> bag, List<AlumniAddress> addresses) {
     return AlumniTemplates.fill(
       AlumniTemplates.pick(bag, AlumniTemplates.GROUP),
       null,
       month1to12,
       now,
-      bag);
+      bag,
+      addresses);
   }
 
   static String monthName(int month1to12, Calendar now) {

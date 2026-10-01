@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemAlumniDmBinding;
+import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import java.util.ArrayList;
@@ -26,15 +27,22 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
   private String mode = AlumniCopy.KIND_WAVE;
   private int month;
   private Map<String, String> bag = new LinkedHashMap<>();
+  private List<AlumniAddress> addresses = new ArrayList<>();
 
   AlumniDmAdapter(Listener listener) {
     this.listener = listener;
   }
 
-  void submit(List<Member> members, String mode, int month, Map<String, String> bag) {
+  void submit(
+    List<Member> members,
+    String mode,
+    int month,
+    Map<String, String> bag,
+    List<AlumniAddress> addresses) {
     this.mode = mode == null ? AlumniCopy.KIND_WAVE : mode;
     this.month = month;
     this.bag = bag == null ? new LinkedHashMap<>() : bag;
+    this.addresses = addresses == null ? new ArrayList<>() : addresses;
     rows.clear();
     if (members != null) {
       rows.addAll(members);
@@ -50,7 +58,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
 
   @Override
   public void onBindViewHolder(@NonNull Holder holder, int position) {
-    holder.bind(rows.get(position), mode, month, bag, listener);
+    holder.bind(rows.get(position), mode, month, bag, addresses, listener);
   }
 
   @Override
@@ -71,13 +79,14 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
       String mode,
       int month,
       Map<String, String> bag,
+      List<AlumniAddress> addresses,
       Listener listener) {
       binding.name.setText(member.name);
       Calendar now = Calendar.getInstance();
       boolean photo = AlumniCopy.KIND_PHOTO.equals(mode);
       boolean showHnm = AlumniCopy.wantsHnm(member, mode);
       boolean showDetails = AlumniCopy.wantsDetails(member, mode, month);
-      String who = AlumniCopy.greetingName(member);
+      String who = AlumniCopy.greetingName(member, bag);
       String phone = AlumniDesk.hasPhone(member) ? AlumniDesk.displayPhone(member.phone) : "no number";
       String tag = AlumniDesk.hasPhone(member) ? "tag" : "do not tag";
       binding.meta.setText(
@@ -87,7 +96,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
           + (member.introduced ? " · intro sent" : " · first DM"));
       hideSentButtons();
       if (photo) {
-        String caption = AlumniCopy.photo(member, now, bag);
+        String caption = AlumniCopy.photo(member, now, bag, addresses);
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_desk_photo);
         binding.preview.setText(caption);
@@ -97,7 +106,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
         return;
       }
       if (showHnm) {
-        String hnm = AlumniCopy.hnm(member, month, now, bag);
+        String hnm = AlumniCopy.hnm(member, month, now, bag, addresses);
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_hnm_label);
         binding.preview.setText(hnm);
@@ -107,7 +116,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
         binding.blockHnm.setVisibility(View.GONE);
       }
       if (showDetails) {
-        String details = AlumniCopy.details(member, month, now, bag);
+        String details = AlumniCopy.details(member, month, now, bag, addresses);
         binding.blockDetails.setVisibility(View.VISIBLE);
         binding.previewDetails.setText(details);
         binding.btnCopyDetails.setOnClickListener(v -> listener.onSend(member, details, false));
@@ -123,6 +132,12 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
       }
       if (binding.btnSentDetails != null) {
         binding.btnSentDetails.setVisibility(View.GONE);
+      }
+      if (binding.btnEditHnm != null) {
+        binding.btnEditHnm.setVisibility(View.GONE);
+      }
+      if (binding.btnEditDetails != null) {
+        binding.btnEditDetails.setVisibility(View.GONE);
       }
     }
   }

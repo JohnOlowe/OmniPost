@@ -10,11 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import damjay.publicity.omnipost.databinding.FragmentAlumniCaptionsBinding;
-import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.util.ExtraKeys;
-import damjay.publicity.omnipost.util.Prefs;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AlumniCaptionsFragment extends Fragment {
   private FragmentAlumniCaptionsBinding binding;
@@ -27,13 +23,11 @@ public class AlumniCaptionsFragment extends Fragment {
     @Nullable ViewGroup container,
     @Nullable Bundle savedInstanceState) {
     binding = FragmentAlumniCaptionsBinding.inflate(inflater, container, false);
-    adapter = new AlumniCaptionsActivity.Adapter(key -> {
-      Intent intent = new Intent(requireContext(), AlumniCaptionEditActivity.class);
-      intent.putExtra(ExtraKeys.CAPTION_KEY, key);
-      startActivity(intent);
-    });
+    adapter = new AlumniCaptionsActivity.Adapter(this::open);
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
+    binding.btnNewAddress.setOnClickListener(v ->
+      startActivity(new Intent(requireContext(), AlumniAddressEditActivity.class)));
     return binding.getRoot();
   }
 
@@ -43,16 +37,22 @@ public class AlumniCaptionsFragment extends Fragment {
     if (adapter == null || getContext() == null) {
       return;
     }
-    List<AlumniCaptionsActivity.Row> rows = new ArrayList<>();
-    for (String key : AlumniTemplates.KEYS) {
-      AlumniCaptionsActivity.Row row = new AlumniCaptionsActivity.Row();
-      row.key = key;
-      row.title = AlumniTemplates.label(key);
-      String value = Prefs.alumniCaption(requireContext(), key);
-      row.preview = value == null ? "" : value.replace('\n', ' ').trim();
-      rows.add(row);
+    adapter.submit(AlumniCaptionsActivity.catalog(requireContext()));
+  }
+
+  private void open(AlumniCaptionsActivity.Row row) {
+    if (row == null || row.header) {
+      return;
     }
-    adapter.submit(rows);
+    if (row.address) {
+      Intent intent = new Intent(requireContext(), AlumniAddressEditActivity.class);
+      intent.putExtra(ExtraKeys.ADDRESS_NAME, row.key);
+      startActivity(intent);
+      return;
+    }
+    Intent intent = new Intent(requireContext(), AlumniCaptionEditActivity.class);
+    intent.putExtra(ExtraKeys.CAPTION_KEY, row.key);
+    startActivity(intent);
   }
 
   @Override
