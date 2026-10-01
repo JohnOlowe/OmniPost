@@ -48,6 +48,7 @@ public class MemberEditActivity extends AppCompatActivity {
   static final String EXTRA_PASTOR = "extra_member_pastor";
   static final String EXTRA_SKIP = "extra_member_skip";
   static final String EXTRA_SAVED = "extra_member_saved";
+  static final String EXTRA_NO_WA = "extra_member_no_wa";
 
   private long memberId;
   private boolean pastorDefault;
@@ -66,6 +67,7 @@ public class MemberEditActivity extends AppCompatActivity {
   private CheckBox skipCaption;
   private CheckBox previousPastor;
   private CheckBox contactSaved;
+  private CheckBox notOnWhatsApp;
   private View nameChoiceBox;
   private RadioGroup nameChoice;
   private RadioButton nameRoster;
@@ -96,6 +98,7 @@ public class MemberEditActivity extends AppCompatActivity {
       intent.putExtra(EXTRA_PASTOR, Member.isPastor(member));
       intent.putExtra(EXTRA_SKIP, member.skipCaption);
       intent.putExtra(EXTRA_SAVED, member.contactSaved);
+      intent.putExtra(EXTRA_NO_WA, member.notOnWhatsApp);
     }
     context.startActivity(intent);
   }
@@ -135,11 +138,13 @@ public class MemberEditActivity extends AppCompatActivity {
     skipCaption = findViewById(R.id.skip_caption);
     previousPastor = findViewById(R.id.previous_pastor);
     contactSaved = findViewById(R.id.contact_saved);
+    notOnWhatsApp = findViewById(R.id.not_on_whatsapp);
     nameChoiceBox = findViewById(R.id.name_choice_box);
     nameChoice = findViewById(R.id.name_choice);
     nameRoster = findViewById(R.id.name_roster);
     nameSheet = findViewById(R.id.name_sheet);
     contactSaved.setVisibility(View.VISIBLE);
+    notOnWhatsApp.setVisibility(View.VISIBLE);
     showAlumniExtras();
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       this, R.array.months, R.layout.spinner_item);
@@ -203,6 +208,7 @@ public class MemberEditActivity extends AppCompatActivity {
     previousPastor.setChecked(intent.getBooleanExtra(EXTRA_PASTOR, pastorDefault));
     skipCaption.setChecked(intent.getBooleanExtra(EXTRA_SKIP, false));
     contactSaved.setChecked(intent.getBooleanExtra(EXTRA_SAVED, false));
+    notOnWhatsApp.setChecked(intent.getBooleanExtra(EXTRA_NO_WA, false));
     android.widget.TextView title = findViewById(R.id.title);
     title.setText(R.string.edit_alumni);
     paintNameChoice(rosterName);
@@ -291,6 +297,7 @@ public class MemberEditActivity extends AppCompatActivity {
     final boolean pastor = previousPastor.isChecked();
     final boolean skip = skipCaption.isChecked();
     final boolean saved = contactSaved.isChecked();
+    final boolean noWa = notOnWhatsApp.isChecked();
     String rawPhone = phone.getText() == null ? "" : phone.getText().toString().trim();
     String storedPhone = AlumniDesk.storePhone(rawPhone);
     final String phoneValue = storedPhone.isEmpty() ? rawPhone : storedPhone;
@@ -330,6 +337,7 @@ public class MemberEditActivity extends AppCompatActivity {
       scheduleSnap.birthMonth = member.birthMonth;
       scheduleSnap.birthDay = member.birthDay;
       scheduleSnap.skipCaption = member.skipCaption;
+      scheduleSnap.notOnWhatsApp = member.notOnWhatsApp;
       scheduleSnap.desk = member.desk;
       scheduleSnap.kind = member.kind;
       scheduleSnap.photoStatus = member.photoStatus;
@@ -339,6 +347,7 @@ public class MemberEditActivity extends AppCompatActivity {
       member.birthDay = birthDay;
       member.skipCaption = skip;
       member.contactSaved = saved;
+      member.notOnWhatsApp = noWa;
       member.desk = pastor ? Member.DESK_PASTOR : "";
       member.phone = phoneValue;
       member.honorific = honor;

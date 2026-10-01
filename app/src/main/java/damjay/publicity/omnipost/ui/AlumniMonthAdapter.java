@@ -33,6 +33,8 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     void onMarkSent(Member member, String kind, boolean sent);
 
     void onEditCaption(Member member, String kind);
+
+    void onNotOnWhatsApp(Member member);
   }
 
   static final class Row {
@@ -216,6 +218,10 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
           v -> listener.onMarkSent(member, AlumniSend.DETAILS, !done));
       } else {
         binding.blockDetails.setVisibility(View.GONE);
+      }
+      if (binding.btnNotWhatsapp != null) {
+        binding.btnNotWhatsapp.setVisibility(View.VISIBLE);
+        binding.btnNotWhatsapp.setOnClickListener(v -> listener.onNotOnWhatsApp(member));
       }
     }
 

@@ -72,12 +72,14 @@ public class BirthdaysFragment extends Fragment {
   private static final int TAB_ALUMNI = 1;
   private static final int TAB_PASTORS = 2;
   private static final int TAB_NO_NUMBER = 3;
-  private static final int TAB_PAIR = 4;
+  private static final int TAB_NO_WHATSAPP = 4;
+  private static final int TAB_PAIR = 5;
 
   private final Map<Integer, List<BirthdayHorizon.Section>> memberByHorizon = new HashMap<>();
   private final Map<Integer, List<BirthdayHorizon.Section>> alumniByHorizon = new HashMap<>();
   private final Map<Integer, List<BirthdayHorizon.Section>> pastorByHorizon = new HashMap<>();
   private final Map<Integer, List<BirthdayHorizon.Section>> noNumberByHorizon = new HashMap<>();
+  private final Map<Integer, List<BirthdayHorizon.Section>> noWhatsAppByHorizon = new HashMap<>();
   private int tab = TAB_MEMBERS;
   private int memberHorizon = BirthdayHorizon.ALL;
   private int alumniHorizon = BirthdayHorizon.ALL;
@@ -85,6 +87,7 @@ public class BirthdaysFragment extends Fragment {
   private int alumniCount;
   private int pastorCount;
   private int noNumberCount;
+  private int noWhatsAppCount;
   private boolean ignoreChip;
   private String query = "";
   private final ActivityResultLauncher<String[]> sheetLauncher =
@@ -151,6 +154,7 @@ public class BirthdaysFragment extends Fragment {
       binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
       binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_pastors));
       binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_no_number));
+      binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_no_whatsapp));
       binding.tabs.addTab(binding.tabs.newTab().setText(R.string.alumni_pair));
       tab = TAB_ALUMNI;
     } else {
@@ -242,6 +246,9 @@ public class BirthdaysFragment extends Fragment {
       return TAB_NO_NUMBER;
     }
     if (position == 3) {
+      return TAB_NO_WHATSAPP;
+    }
+    if (position == 4) {
       return TAB_PAIR;
     }
     return TAB_ALUMNI;
@@ -273,13 +280,14 @@ public class BirthdaysFragment extends Fragment {
   }
 
   private void paintPairCount() {
-    if (!alumniHome || binding == null || binding.tabs.getTabCount() < 4) {
+    if (!alumniHome || binding == null || binding.tabs.getTabCount() < 5) {
       return;
     }
     setTabTitle(0, alumniCount, R.string.tab_alumni, R.string.tab_alumni_count);
     setTabTitle(1, pastorCount, R.string.tab_pastors, R.string.tab_pastors_count);
     setTabTitle(2, noNumberCount, R.string.tab_no_number, R.string.tab_no_number_count);
-    TabLayout.Tab pair = binding.tabs.getTabAt(3);
+    setTabTitle(3, noWhatsAppCount, R.string.tab_no_whatsapp, R.string.tab_no_whatsapp_count);
+    TabLayout.Tab pair = binding.tabs.getTabAt(4);
     if (pair == null) {
       return;
     }
@@ -325,7 +333,7 @@ public class BirthdaysFragment extends Fragment {
   }
 
   private void syncHorizonChip() {
-    if (binding == null || tab == TAB_PAIR || tab == TAB_NO_NUMBER) {
+    if (binding == null || tab == TAB_PAIR || tab == TAB_NO_NUMBER || tab == TAB_NO_WHATSAPP) {
       return;
     }
     int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
@@ -368,12 +376,15 @@ public class BirthdaysFragment extends Fragment {
     List<Member> alumni = new ArrayList<>();
     List<Member> pastors = new ArrayList<>();
     List<Member> noNumber = new ArrayList<>();
+    List<Member> noWhatsApp = new ArrayList<>();
     for (Member member : all) {
-      if (BirthdayHorizon.onPeopleTab(member, true, false, true)) {
+      if (BirthdayHorizon.onPeopleTab(member, true, false, true, false)) {
         noNumber.add(member);
-      } else if (BirthdayHorizon.onPeopleTab(member, true, true, false)) {
+      } else if (BirthdayHorizon.onPeopleTab(member, true, false, false, true)) {
+        noWhatsApp.add(member);
+      } else if (BirthdayHorizon.onPeopleTab(member, true, true, false, false)) {
         pastors.add(member);
-      } else if (BirthdayHorizon.onPeopleTab(member, true, false, false)) {
+      } else if (BirthdayHorizon.onPeopleTab(member, true, false, false, false)) {
         alumni.add(member);
       } else {
         members.add(member);
@@ -383,16 +394,19 @@ public class BirthdaysFragment extends Fragment {
     alumniCount = alumni.size();
     pastorCount = pastors.size();
     noNumberCount = noNumber.size();
+    noWhatsAppCount = noWhatsApp.size();
     Calendar now = Calendar.getInstance();
     memberByHorizon.clear();
     alumniByHorizon.clear();
     pastorByHorizon.clear();
     noNumberByHorizon.clear();
+    noWhatsAppByHorizon.clear();
     for (int horizon : BirthdayHorizon.HORIZONS) {
       memberByHorizon.put(horizon, BirthdayHorizon.group(members, now, horizon));
       alumniByHorizon.put(horizon, BirthdayHorizon.group(alumni, now, horizon));
       pastorByHorizon.put(horizon, BirthdayHorizon.group(pastors, now, horizon));
       noNumberByHorizon.put(horizon, BirthdayHorizon.group(noNumber, now, BirthdayHorizon.ALL));
+      noWhatsAppByHorizon.put(horizon, BirthdayHorizon.group(noWhatsApp, now, BirthdayHorizon.ALL));
     }
     AlumniMatch.rememberRoster(all);
     final List<AlumniSheet.Row> waiting = new ArrayList<>(pending);
@@ -402,7 +416,7 @@ public class BirthdaysFragment extends Fragment {
   private List<BirthdayHorizon.Section> currentSections() {
     if (searching()) {
       List<Member> hits = BirthdayHorizon.searchHits(
-        all, query, alumniHome, tab == TAB_PASTORS, tab == TAB_NO_NUMBER);
+        all, query, alumniHome, tab == TAB_PASTORS, tab == TAB_NO_NUMBER, tab == TAB_NO_WHATSAPP);
       return BirthdayHorizon.group(hits, Calendar.getInstance(), BirthdayHorizon.ALL);
     }
     Map<Integer, List<BirthdayHorizon.Section>> byHorizon = memberByHorizon;
@@ -412,6 +426,8 @@ public class BirthdaysFragment extends Fragment {
       byHorizon = pastorByHorizon;
     } else if (tab == TAB_NO_NUMBER) {
       byHorizon = noNumberByHorizon;
+    } else if (tab == TAB_NO_WHATSAPP) {
+      byHorizon = noWhatsAppByHorizon;
     }
     int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
     List<BirthdayHorizon.Section> sections = byHorizon.get(horizon);
@@ -457,7 +473,9 @@ public class BirthdaysFragment extends Fragment {
       ? getString(R.string.tab_pastors)
       : tab == TAB_NO_NUMBER
         ? getString(R.string.tab_no_number)
-        : tab == TAB_ALUMNI ? getString(R.string.tab_alumni) : getString(R.string.tab_members);
+        : tab == TAB_NO_WHATSAPP
+          ? getString(R.string.tab_no_whatsapp)
+          : tab == TAB_ALUMNI ? getString(R.string.tab_alumni) : getString(R.string.tab_members);
     int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
     String heading = getString(R.string.copy_birthday_heading, who, horizonLabel(horizon));
     String text = BirthdayHorizon.copyList(heading, sections);
@@ -483,8 +501,9 @@ public class BirthdaysFragment extends Fragment {
     }
     boolean pairTab = tab == TAB_PAIR;
     boolean noNumberTab = tab == TAB_NO_NUMBER;
+    boolean noWhatsAppTab = tab == TAB_NO_WHATSAPP;
     boolean alumniDesk = alumniHome;
-    boolean hideHorizon = pairTab || noNumberTab || searching();
+    boolean hideHorizon = pairTab || noNumberTab || noWhatsAppTab || searching();
     binding.horizon.setVisibility(hideHorizon ? View.GONE : View.VISIBLE);
     binding.btnCopyBirthdays.setVisibility(pairTab ? View.GONE : View.VISIBLE);
     paintPairCount();
@@ -507,9 +526,11 @@ public class BirthdaysFragment extends Fragment {
     }
     List<BirthdayHorizon.Section> sections = currentSections();
     adapter.submit(sections);
-    int roster = tab == TAB_NO_NUMBER
-      ? noNumberCount
-      : tab == TAB_PASTORS ? pastorCount : tab == TAB_ALUMNI ? alumniCount : memberCount;
+    int roster = tab == TAB_NO_WHATSAPP
+      ? noWhatsAppCount
+      : tab == TAB_NO_NUMBER
+        ? noNumberCount
+        : tab == TAB_PASTORS ? pastorCount : tab == TAB_ALUMNI ? alumniCount : memberCount;
     boolean empty = sections.isEmpty();
     int emptyText = R.string.empty_birthdays;
     if (searching()) {
@@ -520,6 +541,8 @@ public class BirthdaysFragment extends Fragment {
       emptyText = R.string.empty_pastors;
     } else if (tab == TAB_NO_NUMBER) {
       emptyText = R.string.empty_no_number;
+    } else if (tab == TAB_NO_WHATSAPP) {
+      emptyText = R.string.empty_no_whatsapp;
     }
     binding.empty.setText(searching() || (empty && roster == 0) ? emptyText : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
@@ -529,7 +552,8 @@ public class BirthdaysFragment extends Fragment {
     binding.fab.setContentDescription(getString(
       tab == TAB_PASTORS
         ? R.string.add_pastor
-        : tab == TAB_NO_NUMBER || tab == TAB_ALUMNI ? R.string.add_alumni : R.string.add_member));
+        : tab == TAB_NO_NUMBER || tab == TAB_NO_WHATSAPP || tab == TAB_ALUMNI
+          ? R.string.add_alumni : R.string.add_member));
   }
 
   private void showEditor(@Nullable Member existing) {
@@ -553,6 +577,10 @@ public class BirthdaysFragment extends Fragment {
     View contactSaved = view.findViewById(R.id.contact_saved);
     if (contactSaved != null) {
       contactSaved.setVisibility(View.GONE);
+    }
+    View notOnWhatsAppBox = view.findViewById(R.id.not_on_whatsapp);
+    if (notOnWhatsAppBox != null) {
+      notOnWhatsAppBox.setVisibility(View.GONE);
     }
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);

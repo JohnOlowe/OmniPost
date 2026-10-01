@@ -74,7 +74,7 @@ public final class BirthdayHorizon {
    */
   public static List<Member> searchHits(
       List<Member> all, String query, boolean alumniHome, boolean pastorsTab) {
-    return searchHits(all, query, alumniHome, pastorsTab, false);
+    return searchHits(all, query, alumniHome, pastorsTab, false, false);
   }
 
   public static List<Member> searchHits(
@@ -83,6 +83,16 @@ public final class BirthdayHorizon {
       boolean alumniHome,
       boolean pastorsTab,
       boolean noNumberTab) {
+    return searchHits(all, query, alumniHome, pastorsTab, noNumberTab, false);
+  }
+
+  public static List<Member> searchHits(
+      List<Member> all,
+      String query,
+      boolean alumniHome,
+      boolean pastorsTab,
+      boolean noNumberTab,
+      boolean noWhatsAppTab) {
     List<Member> hits = new ArrayList<>();
     if (all == null) {
       return hits;
@@ -91,7 +101,7 @@ public final class BirthdayHorizon {
       if (member == null || !nameMatches(member, query)) {
         continue;
       }
-      if (!onPeopleTab(member, alumniHome, pastorsTab, noNumberTab)) {
+      if (!onPeopleTab(member, alumniHome, pastorsTab, noNumberTab, noWhatsAppTab)) {
         continue;
       }
       hits.add(member);
@@ -99,9 +109,21 @@ public final class BirthdayHorizon {
     return hits;
   }
 
-  /** Alumni / pastors with a number stay on those tabs. No number is its own roster. */
+  /**
+   * Alumni / pastors with a WhatsApp number stay on those tabs. No number and
+   * numbers not on WhatsApp each have their own roster.
+   */
   public static boolean onPeopleTab(
       Member member, boolean alumniHome, boolean pastorsTab, boolean noNumberTab) {
+    return onPeopleTab(member, alumniHome, pastorsTab, noNumberTab, false);
+  }
+
+  public static boolean onPeopleTab(
+      Member member,
+      boolean alumniHome,
+      boolean pastorsTab,
+      boolean noNumberTab,
+      boolean noWhatsAppTab) {
     if (member == null) {
       return false;
     }
@@ -116,6 +138,12 @@ public final class BirthdayHorizon {
       return !numbered;
     }
     if (!numbered) {
+      return false;
+    }
+    if (noWhatsAppTab) {
+      return member.notOnWhatsApp;
+    }
+    if (member.notOnWhatsApp) {
       return false;
     }
     if (pastorsTab) {

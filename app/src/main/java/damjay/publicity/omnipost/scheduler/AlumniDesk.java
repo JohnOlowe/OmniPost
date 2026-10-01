@@ -25,6 +25,11 @@ public final class AlumniDesk {
     return d.length() >= 10 && d.length() <= 15;
   }
 
+  /** Usable number that is actually on WhatsApp. */
+  public static boolean canWhatsApp(Member member) {
+    return member != null && hasPhone(member) && !member.notOnWhatsApp;
+  }
+
   public static String digits(String phone) {
     if (phone == null) {
       return "";
@@ -146,7 +151,7 @@ public final class AlumniDesk {
   public static boolean inWave(Member member, int month1to12) {
     return Member.isAlumni(member)
         && !Member.isPastor(member)
-        && hasPhone(member)
+        && canWhatsApp(member)
         && personWave(member) == monthWave(month1to12);
   }
 
@@ -185,9 +190,14 @@ public final class AlumniDesk {
     } else {
       photo = "If they still have not sent a picture: NO PICTURE. Send details to the designer. Ask media for the design.";
     }
-    String tag = hasPhone(member)
-      ? "Tag them — number is on their card (" + displayPhone(member.phone) + ")."
-      : "No number — do not tag. Fill the number on this name; do not add a second card.";
+    String tag;
+    if (!hasPhone(member)) {
+      tag = "No number — do not tag. Fill the number on this name; do not add a second card.";
+    } else if (member.notOnWhatsApp) {
+      tag = "Number is not on WhatsApp — do not tag. They sit on People → No WhatsApp.";
+    } else {
+      tag = "Tag them — number is on their card (" + displayPhone(member.phone) + ").";
+    }
     return photo + " " + tag + " ARO reaches out. President saves the contact.";
   }
 
@@ -195,9 +205,14 @@ public final class AlumniDesk {
     if (member == null) {
       return "";
     }
-    String tag = hasPhone(member)
-      ? "DM " + displayPhone(member.phone) + "."
-      : "No number in the database — do not tag. If they reply with a name that is already here, fill the number on that card.";
+    String tag;
+    if (!hasPhone(member)) {
+      tag = "No number in the database — do not tag. If they reply with a name that is already here, fill the number on that card.";
+    } else if (member.notOnWhatsApp) {
+      tag = "Number is not on WhatsApp — do not DM. They sit on People → No WhatsApp.";
+    } else {
+      tag = "DM " + displayPhone(member.phone) + ".";
+    }
     return "Two days to the birthday. Ask for a picture. If they do not answer: NO PICTURE. "
       + tag
       + " Forward what you have to the designer.";
@@ -235,7 +250,9 @@ public final class AlumniDesk {
       return "";
     }
     StringBuilder out = new StringBuilder();
-    if (hasPhone(member)) {
+    if (hasPhone(member) && member.notOnWhatsApp) {
+      out.append(displayPhone(member.phone)).append(" · not on WhatsApp");
+    } else if (hasPhone(member)) {
       out.append(displayPhone(member.phone));
     } else if (Member.isAlumni(member)) {
       out.append("no number");

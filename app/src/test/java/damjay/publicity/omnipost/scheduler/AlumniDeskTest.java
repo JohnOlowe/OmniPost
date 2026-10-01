@@ -87,6 +87,19 @@ public class AlumniDeskTest {
   }
 
   @Test
+  public void numberNotOnWhatsAppCannotBeDmed() {
+    Member member = alumni("Ada", 10, 2);
+    member.phone = "08031234567";
+    assertTrue(AlumniDesk.canWhatsApp(member));
+    member.notOnWhatsApp = true;
+    assertTrue(AlumniDesk.hasPhone(member));
+    assertFalse(AlumniDesk.canWhatsApp(member));
+    assertFalse(AlumniDesk.inWave(member, 10));
+    assertTrue(AlumniDesk.rosterLine(member, 10).contains("not on WhatsApp"));
+    assertTrue(AlumniDesk.birthdayBrief(member).contains("not on WhatsApp"));
+  }
+
+  @Test
   public void previousPastorsSkipTheWaveKeepBirthdayLine() {
     Member pastor = alumni("Pastor Ada", 10, 2);
     pastor.desk = Member.DESK_PASTOR;

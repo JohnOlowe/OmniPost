@@ -35,7 +35,7 @@ public final class AlumniMonth {
     }
     for (Member member : all) {
       if (Member.isAlumni(member)
-          && AlumniDesk.hasPhone(member)
+          && AlumniDesk.canWhatsApp(member)
           && member.birthMonth == month1to12) {
         out.add(member);
       }
@@ -49,7 +49,7 @@ public final class AlumniMonth {
       return out;
     }
     for (Member member : all) {
-      if (AlumniDesk.hasPhone(member)
+      if (AlumniDesk.canWhatsApp(member)
           && AlumniDesk.inWave(member, month1to12)
           && member.birthMonth != month1to12) {
         out.add(member);

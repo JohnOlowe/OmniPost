@@ -99,6 +99,9 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
           + phone
           + also
           + (member.introduced ? " · intro sent" : " · first DM"));
+      if (binding.btnNotWhatsapp != null) {
+        binding.btnNotWhatsapp.setVisibility(View.GONE);
+      }
       hideSentButtons();
       if (photo) {
         String caption = AlumniCopy.photo(member, now, bag, addresses);

@@ -89,6 +89,11 @@ public class AlumniMonthFragment extends Fragment {
           AlumniSend.DETAILS.equals(kind) ? AlumniTemplates.DETAILS : AlumniTemplates.HNM);
         startActivity(intent);
       }
+
+      @Override
+      public void onNotOnWhatsApp(Member member) {
+        parkNotOnWhatsApp(member);
+      }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
@@ -160,6 +165,23 @@ public class AlumniMonthFragment extends Fragment {
         : R.string.alumni_copied_dm,
       Toast.LENGTH_LONG)
       .show();
+  }
+
+  private void parkNotOnWhatsApp(Member member) {
+    if (member == null) {
+      return;
+    }
+    member.notOnWhatsApp = true;
+    drop(birthday, member.id);
+    drop(wave, member.id);
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      AppDatabase.get(app).memberDao().update(member);
+      ScheduleCoordinator.cancelMemberTasks(app, member.id);
+      ScheduleCoordinator.bootstrap(app);
+    });
+    paint();
+    Toast.makeText(requireContext(), R.string.alumni_moved_no_whatsapp, Toast.LENGTH_SHORT).show();
   }
 
   private void mark(Member member, String kind, boolean sent) {
@@ -247,7 +269,7 @@ public class AlumniMonthFragment extends Fragment {
       if (member == null
           || seen.contains(member.id)
           || !Member.isAlumni(member)
-          || !AlumniDesk.hasPhone(member)) {
+          || !AlumniDesk.canWhatsApp(member)) {
         continue;
       }
       if (BirthdayHorizon.nameMatches(member, query)) {
@@ -257,13 +279,22 @@ public class AlumniMonthFragment extends Fragment {
     return out;
   }
 
+  private static void drop(List<Member> list, long id) {
+    for (int i = list.size() - 1; i >= 0; i--) {
+      Member row = list.get(i);
+      if (row != null && row.id == id) {
+        list.remove(i);
+      }
+    }
+  }
+
   private List<Member> filterNames(List<Member> source) {
     List<Member> out = new ArrayList<>();
     if (source == null) {
       return out;
     }
     for (Member member : source) {
-      if (BirthdayHorizon.nameMatches(member, query)) {
+      if (AlumniDesk.canWhatsApp(member) && BirthdayHorizon.nameMatches(member, query)) {
         out.add(member);
       }
     }

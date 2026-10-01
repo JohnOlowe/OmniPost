@@ -129,8 +129,12 @@ public class BirthdayHorizonTest {
     pastor.phone = "2348011111111";
     Member none = person("Ada None", 8, 2);
     none.kind = Member.KIND_ALUMNI;
+    Member noWa = person("Ada NoWa", 9, 4);
+    noWa.kind = Member.KIND_ALUMNI;
+    noWa.phone = "2348090000000";
+    noWa.notOnWhatsApp = true;
     Member fellow = person("Ada Fellow", 7, 2);
-    List<Member> all = Arrays.asList(alum, pastor, none, fellow);
+    List<Member> all = Arrays.asList(alum, pastor, none, noWa, fellow);
     List<Member> alumniHits = BirthdayHorizon.searchHits(all, "Ada", true, false, false);
     assertEquals(1, alumniHits.size());
     assertEquals("Ada Okafor", alumniHits.get(0).name);
@@ -140,6 +144,9 @@ public class BirthdayHorizonTest {
     List<Member> noNumber = BirthdayHorizon.searchHits(all, "Ada", true, false, true);
     assertEquals(1, noNumber.size());
     assertEquals("Ada None", noNumber.get(0).name);
+    List<Member> noWhatsApp = BirthdayHorizon.searchHits(all, "Ada", true, false, false, true);
+    assertEquals(1, noWhatsApp.size());
+    assertEquals("Ada NoWa", noWhatsApp.get(0).name);
     List<Member> memberHits = BirthdayHorizon.searchHits(all, "Ada", false, false);
     assertEquals(1, memberHits.size());
     assertEquals("Ada Fellow", memberHits.get(0).name);

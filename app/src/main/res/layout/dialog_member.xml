@@ -230,6 +230,14 @@
     android:textColor="@color/cream"/>
 
   <CheckBox
+    android:id="@+id/not_on_whatsapp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/alumni_not_on_whatsapp_hint"
+    android:textColor="@color/cream"/>
+
+  <CheckBox
     android:id="@+id/contact_saved"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

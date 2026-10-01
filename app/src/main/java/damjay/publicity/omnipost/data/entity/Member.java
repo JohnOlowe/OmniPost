@@ -77,6 +77,9 @@ public class Member {
   /** True after this number is already in the President's contacts. Skip Save All. */
   public boolean contactSaved;
 
+  /** True when the number exists but is not on WhatsApp. Own People tab; off This month. */
+  public boolean notOnWhatsApp;
+
   public static boolean isAlumni(Member member) {
     return member != null && KIND_ALUMNI.equals(member.kind);
   }
@@ -100,6 +103,7 @@ public class Member {
     return before.birthMonth != after.birthMonth
       || before.birthDay != after.birthDay
       || before.skipCaption != after.skipCaption
+      || before.notOnWhatsApp != after.notOnWhatsApp
       || !eq(before.desk, after.desk)
       || !eq(before.kind, after.kind)
       || !eq(before.photoStatus, after.photoStatus);

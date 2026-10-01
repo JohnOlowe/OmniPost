@@ -161,7 +161,7 @@ public class AlumniDmActivity extends AppCompatActivity {
         }
         continue;
       }
-      if (!AlumniDesk.hasPhone(member)) {
+      if (!AlumniDesk.canWhatsApp(member)) {
         continue;
       }
       if (AlumniCopy.KIND_PHOTO.equals(mode)) {

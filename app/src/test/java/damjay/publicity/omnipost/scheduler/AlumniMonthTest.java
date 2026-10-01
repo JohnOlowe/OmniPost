@@ -168,6 +168,32 @@ public class AlumniMonthTest {
     assertFalse(AlumniDesk.inWave(waveNone, 10));
   }
 
+  @Test
+  public void thisMonthSkipsNumbersNotOnWhatsApp() {
+    Member numbered = alumni("Ada Okafor", 10);
+    numbered.id = 41;
+    Member noWa = alumni("No Wa Ada", 10);
+    noWa.id = 42;
+    noWa.notOnWhatsApp = true;
+    Member waveNoWa = alumni("Wave No Wa", 3);
+    waveNoWa.id = 43;
+    waveNoWa.notOnWhatsApp = true;
+    List<Member> all = new ArrayList<>();
+    all.add(numbered);
+    all.add(noWa);
+    all.add(waveNoWa);
+    List<Member> birthday = AlumniMonth.birthdayPeople(all, 10);
+    assertEquals(1, birthday.size());
+    assertEquals(numbered.name, birthday.get(0).name);
+    assertFalse(AlumniDesk.canWhatsApp(noWa));
+    assertFalse(AlumniDesk.inWave(waveNoWa, 10));
+    List<Member> wave = AlumniMonth.wavePeople(all, 10);
+    assertFalse(contains(wave, waveNoWa.id));
+    for (Member member : wave) {
+      assertTrue(AlumniDesk.canWhatsApp(member));
+    }
+  }
+
   private static Member alumni(String name, int month) {
     Member member = new Member();
     member.name = name;
