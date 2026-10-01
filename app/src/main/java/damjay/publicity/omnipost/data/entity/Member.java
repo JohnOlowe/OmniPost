@@ -22,6 +22,13 @@ public class Member {
   public String notes = "";
 
   @NonNull
+  public String phone = "";
+
+  /** Empty = still chasing. {@code got} / {@code none} settle the photo nag. */
+  @NonNull
+  public String photoStatus = "";
+
+  @NonNull
   public String kind = KIND_MEMBER;
 
   /** Alumni greetings are forwarded in WhatsApp; no caption to write. */

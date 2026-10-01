@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
@@ -154,6 +155,9 @@ public class RoutineGeneratorTest {
     assertEquals(TaskTypes.SECTION_CAMPAIGN, TaskTypes.section(TaskTypes.COUNTDOWN));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.BIRTHDAY));
     assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_BIRTHDAY));
+    assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_MONTH));
+    assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_WAVE));
+    assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_PHOTO));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.FLEXIBLE));
     assertEquals(TaskTypes.SECTION_ONCE, TaskTypes.section(TaskTypes.ONE_OFF));
   }
@@ -430,9 +434,160 @@ public class RoutineGeneratorTest {
         assertEquals(TaskStatus.READY, task.status);
         assertEquals("Forward", TaskStatus.label(task));
         assertEquals("", CaptionTemplates.forTask(null, task));
+        assertTrue(task.description.contains("do not tag") || task.description.contains("NO PICTURE"));
       }
     }
     assertTrue(found);
+  }
+
+  @Test
+  public void alumniDeskMintsOneMonthCardOneWaveAndAPhotoNotTwoHundredDms() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Member> alumni = new ArrayList<>();
+    alumni.add(alumni(9, "Ada", 8, 31));
+    alumni.add(alumni(10, "Bo", 9, 4));
+    alumni.add(alumni(11, "Cy", 1, 2));
+    alumni.add(alumni(12, "Di", 2, 3));
+    alumni.add(alumni(13, "Ed", 3, 4));
+    alumni.add(alumni(14, "Fa", 4, 5));
+    List<Task> tasks = RoutineGenerator.generate(now.getTimeInMillis(), utc, alumni);
+    int monthCards = 0;
+    int waveCards = 0;
+    int photos = 0;
+    int birthdays = 0;
+    boolean adaPhoto = false;
+    for (Task task : tasks) {
+      if (TaskTypes.ALUMNI_MONTH.equals(task.type)) {
+        monthCards++;
+        assertTrue(task.skipCaption);
+        assertTrue(task.description.contains("Alumni Relations Officer"));
+      }
+      if (TaskTypes.ALUMNI_WAVE.equals(task.type)) {
+        waveCards++;
+        assertTrue(task.skipCaption);
+        assertTrue(task.occurrenceKey.startsWith(TaskTypes.ALUMNI_WAVE + "|"));
+      }
+      if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+        photos++;
+        if ((TaskTypes.ALUMNI_PHOTO + "|9|2026-08-31").equals(task.occurrenceKey)) {
+          adaPhoto = true;
+          Calendar post = Calendar.getInstance(utc);
+          post.setTimeInMillis(task.postAtMillis);
+          assertEquals(29, post.get(Calendar.DAY_OF_MONTH));
+          assertEquals(10, post.get(Calendar.HOUR_OF_DAY));
+        }
+      }
+      if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+        birthdays++;
+      }
+    }
+    assertTrue(monthCards >= 1 && monthCards <= 2);
+    assertTrue(waveCards >= 1 && waveCards <= 2);
+    assertTrue(adaPhoto);
+    assertTrue(photos <= 2);
+    assertTrue(birthdays <= 2);
+    assertTrue(tasks.size() < 80);
+  }
+
+  @Test
+  public void birthdayMonthStaysThroughTheFifthThenRolls() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar third = Calendar.getInstance(utc);
+    third.clear();
+    third.setTimeZone(utc);
+    third.set(2026, Calendar.SEPTEMBER, 3, 12, 0, 0);
+    third.set(Calendar.MILLISECOND, 0);
+    Member ada = alumni(9, "Ada", 8, 31);
+    List<Task> early =
+      RoutineGenerator.generate(third.getTimeInMillis(), utc, Collections.singletonList(ada));
+    boolean sepMonth = false;
+    boolean octMonth = false;
+    for (Task task : early) {
+      if ((TaskTypes.ALUMNI_MONTH + "|2026-09").equals(task.occurrenceKey)) {
+        sepMonth = true;
+      }
+      if ((TaskTypes.ALUMNI_MONTH + "|2026-10").equals(task.occurrenceKey)) {
+        octMonth = true;
+      }
+    }
+    assertTrue(sepMonth);
+    assertTrue(octMonth);
+
+    Calendar twentieth = (Calendar) third.clone();
+    twentieth.set(Calendar.DAY_OF_MONTH, 20);
+    List<Task> late =
+      RoutineGenerator.generate(twentieth.getTimeInMillis(), utc, Collections.singletonList(ada));
+    for (Task task : late) {
+      assertFalse((TaskTypes.ALUMNI_MONTH + "|2026-09").equals(task.occurrenceKey));
+      assertFalse((TaskTypes.ALUMNI_WAVE + "|2026-09").equals(task.occurrenceKey));
+    }
+  }
+
+  @Test
+  public void fullRosterDoesNotMintADmPerPerson() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, AlumniRoster.members());
+    int photos = 0;
+    int months = 0;
+    int waves = 0;
+    int birthdays = 0;
+    for (Task task : tasks) {
+      if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+        photos++;
+      } else if (TaskTypes.ALUMNI_MONTH.equals(task.type)) {
+        months++;
+      } else if (TaskTypes.ALUMNI_WAVE.equals(task.type)) {
+        waves++;
+      } else if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+        birthdays++;
+      }
+    }
+    assertTrue(months >= 1 && months <= 2);
+    assertTrue(waves >= 1 && waves <= 2);
+    assertTrue(photos < 40);
+    assertTrue(birthdays < 40);
+    assertEquals(photos, birthdays);
+  }
+
+  @Test
+  public void settledPhotoIsNotMinted() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Member ada = alumni(9, "Ada", 8, 31);
+    ada.photoStatus = AlumniDesk.PHOTO_GOT;
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(ada));
+    for (Task task : tasks) {
+      assertFalse(TaskTypes.ALUMNI_PHOTO.equals(task.type));
+    }
+  }
+
+  private static Member alumni(long id, String name, int month, int day) {
+    Member member = new Member();
+    member.id = id;
+    member.name = name;
+    member.birthMonth = month;
+    member.birthDay = day;
+    member.kind = Member.KIND_ALUMNI;
+    member.skipCaption = true;
+    member.phone = "";
+    member.photoStatus = "";
+    return member;
   }
 
   @Test

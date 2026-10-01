@@ -21,6 +21,7 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.FragmentTasksBinding;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
@@ -248,6 +249,13 @@ public class TasksFragment extends Fragment {
     if (!posted) {
       labels.add(getString(task.skipCaption ? R.string.turn_captions_on : R.string.turn_captions_off));
     }
+    boolean alumniPhoto = !posted
+      && task.memberId > 0L
+      && (TaskTypes.ALUMNI_PHOTO.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type));
+    if (alumniPhoto) {
+      labels.add(getString(R.string.alumni_got_picture));
+      labels.add(getString(R.string.alumni_no_picture));
+    }
     boolean series = !posted && (task.seriesId > 0L || TaskTypes.oneCard(task.type));
     if (series) {
       labels.add(getString(R.string.edit_series));
@@ -275,6 +283,18 @@ public class TasksFragment extends Fragment {
         if (!posted) {
           if (which == index) {
             toggleCaptions(task);
+            return;
+          }
+          index++;
+        }
+        if (alumniPhoto) {
+          if (which == index) {
+            setAlumniPhoto(task, AlumniDesk.PHOTO_GOT);
+            return;
+          }
+          index++;
+          if (which == index) {
+            setAlumniPhoto(task, AlumniDesk.PHOTO_NONE);
             return;
           }
           index++;
@@ -362,6 +382,28 @@ public class TasksFragment extends Fragment {
           requireContext(),
           skip ? R.string.captions_off_toast : R.string.captions_on_toast,
           Toast.LENGTH_SHORT)
+          .show();
+      });
+    });
+  }
+
+  private void setAlumniPhoto(Task task, String status) {
+    if (task == null || task.memberId <= 0L) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.setAlumniPhoto(app, task.memberId, status);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(
+          requireContext(),
+          AlumniDesk.PHOTO_NONE.equals(status)
+            ? R.string.alumni_photo_none_saved
+            : R.string.alumni_photo_saved,
+          Toast.LENGTH_LONG)
           .show();
       });
     });

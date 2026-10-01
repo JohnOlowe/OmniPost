@@ -29,6 +29,14 @@ public final class ScheduleTimes {
   public static final int GENERATE_COUNTDOWN_DAYS = 3;
   /** Only mint birthday cards that are actually coming up, so a 200-name roster cannot flood AMS. */
   public static final int GENERATE_BIRTHDAY_DAYS = 21;
+  /** Ask for the flyer picture this many days before the birthday. */
+  public static final int ALUMNI_PHOTO_LEAD_DAYS = 2;
+  public static final int ALUMNI_PHOTO_HOUR = 10;
+  /** Keep the 1st-of-month HNM card through the 5th. */
+  public static final int ALUMNI_MONTH_CATCHUP_DAYS = 4;
+  public static final int ALUMNI_WAVE_DAY = 5;
+  /** Keep the bi-monthly DM wave a week after the 5th. */
+  public static final int ALUMNI_WAVE_CATCHUP_DAYS = 7;
 
   private ScheduleTimes() {}
 }

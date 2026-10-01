@@ -21,6 +21,7 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
@@ -238,8 +239,12 @@ public class BirthdaysFragment extends Fragment {
   private void showEditor(@Nullable Member existing) {
     View view = getLayoutInflater().inflate(R.layout.dialog_member, null, false);
     TextInputEditText name = view.findViewById(R.id.input_name);
+    TextInputEditText phone = view.findViewById(R.id.input_phone);
     Spinner month = view.findViewById(R.id.spinner_month);
     Spinner day = view.findViewById(R.id.spinner_day);
+    Spinner photo = view.findViewById(R.id.spinner_photo);
+    View phoneLayout = view.findViewById(R.id.layout_phone);
+    View photoLabel = view.findViewById(R.id.label_photo);
     CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);
@@ -253,16 +258,28 @@ public class BirthdaysFragment extends Fragment {
       new ArrayAdapter<>(requireContext(), R.layout.spinner_item, days);
     dayAdapter.setDropDownViewResource(R.layout.spinner_item);
     day.setAdapter(dayAdapter);
+    ArrayAdapter<CharSequence> photos = ArrayAdapter.createFromResource(
+      requireContext(), R.array.alumni_photo_status, R.layout.spinner_item);
+    photos.setDropDownViewResource(R.layout.spinner_item);
+    photo.setAdapter(photos);
     boolean alumniTab = Member.KIND_ALUMNI.equals(kind);
     if (existing != null) {
       name.setText(existing.name);
       month.setSelection(Math.max(0, existing.birthMonth - 1));
       day.setSelection(Math.max(0, existing.birthDay - 1));
       skipCaption.setChecked(existing.skipCaption);
+      if (existing.phone != null) {
+        phone.setText(existing.phone);
+      }
+      photo.setSelection(AlumniDesk.photoSpinnerIndex(existing));
     } else {
       skipCaption.setChecked(alumniTab && Prefs.alumniSkipCaption(requireContext()));
     }
     boolean alumni = existing != null ? Member.isAlumni(existing) : alumniTab;
+    int alumniVis = alumni ? View.VISIBLE : View.GONE;
+    phoneLayout.setVisibility(alumniVis);
+    photoLabel.setVisibility(alumniVis);
+    photo.setVisibility(alumniVis);
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(
         existing == null
@@ -286,15 +303,44 @@ public class BirthdaysFragment extends Fragment {
         member.birthDay = dayOfMonth;
         member.kind = alumni ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
         member.skipCaption = skipCaption.isChecked();
+        if (alumni) {
+          member.phone = phone.getText() == null ? "" : phone.getText().toString().trim();
+          member.photoStatus = AlumniDesk.photoStatusFromIndex(photo.getSelectedItemPosition());
+        }
         AppExecutors.disk().execute(() -> {
           AppDatabase db = AppDatabase.get(requireContext());
-          if (member.id == 0L) {
-            member.id = db.memberDao().insert(member);
-          } else {
-            db.memberDao().update(member);
-            ScheduleCoordinator.cancelMemberTasks(requireContext(), member.id);
+          boolean merged = false;
+          if (member.id == 0L && alumni) {
+            Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, member.name);
+            if (prior != null) {
+              if (AlumniDesk.digits(member.phone).length() >= 7) {
+                prior.phone = member.phone;
+              }
+              if (member.photoStatus != null && !member.photoStatus.isEmpty()) {
+                prior.photoStatus = member.photoStatus;
+              }
+              prior.skipCaption = member.skipCaption;
+              db.memberDao().update(prior);
+              merged = true;
+              ScheduleCoordinator.cancelMemberTasks(requireContext(), prior.id);
+            }
+          }
+          if (!merged) {
+            if (member.id == 0L) {
+              member.id = db.memberDao().insert(member);
+            } else {
+              db.memberDao().update(member);
+              ScheduleCoordinator.cancelMemberTasks(requireContext(), member.id);
+            }
           }
           ScheduleCoordinator.bootstrap(requireContext());
+          boolean showMerged = merged;
+          AppExecutors.main(() -> {
+            if (!isAdded() || !showMerged) {
+              return;
+            }
+            Toast.makeText(requireContext(), R.string.alumni_filled_existing, Toast.LENGTH_LONG).show();
+          });
         });
       })
       .setNegativeButton(android.R.string.cancel, null)

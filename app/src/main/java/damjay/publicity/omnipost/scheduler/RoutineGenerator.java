@@ -74,11 +74,16 @@ public final class RoutineGenerator {
         addSeries(out, now, series, writeHour, lead);
       }
     }
+    List<Member> alumni = new ArrayList<>();
     if (members != null) {
       for (Member member : members) {
         addBirthday(out, now, member, writeHour, lead);
+        if (Member.isAlumni(member)) {
+          alumni.add(member);
+        }
       }
     }
+    addAlumniDesk(out, now, alumni, writeHour, lead);
     return out;
   }
 
@@ -439,7 +444,7 @@ public final class RoutineGenerator {
     String type = alumni ? TaskTypes.ALUMNI_BIRTHDAY : TaskTypes.BIRTHDAY;
     String title = member.name + "'s Birthday";
     String description = alumni
-      ? "Alumni birthday. Write a greeting if you want one, or turn captions off and forward in WhatsApp."
+      ? AlumniDesk.birthdayBrief(member)
       : "Write the greeting the evening before. Caption ready by 6:30 AM. Post at 7:00 AM.";
     out.add(withSkip(build(
       type,
@@ -450,6 +455,131 @@ public final class RoutineGenerator {
       type + "|" + member.id + "|" + DateUtils.dayKey(post),
       member.id,
       0L), member.skipCaption));
+    if (alumni) {
+      addAlumniPhoto(out, now, member, post, draftHour, leadDays);
+    }
+  }
+
+  private static void addAlumniDesk(
+    List<Task> out, Calendar now, List<Member> alumni, int draftHour, int leadDays) {
+    if (alumni == null || alumni.isEmpty()) {
+      return;
+    }
+    Calendar month = DateUtils.startOfDay(now);
+    month.set(Calendar.DAY_OF_MONTH, 1);
+    for (int m = 0; m < ScheduleTimes.GENERATE_MONTH_COUNT; m++) {
+      Calendar target = (Calendar) month.clone();
+      target.add(Calendar.MONTH, m);
+      addAlumniMonthCard(out, now, target, alumni, draftHour, leadDays);
+      addAlumniWaveCard(out, now, target, alumni, draftHour, leadDays);
+    }
+  }
+
+  private static void addAlumniMonthCard(
+    List<Task> out,
+    Calendar now,
+    Calendar target,
+    List<Member> alumni,
+    int draftHour,
+    int leadDays) {
+    Calendar post = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
+    post.set(Calendar.DAY_OF_MONTH, 1);
+    if (!stillDue(now, post, ScheduleTimes.ALUMNI_MONTH_CATCHUP_DAYS)) {
+      return;
+    }
+    List<Member> born = new ArrayList<>();
+    int month = post.get(Calendar.MONTH) + 1;
+    for (Member member : alumni) {
+      if (member != null && member.birthMonth == month) {
+        born.add(member);
+      }
+    }
+    String monthName = DateUtils.monthName(post);
+    Calendar draft = DateUtils.draftAt(post, leadDays, draftHour, 0);
+    out.add(withSkip(build(
+      TaskTypes.ALUMNI_MONTH,
+      "Alumni birthday month · " + monthName,
+      AlumniDesk.monthBrief(monthName, born),
+      draft.getTimeInMillis(),
+      post.getTimeInMillis(),
+      TaskTypes.ALUMNI_MONTH + "|" + DateUtils.monthKey(post),
+      0L,
+      0L), true));
+  }
+
+  private static void addAlumniWaveCard(
+    List<Task> out,
+    Calendar now,
+    Calendar target,
+    List<Member> alumni,
+    int draftHour,
+    int leadDays) {
+    Calendar post = DateUtils.sameDayAt(target, ScheduleTimes.MONTH_POST_HOUR, 0);
+    int day = Math.min(ScheduleTimes.ALUMNI_WAVE_DAY, post.getActualMaximum(Calendar.DAY_OF_MONTH));
+    post.set(Calendar.DAY_OF_MONTH, day);
+    if (!stillDue(now, post, ScheduleTimes.ALUMNI_WAVE_CATCHUP_DAYS)) {
+      return;
+    }
+    int month = post.get(Calendar.MONTH) + 1;
+    List<Member> wave = new ArrayList<>();
+    for (Member member : alumni) {
+      if (AlumniDesk.inWave(member, month)) {
+        wave.add(member);
+      }
+    }
+    String monthName = DateUtils.monthName(post);
+    Calendar draft = DateUtils.draftAt(post, leadDays, draftHour, 0);
+    out.add(withSkip(build(
+      TaskTypes.ALUMNI_WAVE,
+      "Alumni DM wave · " + monthName,
+      AlumniDesk.waveBrief(monthName, wave),
+      draft.getTimeInMillis(),
+      post.getTimeInMillis(),
+      TaskTypes.ALUMNI_WAVE + "|" + DateUtils.monthKey(post),
+      0L,
+      0L), true));
+  }
+
+  private static void addAlumniPhoto(
+    List<Task> out,
+    Calendar now,
+    Member member,
+    Calendar birthday,
+    int draftHour,
+    int leadDays) {
+    if (!AlumniDesk.wantsPhoto(member) || birthday == null) {
+      return;
+    }
+    if (DateUtils.calendarDaysBetween(DateUtils.startOfDay(now), DateUtils.startOfDay(birthday)) <= 0) {
+      return;
+    }
+    Calendar photo = (Calendar) birthday.clone();
+    photo.add(Calendar.DAY_OF_MONTH, -ScheduleTimes.ALUMNI_PHOTO_LEAD_DAYS);
+    photo.set(Calendar.HOUR_OF_DAY, ScheduleTimes.ALUMNI_PHOTO_HOUR);
+    photo.set(Calendar.MINUTE, 0);
+    photo.set(Calendar.SECOND, 0);
+    photo.set(Calendar.MILLISECOND, 0);
+    Calendar draft = DateUtils.draftAt(photo, leadDays, draftHour, 0);
+    out.add(withSkip(build(
+      TaskTypes.ALUMNI_PHOTO,
+      "Picture from " + member.name,
+      AlumniDesk.photoBrief(member),
+      draft.getTimeInMillis(),
+      photo.getTimeInMillis(),
+      TaskTypes.ALUMNI_PHOTO + "|" + member.id + "|" + DateUtils.dayKey(birthday),
+      member.id,
+      0L), true));
+  }
+
+  static boolean stillDue(Calendar now, Calendar post, int catchUpDays) {
+    if (now == null || post == null) {
+      return false;
+    }
+    int age = DateUtils.calendarDaysBetween(DateUtils.startOfDay(post), DateUtils.startOfDay(now));
+    if (age < 0) {
+      return true;
+    }
+    return age <= Math.max(0, catchUpDays);
   }
 
   private static Task withSkip(Task task, boolean skip) {
@@ -457,7 +587,7 @@ public final class RoutineGenerator {
       return null;
     }
     task.skipCaption = skip;
-    if (skip) {
+    if (skip && (task.description == null || task.description.isEmpty())) {
       task.description = "No caption — open WhatsApp and forward.";
     }
     return task;

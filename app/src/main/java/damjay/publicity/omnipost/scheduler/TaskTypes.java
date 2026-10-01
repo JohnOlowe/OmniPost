@@ -8,6 +8,9 @@ public final class TaskTypes {
   public static final String FRIDAY_PRAYER = "FRIDAY_PRAYER";
   public static final String BIRTHDAY = "BIRTHDAY";
   public static final String ALUMNI_BIRTHDAY = "ALUMNI_BIRTHDAY";
+  public static final String ALUMNI_MONTH = "ALUMNI_MONTH";
+  public static final String ALUMNI_WAVE = "ALUMNI_WAVE";
+  public static final String ALUMNI_PHOTO = "ALUMNI_PHOTO";
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
   public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
@@ -45,6 +48,12 @@ public final class TaskTypes {
         return "Birthday";
       case ALUMNI_BIRTHDAY:
         return "Alumni birthday";
+      case ALUMNI_MONTH:
+        return "Alumni birthday month";
+      case ALUMNI_WAVE:
+        return "Alumni DM wave";
+      case ALUMNI_PHOTO:
+        return "Alumni photo";
       case NEW_MONTH_FASTING:
         return "Fasting tomorrow";
       case FASTING_DAY:
@@ -86,11 +95,14 @@ public final class TaskTypes {
       case FASTING_DAY:
       case HAPPY_NEW_MONTH:
       case BIRTHDAY_NOTICE:
+      case ALUMNI_MONTH:
+      case ALUMNI_WAVE:
         return "Monthly";
       case COUNTDOWN:
         return "Daily";
       case BIRTHDAY:
       case ALUMNI_BIRTHDAY:
+      case ALUMNI_PHOTO:
         return "Yearly";
       case FLEXIBLE:
         return "Flexible";
@@ -122,10 +134,20 @@ public final class TaskTypes {
       case FLEXIBLE:
         return SECTION_FLEXIBLE;
       case ALUMNI_BIRTHDAY:
+      case ALUMNI_MONTH:
+      case ALUMNI_WAVE:
+      case ALUMNI_PHOTO:
         return SECTION_ALUMNI;
       default:
         return SECTION_ONCE;
     }
+  }
+
+  public static boolean isAlumniDesk(String type) {
+    return ALUMNI_BIRTHDAY.equals(type)
+        || ALUMNI_MONTH.equals(type)
+        || ALUMNI_WAVE.equals(type)
+        || ALUMNI_PHOTO.equals(type);
   }
 
   public static boolean isCustom(String type) {

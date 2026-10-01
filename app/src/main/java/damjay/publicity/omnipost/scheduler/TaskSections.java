@@ -15,7 +15,7 @@ public final class TaskSections {
   public static final String SUB_MONTHLY = "Does not change — next fasting / new month / birthday notice.";
   public static final String SUB_CAMPAIGN = "One card. The day count updates itself.";
   public static final String SUB_FLEXIBLE = "Birthdays and posts you time yourself.";
-  public static final String SUB_ALUMNI = "Forward a greeting in WhatsApp. No caption to write.";
+  public static final String SUB_ALUMNI = "Birthday month, photos, and a DM every two months. Never tag without a number.";
   public static final String SUB_ONCE = "Happens once.";
 
   public static final long NEXT_WINDOW_MS = 48L * 60L * 60L * 1000L;

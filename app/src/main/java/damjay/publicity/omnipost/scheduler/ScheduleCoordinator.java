@@ -50,11 +50,8 @@ public final class ScheduleCoordinator {
       if (!existing.titleLocked) {
         existing.title = candidate.title;
       }
-      if (existing.skipCaption) {
-        existing.description = "No caption — open WhatsApp and forward.";
-      } else {
-        existing.description = candidate.description;
-      }
+      existing.skipCaption = candidate.skipCaption;
+      existing.description = candidate.description;
       existing.type = candidate.type;
       existing.seriesId = candidate.seriesId;
       if (!existing.timesLocked) {
@@ -553,19 +550,15 @@ public final class ScheduleCoordinator {
     if (task == null || TaskStatus.POSTED.equals(task.status)) {
       return;
     }
-    task.skipCaption = skip;
-    if (skip) {
-      task.description = "No caption — open WhatsApp and forward.";
-    } else if (task.description != null && task.description.startsWith("No caption")) {
-      task.description = "Write the caption. OmniPost will nag you when it is time.";
-    }
+    applySkipText(db, task, skip);
     long now = System.currentTimeMillis();
     if (!(TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now)) {
       task.status = TaskStatus.dueStatus(task, now, Prefs.warningLeadMs(app));
       task.snoozeUntilMillis = 0L;
     }
     db.taskDao().update(task);
-    if (task.memberId > 0L) {
+    if (task.memberId > 0L
+        && (TaskTypes.BIRTHDAY.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type))) {
       Member member = db.memberDao().getById(task.memberId);
       if (member != null) {
         member.skipCaption = skip;
@@ -605,12 +598,10 @@ public final class ScheduleCoordinator {
         if (task == null || TaskStatus.POSTED.equals(task.status)) {
           continue;
         }
-        task.skipCaption = skip;
-        if (skip) {
-          task.description = "No caption — open WhatsApp and forward.";
-        } else if (task.description != null && task.description.startsWith("No caption")) {
-          task.description = "Write the greeting. OmniPost will nag you when it is time.";
+        if (!TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+          continue;
         }
+        applySkipText(db, task, skip);
         if (!(TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now)) {
           task.status = TaskStatus.dueStatus(task, now, warningLead);
           task.snoozeUntilMillis = 0L;
@@ -684,6 +675,69 @@ public final class ScheduleCoordinator {
       NotificationHelper.cancelForTask(app, task.id);
       db.taskDao().deleteById(task.id);
     }
+  }
+
+  public static void setAlumniPhoto(Context context, long memberId, String status) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Member member = db.memberDao().getById(memberId);
+    if (member == null) {
+      return;
+    }
+    String value = status == null ? "" : status;
+    if (!AlumniDesk.PHOTO_GOT.equals(value) && !AlumniDesk.PHOTO_NONE.equals(value)) {
+      value = "";
+    }
+    member.photoStatus = value;
+    db.memberDao().update(member);
+    List<Task> tasks = db.taskDao().getActiveForMember(memberId);
+    if (tasks != null) {
+      for (Task task : tasks) {
+        if (task == null || TaskStatus.POSTED.equals(task.status)) {
+          continue;
+        }
+        if (TaskTypes.ALUMNI_PHOTO.equals(task.type) && AlumniDesk.photoSettled(member)) {
+          markPosted(app, task.id);
+          continue;
+        }
+        if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+          task.description = AlumniDesk.birthdayBrief(member);
+          db.taskDao().update(task);
+        }
+      }
+    }
+    bootstrap(app);
+  }
+
+  private static void applySkipText(AppDatabase db, Task task, boolean skip) {
+    if (task == null) {
+      return;
+    }
+    task.skipCaption = skip;
+    if (!skip) {
+      if (task.description != null && task.description.startsWith("No caption")) {
+        task.description = "Write the caption. OmniPost will nag you when it is time.";
+      }
+      return;
+    }
+    if (task.memberId > 0L && db != null) {
+      Member member = db.memberDao().getById(task.memberId);
+      if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+        task.description = AlumniDesk.photoBrief(member);
+        return;
+      }
+      if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+        task.description = AlumniDesk.birthdayBrief(member);
+        return;
+      }
+    }
+    if (TaskTypes.ALUMNI_MONTH.equals(task.type) || TaskTypes.ALUMNI_WAVE.equals(task.type)) {
+      return;
+    }
+    task.description = "No caption — open WhatsApp and forward.";
   }
 
   public static void cancelMemberTasks(Context context, long memberId) {

@@ -142,7 +142,11 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     void bind(Task task, Listener listener) {
       binding.title.setText(task.title);
-      if (task.skipCaption && !TaskStatus.POSTED.equals(task.status)) {
+      if (TaskTypes.isAlumniDesk(task.type)
+          && task.description != null
+          && !task.description.isEmpty()) {
+        binding.description.setText(task.description);
+      } else if (task.skipCaption && !TaskStatus.POSTED.equals(task.status)) {
         binding.description.setText(
           TaskStatus.NAGGING.equals(task.status)
             ? itemView.getContext().getString(R.string.no_caption_post)

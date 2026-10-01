@@ -121,6 +121,8 @@ public class DeskBackupTest {
     assertEquals("Ada", got.members.get(0).name);
     assertEquals(3, got.members.get(0).birthMonth);
     assertEquals(Member.KIND_MEMBER, got.members.get(0).kind);
+    assertEquals("", got.members.get(0).phone);
+    assertEquals("", got.members.get(0).photoStatus);
     assertFalse(got.members.get(0).skipCaption);
     assertFalse(got.customTasks.get(0).skipCaption);
     assertFalse(got.customTasks.get(0).titleLocked);

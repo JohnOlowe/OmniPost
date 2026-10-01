@@ -33,4 +33,7 @@ public interface MemberDao {
 
   @Query("SELECT COUNT(*) FROM members WHERE kind = :kind")
   int countByKind(String kind);
+
+  @Query("SELECT * FROM members WHERE kind = :kind AND LOWER(name) = LOWER(:name) LIMIT 1")
+  Member findByKindAndNameIgnoreCase(String kind, String name);
 }

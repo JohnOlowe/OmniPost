@@ -42,6 +42,34 @@
     android:layout_width="match_parent"
     android:layout_height="48dp"/>
 
+  <com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/layout_phone"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:hint="@string/alumni_phone">
+
+    <com.google.android.material.textfield.TextInputEditText
+      android:id="@+id/input_phone"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:inputType="phone"
+      android:textColor="@color/cream"/>
+  </com.google.android.material.textfield.TextInputLayout>
+
+  <TextView
+    android:id="@+id/label_photo"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/alumni_photo"
+    android:textColor="@color/text_muted"/>
+
+  <Spinner
+    android:id="@+id/spinner_photo"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"/>
+
   <CheckBox
     android:id="@+id/skip_caption"
     android:layout_width="match_parent"

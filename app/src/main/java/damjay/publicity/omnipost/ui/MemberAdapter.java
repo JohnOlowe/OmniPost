@@ -8,9 +8,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemMemberBinding;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -135,7 +137,15 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
     void bind(Member member, Listener listener) {
       binding.name.setText(member.name);
-      binding.when.setText(DateUtils.monthDayLabel(member.birthMonth, member.birthDay));
+      String when = DateUtils.monthDayLabel(member.birthMonth, member.birthDay);
+      if (Member.isAlumni(member)) {
+        int month = Calendar.getInstance().get(Calendar.MONTH) + 1;
+        String extra = AlumniDesk.rosterLine(member, month);
+        if (extra != null && !extra.isEmpty()) {
+          when = when + " · " + extra;
+        }
+      }
+      binding.when.setText(when);
       binding.getRoot().setOnClickListener(v -> listener.onEdit(member));
       binding.btnDelete.setOnClickListener(v -> listener.onDelete(member));
     }

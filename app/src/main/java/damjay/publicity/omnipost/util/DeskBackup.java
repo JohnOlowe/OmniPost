@@ -354,6 +354,8 @@ public final class DeskBackup {
       o.put("birthDay", member.birthDay);
       o.put("notes", nz(member.notes));
       o.put("kind", nz(member.kind));
+      o.put("phone", nz(member.phone));
+      o.put("photoStatus", nz(member.photoStatus));
       o.put("skipCaption", member.skipCaption);
       out.put(o);
     }
@@ -466,6 +468,8 @@ public final class DeskBackup {
       if (member.kind.isEmpty()) {
         member.kind = Member.KIND_MEMBER;
       }
+      member.phone = str(o, "phone");
+      member.photoStatus = str(o, "photoStatus");
       member.skipCaption = o.optBoolean("skipCaption", false);
       out.add(member);
     }
