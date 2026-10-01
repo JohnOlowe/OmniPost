@@ -5,6 +5,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemMemberBinding;
