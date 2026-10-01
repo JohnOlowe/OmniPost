@@ -48,6 +48,14 @@
         android:textColor="@color/text_muted"
         android:textSize="13sp"/>
     </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_captions"
+      style="@style/Widget.Material3.Button.TextButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/alumni_edit_captions_short"
+      android:textColor="@color/gold"/>
   </LinearLayout>
 
   <com.google.android.material.card.MaterialCardView

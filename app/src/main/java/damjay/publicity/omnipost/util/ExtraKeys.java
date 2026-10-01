@@ -11,6 +11,7 @@ public final class ExtraKeys {
   public static final String ALUMNI_MODE = "extra_alumni_mode";
   public static final String MEMBER_ID = "extra_member_id";
   public static final String PENDING_INDEX = "extra_pending_index";
+  public static final String CAPTION_KEY = "extra_caption_key";
 
   private ExtraKeys() {}
 }

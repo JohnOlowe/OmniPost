@@ -39,7 +39,10 @@ public class TasksFragment extends Fragment {
   private TaskAdapter adapter;
   private final List<Task> active = new ArrayList<>();
   private final List<Task> posted = new ArrayList<>();
-  private boolean showPosted;
+  private static final int DESK_POST = 0;
+  private static final int DESK_POSTED = 1;
+  private static final int DESK_ALUMNI = 2;
+  private int desk = DESK_POST;
 
   @Nullable
   @Override
@@ -157,9 +160,17 @@ public class TasksFragment extends Fragment {
       if (!isChecked) {
         return;
       }
-      showPosted = checkedId == R.id.chip_posted;
+      if (checkedId == R.id.chip_posted) {
+        desk = DESK_POSTED;
+      } else if (checkedId == R.id.chip_alumni) {
+        desk = DESK_ALUMNI;
+      } else {
+        desk = DESK_POST;
+      }
       render();
     });
+    binding.btnAlumniCaptions.setOnClickListener(v ->
+      startActivity(new Intent(requireContext(), AlumniCaptionsActivity.class)));
     binding.fab.setOnClickListener(v -> showAddChooser());
     AppDatabase db = AppDatabase.get(requireContext());
     db.taskDao().observeActive().observe(getViewLifecycleOwner(), list -> {
@@ -167,18 +178,14 @@ public class TasksFragment extends Fragment {
       if (list != null) {
         active.addAll(list);
       }
-      if (!showPosted) {
-        render();
-      }
+      render();
     });
     db.taskDao().observePosted().observe(getViewLifecycleOwner(), list -> {
       posted.clear();
       if (list != null) {
         posted.addAll(list);
       }
-      if (showPosted) {
-        render();
-      }
+      render();
     });
     return binding.getRoot();
   }
@@ -466,11 +473,37 @@ public class TasksFragment extends Fragment {
     if (binding == null) {
       return;
     }
-    List<Task> source = showPosted ? posted : active;
-    adapter.submit(source, showPosted);
-    binding.empty.setText(showPosted ? R.string.empty_posted : R.string.empty_tasks);
+    boolean alumniDesk = desk == DESK_ALUMNI;
+    boolean postedMode = desk == DESK_POSTED;
+    List<Task> source;
+    if (alumniDesk) {
+      source = onlyAlumni(active, true);
+      source.addAll(onlyAlumni(posted, true));
+    } else {
+      source = onlyAlumni(postedMode ? posted : active, false);
+    }
+    adapter.submit(source, postedMode);
+    int empty = postedMode
+      ? R.string.empty_posted
+      : alumniDesk ? R.string.empty_alumni_tasks : R.string.empty_tasks;
+    binding.empty.setText(empty);
     binding.empty.setVisibility(source.isEmpty() ? View.VISIBLE : View.GONE);
-    binding.fab.setVisibility(showPosted ? View.GONE : View.VISIBLE);
+    binding.howItWorks.setText(alumniDesk ? R.string.how_alumni_desk : R.string.how_it_works);
+    binding.btnAlumniCaptions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.fab.setVisibility(desk == DESK_POST ? View.VISIBLE : View.GONE);
+  }
+
+  private static List<Task> onlyAlumni(List<Task> source, boolean alumni) {
+    List<Task> out = new ArrayList<>();
+    if (source == null) {
+      return out;
+    }
+    for (Task task : source) {
+      if (task != null && TaskTypes.isAlumniDesk(task.type) == alumni) {
+        out.add(task);
+      }
+    }
+    return out;
   }
 
   @Override

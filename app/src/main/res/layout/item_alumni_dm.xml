@@ -35,41 +35,110 @@
       android:textSize="12sp"
       tools:text="Ma · 0803… · birthday month"/>
 
-    <TextView
-      android:id="@+id/preview"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginTop="8dp"
-      android:ellipsize="end"
-      android:maxLines="5"
-      android:textColor="@color/text_muted"
-      android:textSize="13sp"/>
-
     <LinearLayout
+      android:id="@+id/block_hnm"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="10dp"
-      android:orientation="horizontal">
+      android:orientation="vertical">
 
-      <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_copy"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="0dp"
+      <TextView
+        android:id="@+id/label_hnm"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_weight="1"
-        android:text="@string/alumni_copy_dm"
+        android:text="@string/alumni_hnm_label"
         android:textColor="@color/gold"
-        app:strokeColor="@color/navy_700"/>
+        android:textStyle="bold"/>
 
-      <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_whatsapp"
-        android:layout_width="0dp"
+      <TextView
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:backgroundTint="@color/whatsapp"
-        android:text="@string/open_whatsapp"
-        android:textColor="@color/cream"/>
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="6"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"/>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_copy"
+          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginEnd="8dp"
+          android:layout_weight="1"
+          android:text="@string/alumni_copy_dm"
+          android:textColor="@color/gold"
+          app:strokeColor="@color/navy_700"/>
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_whatsapp"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:backgroundTint="@color/whatsapp"
+          android:text="@string/open_whatsapp"
+          android:textColor="@color/cream"/>
+      </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+      android:id="@+id/block_details"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="12dp"
+      android:orientation="vertical"
+      android:visibility="gone">
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/alumni_details_label"
+        android:textColor="@color/gold"
+        android:textStyle="bold"/>
+
+      <TextView
+        android:id="@+id/preview_details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="6"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"/>
+
+      <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_copy_details"
+          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_marginEnd="8dp"
+          android:layout_weight="1"
+          android:text="@string/alumni_copy_details"
+          android:textColor="@color/gold"
+          app:strokeColor="@color/navy_700"/>
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_whatsapp_details"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:backgroundTint="@color/whatsapp"
+          android:text="@string/open_whatsapp"
+          android:textColor="@color/cream"/>
+      </LinearLayout>
     </LinearLayout>
   </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

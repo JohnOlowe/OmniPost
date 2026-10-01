@@ -1,15 +1,20 @@
 package damjay.publicity.omnipost.ui;
 
 import android.view.LayoutInflater;
+import android.view.View;
 import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemAlumniDmBinding;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder> {
   interface Listener {
@@ -20,14 +25,16 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
   private final List<Member> rows = new ArrayList<>();
   private String mode = AlumniCopy.KIND_WAVE;
   private int month;
+  private Map<String, String> bag = new LinkedHashMap<>();
 
   AlumniDmAdapter(Listener listener) {
     this.listener = listener;
   }
 
-  void submit(List<Member> members, String mode, int month) {
+  void submit(List<Member> members, String mode, int month, Map<String, String> bag) {
     this.mode = mode == null ? AlumniCopy.KIND_WAVE : mode;
     this.month = month;
+    this.bag = bag == null ? new LinkedHashMap<>() : bag;
     rows.clear();
     if (members != null) {
       rows.addAll(members);
@@ -43,7 +50,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
 
   @Override
   public void onBindViewHolder(@NonNull Holder holder, int position) {
-    holder.bind(rows.get(position), mode, month, listener);
+    holder.bind(rows.get(position), mode, month, bag, listener);
   }
 
   @Override
@@ -59,16 +66,17 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
       this.binding = binding;
     }
 
-    void bind(Member member, String mode, int month, Listener listener) {
+    void bind(
+      Member member,
+      String mode,
+      int month,
+      Map<String, String> bag,
+      Listener listener) {
       binding.name.setText(member.name);
-      String caption;
-      if (AlumniCopy.KIND_PHOTO.equals(mode)) {
-        caption = AlumniCopy.photo(member);
-      } else if (AlumniCopy.KIND_BIRTHDAY.equals(mode) || member.birthMonth == month) {
-        caption = AlumniCopy.dm(member, month);
-      } else {
-        caption = AlumniCopy.dm(member, month);
-      }
+      Calendar now = Calendar.getInstance();
+      boolean photo = AlumniCopy.KIND_PHOTO.equals(mode);
+      boolean showHnm = AlumniCopy.wantsHnm(member, mode);
+      boolean showDetails = AlumniCopy.wantsDetails(member, mode, month);
       String who = AlumniCopy.greetingName(member);
       String phone = AlumniDesk.hasPhone(member) ? AlumniDesk.displayPhone(member.phone) : "no number";
       String tag = AlumniDesk.hasPhone(member) ? "tag" : "do not tag";
@@ -77,9 +85,35 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
           + " · "
           + phone
           + (member.introduced ? " · intro sent" : " · first DM"));
-      binding.preview.setText(caption);
-      binding.btnCopy.setOnClickListener(v -> listener.onSend(member, caption, false));
-      binding.btnWhatsapp.setOnClickListener(v -> listener.onSend(member, caption, true));
+      if (photo) {
+        String caption = AlumniCopy.photo(member, now, bag);
+        binding.blockHnm.setVisibility(View.VISIBLE);
+        binding.labelHnm.setText(R.string.alumni_desk_photo);
+        binding.preview.setText(caption);
+        binding.btnCopy.setOnClickListener(v -> listener.onSend(member, caption, false));
+        binding.btnWhatsapp.setOnClickListener(v -> listener.onSend(member, caption, true));
+        binding.blockDetails.setVisibility(View.GONE);
+        return;
+      }
+      if (showHnm) {
+        String hnm = AlumniCopy.hnm(member, month, now, bag);
+        binding.blockHnm.setVisibility(View.VISIBLE);
+        binding.labelHnm.setText(R.string.alumni_hnm_label);
+        binding.preview.setText(hnm);
+        binding.btnCopy.setOnClickListener(v -> listener.onSend(member, hnm, false));
+        binding.btnWhatsapp.setOnClickListener(v -> listener.onSend(member, hnm, true));
+      } else {
+        binding.blockHnm.setVisibility(View.GONE);
+      }
+      if (showDetails) {
+        String details = AlumniCopy.details(member, month, now, bag);
+        binding.blockDetails.setVisibility(View.VISIBLE);
+        binding.previewDetails.setText(details);
+        binding.btnCopyDetails.setOnClickListener(v -> listener.onSend(member, details, false));
+        binding.btnWhatsappDetails.setOnClickListener(v -> listener.onSend(member, details, true));
+      } else {
+        binding.blockDetails.setVisibility(View.GONE);
+      }
     }
   }
 }

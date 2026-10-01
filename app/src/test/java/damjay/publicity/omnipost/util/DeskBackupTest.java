@@ -35,6 +35,7 @@ public class DeskBackupTest {
     snap.vibrateSeconds = 45;
     snap.ringMinutes = 3;
     snap.alumniSkipCaption = false;
+    snap.alumniCaptions = "{\"hnm\":\"Hello {who}\"}";
     snap.seedCaptions = true;
     snap.deskOngoing = false;
     snap.fullScreen = true;
@@ -114,6 +115,7 @@ public class DeskBackupTest {
     assertEquals(45, got.vibrateSeconds);
     assertEquals(3, got.ringMinutes);
     assertFalse(got.alumniSkipCaption);
+    assertEquals("{\"hnm\":\"Hello {who}\"}", got.alumniCaptions);
     assertTrue(got.seedCaptions);
     assertFalse(got.deskOngoing);
     assertTrue(got.fullScreen);

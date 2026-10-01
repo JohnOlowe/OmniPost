@@ -10,21 +10,38 @@ import org.junit.Test;
 
 public class AlumniCopyTest {
   @Test
-  public void sirMaAndNameAndAWordingTweak() {
+  public void happyNewMonthAndDetailsAreSeparateMessages() {
     Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
     Member tobi = person("Tobi Ade", Member.GENDER_MALE, 3, 4);
     Calendar oct = cal(2026, Calendar.OCTOBER, 1);
-    String adaDm = AlumniCopy.dm(ada, 10, oct);
-    String tobiDm = AlumniCopy.dm(tobi, 10, oct);
-    assertTrue(adaDm.contains("Ma Ada"));
-    assertTrue(adaDm.contains("birthday month"));
-    assertTrue(adaDm.contains("Olowe John"));
-    assertTrue(adaDm.contains("picture"));
-    assertTrue(tobiDm.contains("Sir Tobi"));
-    assertTrue(tobiDm.contains("Alumni Relations Officer"));
-    assertFalse(tobiDm.contains("birthday month"));
-    assertFalse(adaDm.equals(tobiDm));
-    assertFalse(adaDm.contains("Independence"));
+    String adaHnm = AlumniCopy.hnm(ada, 10, oct, null);
+    String adaDetails = AlumniCopy.details(ada, 10, oct, null);
+    String tobiHnm = AlumniCopy.hnm(tobi, 10, oct, null);
+    assertTrue(adaHnm.contains("Ma Ada"));
+    assertTrue(adaHnm.contains("Happy New Month"));
+    assertFalse(adaHnm.toLowerCase().contains("picture"));
+    assertTrue(adaDetails.contains("Ma Ada"));
+    assertTrue(adaDetails.toLowerCase().contains("picture"));
+    assertTrue(adaDetails.toLowerCase().contains("birth date")
+      || adaDetails.toLowerCase().contains("name written"));
+    assertTrue(tobiHnm.contains("Sir Tobi"));
+    assertTrue(tobiHnm.contains("Alumni Relations Officer") || tobiHnm.contains("Olowe John"));
+    assertFalse(tobiHnm.toLowerCase().contains("picture"));
+    assertFalse(adaHnm.equals(tobiHnm));
+    assertFalse(adaHnm.contains("Independence"));
+    assertTrue(AlumniCopy.wantsHnm(ada, AlumniCopy.KIND_BIRTHDAY));
+    assertTrue(AlumniCopy.wantsDetails(ada, AlumniCopy.KIND_BIRTHDAY, 10));
+    assertTrue(AlumniCopy.wantsHnm(tobi, AlumniCopy.KIND_WAVE));
+    assertFalse(AlumniCopy.wantsDetails(tobi, AlumniCopy.KIND_WAVE, 10));
+  }
+
+  @Test
+  public void previousPastorsSkipHnmKeepDetails() {
+    Member pastor = person("Pastor Ada", Member.GENDER_FEMALE, 10, 2);
+    pastor.desk = Member.DESK_PASTOR;
+    assertFalse(AlumniCopy.wantsHnm(pastor, AlumniCopy.KIND_BIRTHDAY));
+    assertTrue(AlumniCopy.wantsDetails(pastor, AlumniCopy.KIND_BIRTHDAY, 10));
+    assertFalse(AlumniCopy.wantsHnm(pastor, AlumniCopy.KIND_WAVE));
   }
 
   @Test
@@ -44,6 +61,17 @@ public class AlumniCopyTest {
     assertTrue(photo.contains("Ma Ada"));
     assertTrue(photo.toLowerCase().contains("picture"));
     assertFalse(photo.contains("Independence"));
+  }
+
+  @Test
+  public void customTemplateFillsWhoAndMonth() {
+    Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
+    Calendar oct = cal(2026, Calendar.OCTOBER, 1);
+    java.util.Map<String, String> bag = new java.util.HashMap<>();
+    bag.put(AlumniTemplates.HNM, "Hello {who}, welcome to {month}.");
+    String got = AlumniCopy.hnm(ada, 10, oct, bag);
+    assertTrue(got.contains("Hello Ma Ada, welcome to October."));
+    assertFalse(got.contains("{who}"));
   }
 
   private static Member person(String name, String gender, int month, int day) {

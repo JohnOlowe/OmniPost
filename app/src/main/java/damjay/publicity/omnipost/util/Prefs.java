@@ -2,8 +2,12 @@ package damjay.publicity.omnipost.util;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.share.InstagramStyle;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.json.JSONObject;
 
 public final class Prefs {
   public static final String MODE_ESCALATE = "escalate";
@@ -20,6 +24,7 @@ public final class Prefs {
   private static final String VIBRATE_SEC = "vibrate_seconds";
   private static final String RING_MIN = "ring_minutes";
   private static final String ALUMNI_SKIP = "alumni_skip_caption";
+  private static final String ALUMNI_CAPS = "alumni_captions";
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
@@ -169,6 +174,75 @@ public final class Prefs {
 
   public static void setAlumniSkipCaption(Context ctx, boolean skip) {
     sp(ctx).edit().putBoolean(ALUMNI_SKIP, skip).apply();
+  }
+
+  public static String alumniCaptionsJson(Context ctx) {
+    return sp(ctx).getString(ALUMNI_CAPS, "");
+  }
+
+  public static void setAlumniCaptionsJson(Context ctx, String json) {
+    String value = json == null ? "" : json.trim();
+    if (value.isEmpty() || "{}".equals(value)) {
+      sp(ctx).edit().remove(ALUMNI_CAPS).apply();
+      return;
+    }
+    sp(ctx).edit().putString(ALUMNI_CAPS, value).apply();
+  }
+
+  public static String alumniCaption(Context ctx, String key) {
+    String custom = alumniCaptionRaw(ctx, key);
+    if (custom == null || custom.trim().isEmpty()) {
+      return AlumniTemplates.fallback(key);
+    }
+    return custom;
+  }
+
+  public static void setAlumniCaption(Context ctx, String key, String value) {
+    if (key == null || key.isEmpty()) {
+      return;
+    }
+    JSONObject o = alumniCaptionObject(ctx);
+    String text = value == null ? "" : value;
+    String fallback = AlumniTemplates.fallback(key);
+    if (text.trim().isEmpty() || text.equals(fallback)) {
+      o.remove(key);
+    } else {
+      try {
+        o.put(key, text);
+      } catch (Exception ignored) {
+        return;
+      }
+    }
+    setAlumniCaptionsJson(ctx, o.length() == 0 ? "" : o.toString());
+  }
+
+  public static Map<String, String> alumniCaptionBag(Context ctx) {
+    Map<String, String> out = new LinkedHashMap<>();
+    for (String key : AlumniTemplates.KEYS) {
+      out.put(key, alumniCaption(ctx, key));
+    }
+    return out;
+  }
+
+  private static String alumniCaptionRaw(Context ctx, String key) {
+    JSONObject o = alumniCaptionObject(ctx);
+    if (key == null || !o.has(key)) {
+      return null;
+    }
+    String value = o.optString(key, "");
+    return value.trim().isEmpty() ? null : value;
+  }
+
+  private static JSONObject alumniCaptionObject(Context ctx) {
+    String raw = alumniCaptionsJson(ctx);
+    if (raw == null || raw.isEmpty()) {
+      return new JSONObject();
+    }
+    try {
+      return new JSONObject(raw);
+    } catch (Exception e) {
+      return new JSONObject();
+    }
   }
 
   public static boolean seedCaptions(Context ctx) {

@@ -42,6 +42,7 @@ public final class DeskBackup {
     public int vibrateSeconds = 30;
     public int ringMinutes = 5;
     public boolean alumniSkipCaption = true;
+    public String alumniCaptions = "";
     public boolean seedCaptions;
     public boolean deskOngoing = true;
     public boolean fullScreen = true;
@@ -71,6 +72,7 @@ public final class DeskBackup {
     snap.vibrateSeconds = Prefs.vibrateSeconds(app);
     snap.ringMinutes = Prefs.ringMinutes(app);
     snap.alumniSkipCaption = Prefs.alumniSkipCaption(app);
+    snap.alumniCaptions = Prefs.alumniCaptionsJson(app);
     snap.seedCaptions = Prefs.seedCaptions(app);
     snap.deskOngoing = Prefs.deskOngoing(app);
     snap.fullScreen = Prefs.fullScreen(app);
@@ -117,6 +119,7 @@ public final class DeskBackup {
     Prefs.setVibrateSeconds(app, clamp(snap.vibrateSeconds, 10, 120, 30));
     Prefs.setRingMinutes(app, clamp(snap.ringMinutes, 1, 15, 5));
     Prefs.setAlumniSkipCaption(app, snap.alumniSkipCaption);
+    Prefs.setAlumniCaptionsJson(app, snap.alumniCaptions);
     Prefs.setSeedCaptions(app, snap.seedCaptions);
     Prefs.setDeskOngoing(app, snap.deskOngoing);
     Prefs.setFullScreen(app, snap.fullScreen);
@@ -177,6 +180,7 @@ public final class DeskBackup {
       prefs.put("vibrateSeconds", src.vibrateSeconds);
       prefs.put("ringMinutes", src.ringMinutes);
       prefs.put("alumniSkipCaption", src.alumniSkipCaption);
+      prefs.put("alumniCaptions", src.alumniCaptions == null ? "" : src.alumniCaptions);
       prefs.put("seedCaptions", src.seedCaptions);
       prefs.put("deskOngoing", src.deskOngoing);
       prefs.put("fullScreen", src.fullScreen);
@@ -218,6 +222,7 @@ public final class DeskBackup {
         snap.vibrateSeconds = prefs.optInt("vibrateSeconds", 30);
         snap.ringMinutes = prefs.optInt("ringMinutes", 5);
         snap.alumniSkipCaption = prefs.optBoolean("alumniSkipCaption", true);
+        snap.alumniCaptions = prefs.optString("alumniCaptions", "");
         snap.seedCaptions = prefs.optBoolean("seedCaptions", false);
         snap.deskOngoing = prefs.optBoolean("deskOngoing", true);
         snap.fullScreen = prefs.optBoolean("fullScreen", true);

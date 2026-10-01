@@ -86,6 +86,19 @@
       android:parentActivityName=".MainActivity"/>
 
     <activity
+      android:name=".ui.AlumniCaptionsActivity"
+      android:exported="false"
+      android:label="@string/alumni_edit_captions"
+      android:parentActivityName=".MainActivity"/>
+
+    <activity
+      android:name=".ui.AlumniCaptionEditActivity"
+      android:exported="false"
+      android:label="@string/alumni_edit_captions"
+      android:parentActivityName=".ui.AlumniCaptionsActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlumniMatchActivity"
       android:exported="false"
       android:label="@string/alumni_pair_title"
