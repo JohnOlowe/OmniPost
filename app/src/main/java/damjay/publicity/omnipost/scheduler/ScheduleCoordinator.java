@@ -37,6 +37,7 @@ public final class ScheduleCoordinator {
     ensureAlumni(app, db);
 
     List<Member> members = db.memberDao().getAllSync();
+    AlumniMatch.rememberRoster(members);
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app), Prefs.draftLeadDays(app));

@@ -33,6 +33,7 @@ import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
 import damjay.publicity.omnipost.scheduler.AlumniContacts;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniPending;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
@@ -135,9 +136,12 @@ public class BirthdaysFragment extends Fragment {
     binding.list.setAdapter(adapter);
     binding.list.setHasFixedSize(true);
     binding.list.setItemAnimator(null);
-    pairAdapter = new AlumniMatchActivity.Adapter(index -> {
+    pairAdapter = new AlumniMatchActivity.Adapter((index, row) -> {
       Intent intent = new Intent(requireContext(), AlumniPairActivity.class);
       intent.putExtra(ExtraKeys.PENDING_INDEX, index);
+      if (row != null) {
+        intent.putExtra(ExtraKeys.PENDING_ROW, row);
+      }
       startActivity(intent);
     });
     if (alumniHome) {
@@ -350,6 +354,7 @@ public class BirthdaysFragment extends Fragment {
       alumniByHorizon.put(horizon, BirthdayHorizon.group(alumni, now, horizon));
       pastorByHorizon.put(horizon, BirthdayHorizon.group(pastors, now, horizon));
     }
+    AlumniMatch.rememberRoster(all);
   }
 
   private List<BirthdayHorizon.Section> currentSections() {

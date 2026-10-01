@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
 import damjay.publicity.omnipost.data.entity.Member;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -13,7 +14,8 @@ import java.util.Locale;
 public final class AlumniSheet {
   private AlumniSheet() {}
 
-  public static final class Row {
+  public static final class Row implements Serializable {
+    private static final long serialVersionUID = 1L;
     public String firstName = "";
     public String lastName = "";
     public String gender = "";

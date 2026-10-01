@@ -24,6 +24,30 @@ public class AlumniMatchTest {
   }
 
   @Test
+  public void tokensDropTitlesWithoutRegex() {
+    List<String> got = AlumniMatch.tokens("Mr Adeola Olowe");
+    assertEquals(2, got.size());
+    assertEquals("adeola", got.get(0));
+    assertEquals("olowe", got.get(1));
+  }
+
+  @Test
+  public void cachedRosterRanksWithoutASecondPass() {
+    List<Member> roster = new ArrayList<>();
+    roster.add(alumni("Chioma Okafor", 3, 4));
+    Member member = new Member();
+    member.name = "Chioma Okafor";
+    member.kind = Member.KIND_MEMBER;
+    roster.add(member);
+    AlumniMatch.rememberRoster(roster);
+    AlumniSheet.Row row = row("Chioma Ada Okafor", 3, 4);
+    List<AlumniMatch.Suggestion> got = AlumniMatch.suggest(row, 8);
+    assertEquals(1, got.size());
+    assertEquals("Chioma Okafor", got.get(0).roster.name);
+    AlumniMatch.rememberRoster(new ArrayList<>());
+  }
+
+  @Test
   public void suggestRanksRosterCardsAndIgnoresMembers() {
     List<Member> roster = new ArrayList<>();
     roster.add(alumni("Chioma Okafor", 3, 4));

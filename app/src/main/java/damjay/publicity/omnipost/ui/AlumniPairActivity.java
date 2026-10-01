@@ -27,59 +27,132 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AlumniPairActivity extends AppCompatActivity {
+  private TextView title;
+  private TextView subtitle;
+  private TextView empty;
+  private Adapter adapter;
+  private AlumniSheet.Row row;
+  private boolean actionsBound;
+
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_alumni_match);
     findViewById(R.id.btn_back).setOnClickListener(v -> finish());
-    TextView title = findViewById(R.id.title);
-    TextView subtitle = findViewById(R.id.subtitle);
-    TextView empty = findViewById(R.id.empty);
+    title = findViewById(R.id.title);
+    subtitle = findViewById(R.id.subtitle);
+    empty = findViewById(R.id.empty);
     RecyclerView list = findViewById(R.id.list);
-    int index = getIntent().getIntExtra(ExtraKeys.PENDING_INDEX, -1);
-    AppExecutors.disk().execute(() -> {
-      List<AlumniSheet.Row> pending = AlumniPending.load(this);
-      if (index < 0 || index >= pending.size()) {
-        AppExecutors.main(this::finish);
+    adapter = new Adapter(picked -> {
+      AlumniSheet.Row chosen = row;
+      if (chosen == null) {
         return;
       }
-      AlumniSheet.Row row = pending.get(index);
-      List<Member> roster = AppDatabase.get(this).memberDao().getAllSync();
-      List<AlumniMatch.Suggestion> suggestions = AlumniMatch.suggest(row, roster, 8);
+      AlumniPending.drop(this, chosen);
+      AppExecutors.disk().execute(() -> ScheduleCoordinator.pairAlumni(this, chosen, picked.id));
+      Toast.makeText(this, R.string.alumni_paired, Toast.LENGTH_LONG).show();
+      finish();
+    });
+    list.setLayoutManager(new LinearLayoutManager(this));
+    list.setAdapter(adapter);
+
+    int index = getIntent().getIntExtra(ExtraKeys.PENDING_INDEX, -1);
+    row = extraRow();
+    if (row == null && AlumniPending.cached()) {
+      row = pick(AlumniPending.load(this), index);
+    }
+    if (row != null) {
+      paintSheet(row);
+      loadSuggestions(row);
+      return;
+    }
+    empty.setVisibility(View.VISIBLE);
+    empty.setText(R.string.alumni_pair_wait);
+    AppExecutors.query().execute(() -> {
+      AlumniSheet.Row found = pick(AlumniPending.load(this), index);
       AppExecutors.main(() -> {
-        title.setText(row.displayName());
-        String sheetDay = row.birthMonth > 0
-          ? DateUtils.monthDayLabel(row.birthMonth, row.birthDay)
-          : getString(R.string.alumni_no_sheet_birthday);
-        String phone = AlumniDesk.nigeriaDigits(row.phone).length() == 13
-          ? AlumniDesk.displayPhone(row.phone)
-          : getString(R.string.alumni_no_number_short);
-        subtitle.setText(getString(R.string.alumni_pair_sheet, sheetDay, phone));
-        Adapter adapter = new Adapter(suggestions, sheetDay, picked -> {
-          AlumniPending.drop(this, row);
-          AppExecutors.disk().execute(() -> ScheduleCoordinator.pairAlumni(this, row, picked.id));
-          Toast.makeText(this, R.string.alumni_paired, Toast.LENGTH_LONG).show();
+        if (found == null) {
           finish();
-        });
-        list.setLayoutManager(new LinearLayoutManager(this));
-        list.setAdapter(adapter);
-        empty.setVisibility(suggestions.isEmpty() ? View.VISIBLE : View.GONE);
-        empty.setText(R.string.alumni_pair_no_suggestions);
-        View actions = findViewById(R.id.pair_actions);
-        actions.setVisibility(View.VISIBLE);
-        findViewById(R.id.btn_new_card).setOnClickListener(v -> {
-          AlumniPending.drop(this, row);
-          AppExecutors.disk().execute(() -> ScheduleCoordinator.addAlumniFromSheet(this, row));
-          Toast.makeText(this, R.string.alumni_pair_added, Toast.LENGTH_LONG).show();
-          finish();
-        });
-        findViewById(R.id.btn_drop).setOnClickListener(v -> {
-          AlumniPending.drop(this, row);
-          AppExecutors.disk().execute(() -> ScheduleCoordinator.dropPendingRow(this, row));
-          finish();
-        });
+          return;
+        }
+        row = found;
+        paintSheet(found);
+        loadSuggestions(found);
       });
     });
+  }
+
+  @SuppressWarnings("deprecation")
+  private AlumniSheet.Row extraRow() {
+    Object extra = getIntent().getSerializableExtra(ExtraKeys.PENDING_ROW);
+    return extra instanceof AlumniSheet.Row ? (AlumniSheet.Row) extra : null;
+  }
+
+  private static AlumniSheet.Row pick(List<AlumniSheet.Row> pending, int index) {
+    if (pending == null || index < 0 || index >= pending.size()) {
+      return null;
+    }
+    return pending.get(index);
+  }
+
+  private void paintSheet(AlumniSheet.Row sheet) {
+    title.setText(sheet.displayName());
+    String sheetDay = sheet.birthMonth > 0
+      ? DateUtils.monthDayLabel(sheet.birthMonth, sheet.birthDay)
+      : getString(R.string.alumni_no_sheet_birthday);
+    String phone = AlumniDesk.nigeriaDigits(sheet.phone).length() == 13
+      ? AlumniDesk.displayPhone(sheet.phone)
+      : getString(R.string.alumni_no_number_short);
+    subtitle.setText(getString(R.string.alumni_pair_sheet, sheetDay, phone));
+    adapter.setSheetDay(sheetDay);
+    empty.setVisibility(View.VISIBLE);
+    empty.setText(R.string.alumni_pair_wait);
+    findViewById(R.id.pair_actions).setVisibility(View.VISIBLE);
+    if (actionsBound) {
+      return;
+    }
+    actionsBound = true;
+    findViewById(R.id.btn_new_card).setOnClickListener(v -> {
+      AlumniSheet.Row chosen = row;
+      if (chosen == null) {
+        return;
+      }
+      AlumniPending.drop(this, chosen);
+      AppExecutors.disk().execute(() -> ScheduleCoordinator.addAlumniFromSheet(this, chosen));
+      Toast.makeText(this, R.string.alumni_pair_added, Toast.LENGTH_LONG).show();
+      finish();
+    });
+    findViewById(R.id.btn_drop).setOnClickListener(v -> {
+      AlumniSheet.Row chosen = row;
+      if (chosen == null) {
+        return;
+      }
+      AlumniPending.drop(this, chosen);
+      AppExecutors.disk().execute(() -> ScheduleCoordinator.dropPendingRow(this, chosen));
+      finish();
+    });
+  }
+
+  private void loadSuggestions(AlumniSheet.Row sheet) {
+    String sheetDay = sheet.birthMonth > 0
+      ? DateUtils.monthDayLabel(sheet.birthMonth, sheet.birthDay)
+      : getString(R.string.alumni_no_sheet_birthday);
+    if (AlumniMatch.hasRoster()) {
+      showSuggestions(AlumniMatch.suggest(sheet, 8), sheetDay);
+      return;
+    }
+    AppExecutors.query().execute(() -> {
+      List<Member> roster = AppDatabase.get(this).memberDao().getAllSync();
+      AlumniMatch.rememberRoster(roster);
+      List<AlumniMatch.Suggestion> suggestions = AlumniMatch.suggest(sheet, 8);
+      AppExecutors.main(() -> showSuggestions(suggestions, sheetDay));
+    });
+  }
+
+  private void showSuggestions(List<AlumniMatch.Suggestion> suggestions, String sheetDay) {
+    adapter.replace(suggestions, sheetDay);
+    empty.setText(R.string.alumni_pair_no_suggestions);
+    empty.setVisibility(suggestions == null || suggestions.isEmpty() ? View.VISIBLE : View.GONE);
   }
 
   static class Adapter extends RecyclerView.Adapter<Adapter.Holder> {
@@ -87,14 +160,25 @@ public class AlumniPairActivity extends AppCompatActivity {
       void onPair(Member member);
     }
 
-    private final List<AlumniMatch.Suggestion> rows;
-    private final String sheetDay;
+    private final List<AlumniMatch.Suggestion> rows = new ArrayList<>();
     private final Listener listener;
+    private String sheetDay = "";
 
-    Adapter(List<AlumniMatch.Suggestion> rows, String sheetDay, Listener listener) {
-      this.rows = rows == null ? new ArrayList<>() : rows;
-      this.sheetDay = sheetDay == null ? "" : sheetDay;
+    Adapter(Listener listener) {
       this.listener = listener;
+    }
+
+    void setSheetDay(String sheetDay) {
+      this.sheetDay = sheetDay == null ? "" : sheetDay;
+    }
+
+    void replace(List<AlumniMatch.Suggestion> next, String sheetDay) {
+      setSheetDay(sheetDay);
+      rows.clear();
+      if (next != null) {
+        rows.addAll(next);
+      }
+      notifyDataSetChanged();
     }
 
     @NonNull

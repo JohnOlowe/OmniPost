@@ -235,6 +235,7 @@
   <string name="alumni_pair_new">Not on the roster — new card</string>
   <string name="alumni_pair_drop">Not alumni — drop</string>
   <string name="alumni_pair_no_suggestions">No close names. Add a new card or drop.</string>
+  <string name="alumni_pair_wait">Finding close names…</string>
   <string name="alumni_paired">Filled the number on the roster name. Birthday stayed.</string>
   <string name="alumni_pair_added">New alumni card from the sheet.</string>
   <string name="alumni_bday_same">Roster %1$s · Sheet %2$s · same day</string>

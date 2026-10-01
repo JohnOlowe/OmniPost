@@ -35,9 +35,12 @@ public class AlumniMatchActivity extends AppCompatActivity {
     empty = findViewById(R.id.empty);
     subtitle = findViewById(R.id.subtitle);
     RecyclerView list = findViewById(R.id.list);
-    adapter = new Adapter(index -> {
+    adapter = new Adapter((index, row) -> {
       Intent intent = new Intent(this, AlumniPairActivity.class);
       intent.putExtra(ExtraKeys.PENDING_INDEX, index);
+      if (row != null) {
+        intent.putExtra(ExtraKeys.PENDING_ROW, row);
+      }
       startActivity(intent);
     });
     list.setLayoutManager(new LinearLayoutManager(this));
@@ -69,7 +72,7 @@ public class AlumniMatchActivity extends AppCompatActivity {
 
   static class Adapter extends RecyclerView.Adapter<Adapter.Holder> {
     interface Listener {
-      void onOpen(int index);
+      void onOpen(int index, AlumniSheet.Row row);
     }
 
     private final Listener listener;
@@ -124,7 +127,7 @@ public class AlumniMatchActivity extends AppCompatActivity {
           ? AlumniDesk.displayPhone(row.phone)
           : itemView.getContext().getString(R.string.alumni_no_number_short);
         meta.setText(itemView.getContext().getString(R.string.alumni_sheet_line, bday, phone));
-        itemView.setOnClickListener(v -> listener.onOpen(index));
+        itemView.setOnClickListener(v -> listener.onOpen(index, row));
       }
     }
   }
