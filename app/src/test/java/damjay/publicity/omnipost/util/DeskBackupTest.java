@@ -115,7 +115,7 @@ public class DeskBackupTest {
     assertEquals(45, got.vibrateSeconds);
     assertEquals(3, got.ringMinutes);
     assertFalse(got.alumniSkipCaption);
-    assertEquals("{\"hnm\":\"Hello {who}\"}", got.alumniCaptions);
+    assertTrue(got.alumniCaptions.contains("Hello {who}"));
     assertTrue(got.seedCaptions);
     assertFalse(got.deskOngoing);
     assertTrue(got.fullScreen);

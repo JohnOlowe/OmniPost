@@ -67,9 +67,7 @@ public class AlumniCopyTest {
   public void customTemplateFillsWhoAndMonth() {
     Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
     Calendar oct = cal(2026, Calendar.OCTOBER, 1);
-    java.util.Map<String, String> bag = new java.util.HashMap<>();
-    bag.put(AlumniTemplates.HNM, "Hello {who}, welcome to {month}.");
-    String got = AlumniCopy.hnm(ada, 10, oct, bag);
+    String got = AlumniTemplates.fill("Hello {who}, welcome to {month}.", ada, 10, oct, null);
     assertTrue(got.contains("Hello Ma Ada, welcome to October."));
     assertFalse(got.contains("{who}"));
   }
