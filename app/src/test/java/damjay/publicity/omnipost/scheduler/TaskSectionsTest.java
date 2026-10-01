@@ -236,6 +236,30 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void captionReadyStaysInNextSortedByRing() {
+    long now = 1_700_000_000_000L;
+    Task readySoon = task(1, TaskTypes.BIRTHDAY, TaskStatus.READY, now + 3L * 60L * 60L * 1000L);
+    readySoon.captionSavedAt = now - 1_000L;
+    Task readyLater = task(2, TaskTypes.ONE_OFF, TaskStatus.READY, now + 5L * 86_400_000L);
+    readyLater.captionSavedAt = now - 1_000L;
+    Task weekly = task(3, TaskTypes.SUNDAY_SERVICE, TaskStatus.SCHEDULED, now + 5L * 86_400_000L);
+    List<TaskSections.Section> sections = TaskSections.group(
+      Arrays.asList(readySoon, readyLater, weekly),
+      false,
+      now,
+      ScheduleTimes.WARNING_LEAD_MS);
+    assertEquals(TaskTypes.SECTION_NEXT, sections.get(0).title);
+    assertEquals(2, sections.get(0).tasks.size());
+    assertEquals(readySoon.id, sections.get(0).tasks.get(0).id);
+    assertEquals(readyLater.id, sections.get(0).tasks.get(1).id);
+    assertEquals(TaskTypes.SECTION_WEEKLY, sections.get(1).title);
+    assertEquals(weekly.id, sections.get(1).tasks.get(0).id);
+    assertFalse(TaskStatus.needsYou(readySoon, now));
+    readySoon.postAtMillis = now - 1_000L;
+    assertTrue(TaskStatus.needsYou(readySoon, now));
+  }
+
+  @Test
   public void dueStatusWalksTheChain() {
     long now = 1_000_000L;
     assertEquals(TaskStatus.NAGGING, TaskStatus.dueStatus(now - 10, now - 1, now));

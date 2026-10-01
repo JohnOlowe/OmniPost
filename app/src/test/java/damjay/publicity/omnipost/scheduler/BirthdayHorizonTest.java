@@ -117,4 +117,19 @@ public class BirthdayHorizonTest {
     assertEquals(2, BirthdayHorizon.copyCount(month));
     assertEquals("", BirthdayHorizon.copyList("x", Collections.emptyList()));
   }
+
+  @Test
+  public void nameMatchesFirstLastPhoneAndHonorific() {
+    Member member = person("Adeola Olowe", 10, 1);
+    member.firstName = "Adeola";
+    member.lastName = "Olowe";
+    member.phone = "2348031234567";
+    member.honorific = "Mr";
+    assertTrue(BirthdayHorizon.nameMatches(member, "adeola"));
+    assertTrue(BirthdayHorizon.nameMatches(member, "OLOWE"));
+    assertTrue(BirthdayHorizon.nameMatches(member, "803"));
+    assertTrue(BirthdayHorizon.nameMatches(member, "mr"));
+    assertFalse(BirthdayHorizon.nameMatches(member, "Tobi"));
+    assertTrue(BirthdayHorizon.nameMatches(member, "  "));
+  }
 }

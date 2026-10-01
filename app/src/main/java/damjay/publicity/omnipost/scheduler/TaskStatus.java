@@ -45,6 +45,16 @@ public final class TaskStatus {
         || DRAFTING.equals(status);
   }
 
+  public static boolean needsYou(Task task, long now) {
+    if (task == null || POSTED.equals(task.status)) {
+      return false;
+    }
+    if (needsYou(task.status)) {
+      return true;
+    }
+    return READY.equals(task.status) && task.postAtMillis <= now;
+  }
+
   public static String dueStatus(long draftAtMillis, long postAtMillis, long now) {
     return dueStatus(draftAtMillis, postAtMillis, now, ScheduleTimes.WARNING_LEAD_MS, false);
   }

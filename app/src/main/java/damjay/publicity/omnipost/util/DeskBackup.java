@@ -39,6 +39,11 @@ public final class DeskBackup {
     public int warningMinutes = 30;
     public int draftHour = 20;
     public int draftLeadDays = 1;
+    public int tonightHour = 20;
+    public int tonightMinute = 0;
+    public int morningHour = 7;
+    public int morningMinute = 0;
+    public int lateHour = 19;
     public int vibrateSeconds = 30;
     public int ringMinutes = 5;
     public boolean alumniSkipCaption = true;
@@ -69,6 +74,11 @@ public final class DeskBackup {
     snap.warningMinutes = Prefs.warningMinutes(app);
     snap.draftHour = Prefs.draftHour(app);
     snap.draftLeadDays = Prefs.draftLeadDays(app);
+    snap.tonightHour = Prefs.tonightHour(app);
+    snap.tonightMinute = Prefs.tonightMinute(app);
+    snap.morningHour = Prefs.morningHour(app);
+    snap.morningMinute = Prefs.morningMinute(app);
+    snap.lateHour = Prefs.lateHour(app);
     snap.vibrateSeconds = Prefs.vibrateSeconds(app);
     snap.ringMinutes = Prefs.ringMinutes(app);
     snap.alumniSkipCaption = Prefs.alumniSkipCaption(app);
@@ -116,6 +126,9 @@ public final class DeskBackup {
     Prefs.setWarningMinutes(app, clamp(snap.warningMinutes, 0, 180, 30));
     Prefs.setDraftHour(app, clamp(snap.draftHour, 0, 23, 20));
     Prefs.setDraftLeadDays(app, clamp(snap.draftLeadDays, 0, 7, 1));
+    Prefs.setTonight(app, clamp(snap.tonightHour, 0, 23, 20), clamp(snap.tonightMinute, 0, 59, 0));
+    Prefs.setMorning(app, clamp(snap.morningHour, 0, 23, 7), clamp(snap.morningMinute, 0, 59, 0));
+    Prefs.setLateHour(app, clamp(snap.lateHour, 0, 23, 19));
     Prefs.setVibrateSeconds(app, clamp(snap.vibrateSeconds, 10, 120, 30));
     Prefs.setRingMinutes(app, clamp(snap.ringMinutes, 1, 15, 5));
     Prefs.setAlumniSkipCaption(app, snap.alumniSkipCaption);
@@ -177,6 +190,11 @@ public final class DeskBackup {
       prefs.put("warningMinutes", src.warningMinutes);
       prefs.put("draftHour", src.draftHour);
       prefs.put("draftLeadDays", src.draftLeadDays);
+      prefs.put("tonightHour", src.tonightHour);
+      prefs.put("tonightMinute", src.tonightMinute);
+      prefs.put("morningHour", src.morningHour);
+      prefs.put("morningMinute", src.morningMinute);
+      prefs.put("lateHour", src.lateHour);
       prefs.put("vibrateSeconds", src.vibrateSeconds);
       prefs.put("ringMinutes", src.ringMinutes);
       prefs.put("alumniSkipCaption", src.alumniSkipCaption);
@@ -219,6 +237,11 @@ public final class DeskBackup {
         snap.warningMinutes = prefs.optInt("warningMinutes", 30);
         snap.draftHour = prefs.optInt("draftHour", 20);
         snap.draftLeadDays = prefs.optInt("draftLeadDays", 1);
+        snap.tonightHour = prefs.optInt("tonightHour", 20);
+        snap.tonightMinute = prefs.optInt("tonightMinute", 0);
+        snap.morningHour = prefs.optInt("morningHour", 7);
+        snap.morningMinute = prefs.optInt("morningMinute", 0);
+        snap.lateHour = prefs.optInt("lateHour", 19);
         snap.vibrateSeconds = prefs.optInt("vibrateSeconds", 30);
         snap.ringMinutes = prefs.optInt("ringMinutes", 5);
         snap.alumniSkipCaption = prefs.optBoolean("alumniSkipCaption", true);
@@ -373,6 +396,7 @@ public final class DeskBackup {
       o.put("captionDetails", nz(member.captionDetails));
       o.put("desk", nz(member.desk));
       o.put("skipCaption", member.skipCaption);
+      o.put("contactSaved", member.contactSaved);
       out.put(o);
     }
     return out;
@@ -498,6 +522,7 @@ public final class DeskBackup {
       member.captionDetails = str(o, "captionDetails");
       member.desk = str(o, "desk");
       member.skipCaption = o.optBoolean("skipCaption", false);
+      member.contactSaved = o.optBoolean("contactSaved", false);
       out.add(member);
     }
   }

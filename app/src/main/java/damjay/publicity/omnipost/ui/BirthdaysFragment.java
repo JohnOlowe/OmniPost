@@ -9,6 +9,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -80,6 +82,7 @@ public class BirthdaysFragment extends Fragment {
   private int alumniCount;
   private int pastorCount;
   private boolean ignoreChip;
+  private String query = "";
   private final ActivityResultLauncher<String[]> sheetLauncher =
     registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onSheetPicked);
 
@@ -120,7 +123,14 @@ public class BirthdaysFragment extends Fragment {
           .setNegativeButton(android.R.string.cancel, null)
           .show();
       }
+
+      @Override
+      public void onToggleSaved(Member member) {
+        member.contactSaved = !member.contactSaved;
+        AppExecutors.disk().execute(() -> AppDatabase.get(requireContext()).memberDao().update(member));
+      }
     });
+    adapter.setSavedChip(alumniHome);
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
     binding.list.setHasFixedSize(true);
@@ -166,6 +176,19 @@ public class BirthdaysFragment extends Fragment {
       paint();
     });
     paintAlumniSwitch();
+    binding.search.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        query = s == null ? "" : s.toString();
+        paint();
+      }
+    });
     binding.btnImportAlumni.setOnClickListener(v ->
       new MaterialAlertDialogBuilder(requireContext())
         .setTitle(R.string.alumni_import)
@@ -332,6 +355,23 @@ public class BirthdaysFragment extends Fragment {
   }
 
   private List<BirthdayHorizon.Section> currentSections() {
+    if (searching()) {
+      List<Member> hits = new ArrayList<>();
+      for (Member member : all) {
+        if (member == null || !BirthdayHorizon.nameMatches(member, query)) {
+          continue;
+        }
+        if (alumniHome) {
+          if (!Member.isAlumni(member)) {
+            continue;
+          }
+        } else if (Member.isAlumni(member)) {
+          continue;
+        }
+        hits.add(member);
+      }
+      return BirthdayHorizon.group(hits, Calendar.getInstance(), BirthdayHorizon.ALL);
+    }
     Map<Integer, List<BirthdayHorizon.Section>> byHorizon = memberByHorizon;
     if (tab == TAB_ALUMNI) {
       byHorizon = alumniByHorizon;
@@ -341,6 +381,23 @@ public class BirthdaysFragment extends Fragment {
     int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
     List<BirthdayHorizon.Section> sections = byHorizon.get(horizon);
     return sections == null ? Collections.emptyList() : sections;
+  }
+
+  private boolean searching() {
+    return query != null && !query.trim().isEmpty();
+  }
+
+  private List<AlumniSheet.Row> pendingMatches() {
+    if (!searching()) {
+      return pending;
+    }
+    List<AlumniSheet.Row> hits = new ArrayList<>();
+    for (AlumniSheet.Row row : pending) {
+      if (BirthdayHorizon.sheetMatches(row, query)) {
+        hits.add(row);
+      }
+    }
+    return hits;
   }
 
   private String horizonLabel(int horizon) {
@@ -389,14 +446,16 @@ public class BirthdaysFragment extends Fragment {
     }
     boolean pairTab = tab == TAB_PAIR;
     boolean alumniDesk = alumniHome;
-    binding.horizon.setVisibility(pairTab ? View.GONE : View.VISIBLE);
+    boolean hideHorizon = pairTab || searching();
+    binding.horizon.setVisibility(hideHorizon ? View.GONE : View.VISIBLE);
     binding.btnCopyBirthdays.setVisibility(pairTab ? View.GONE : View.VISIBLE);
     if (pairTab) {
       if (binding.list.getAdapter() != pairAdapter) {
         binding.list.setAdapter(pairAdapter);
       }
-      pairAdapter.submit(pending);
-      boolean empty = pending.isEmpty();
+      List<AlumniSheet.Row> rows = pendingMatches();
+      pairAdapter.submit(rows);
+      boolean empty = rows.isEmpty();
       binding.empty.setText(R.string.alumni_pair_empty);
       binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
       binding.rowAlumniCaptions.getRoot().setVisibility(View.GONE);
@@ -412,12 +471,14 @@ public class BirthdaysFragment extends Fragment {
     int roster = tab == TAB_PASTORS ? pastorCount : tab == TAB_ALUMNI ? alumniCount : memberCount;
     boolean empty = sections.isEmpty();
     int emptyText = R.string.empty_birthdays;
-    if (tab == TAB_ALUMNI) {
+    if (searching()) {
+      emptyText = R.string.search_empty;
+    } else if (tab == TAB_ALUMNI) {
       emptyText = R.string.empty_alumni;
     } else if (tab == TAB_PASTORS) {
       emptyText = R.string.empty_pastors;
     }
-    binding.empty.setText(empty && roster == 0 ? emptyText : R.string.empty_horizon);
+    binding.empty.setText(searching() || (empty && roster == 0) ? emptyText : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
     binding.rowAlumniCaptions.getRoot().setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
     binding.alumniActions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
@@ -449,6 +510,10 @@ public class BirthdaysFragment extends Fragment {
     View genderLabel = view.findViewById(R.id.label_gender);
     CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     CheckBox previousPastor = view.findViewById(R.id.previous_pastor);
+    View contactSaved = view.findViewById(R.id.contact_saved);
+    if (contactSaved != null) {
+      contactSaved.setVisibility(View.GONE);
+    }
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);
     months.setDropDownViewResource(R.layout.spinner_item);
@@ -650,9 +715,14 @@ public class BirthdaysFragment extends Fragment {
       List<Member> members = AppDatabase.get(app).memberDao().getAllSync();
       int n = AlumniContacts.withPhone(members);
       if (n == 0) {
+        boolean anyPhone = AlumniContacts.withPhone(members, true) > 0;
         AppExecutors.main(() -> {
           if (isAdded()) {
-            Toast.makeText(requireContext(), R.string.alumni_save_none, Toast.LENGTH_LONG).show();
+            Toast.makeText(
+              requireContext(),
+              anyPhone ? R.string.alumni_save_skipped : R.string.alumni_save_none,
+              Toast.LENGTH_LONG)
+              .show();
           }
         });
         return;

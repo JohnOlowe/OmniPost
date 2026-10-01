@@ -213,6 +213,127 @@ public final class DateUtils {
     return at;
   }
 
+  public static long plusMinutes(long nowMillis, int minutes) {
+    return nowMillis + minutes * 60_000L;
+  }
+
+  /**
+   * Next :00 or :30 strictly after {@code now}. 5:24 → 5:30, 5:30 → 6:00.
+   */
+  public static long nextHalfHour(long nowMillis) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(nowMillis);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    int minute = c.get(Calendar.MINUTE);
+    if (minute == 0 || minute == 30) {
+      if (c.getTimeInMillis() <= nowMillis) {
+        if (minute == 0) {
+          c.set(Calendar.MINUTE, 30);
+        } else {
+          c.set(Calendar.MINUTE, 0);
+          c.add(Calendar.HOUR_OF_DAY, 1);
+        }
+      }
+    } else if (minute < 30) {
+      c.set(Calendar.MINUTE, 30);
+    } else {
+      c.set(Calendar.MINUTE, 0);
+      c.add(Calendar.HOUR_OF_DAY, 1);
+    }
+    return c.getTimeInMillis();
+  }
+
+  /**
+   * Next :00 strictly after {@code now}. 5:24 → 6:00, 5:00 → 6:00.
+   */
+  public static long nextHourMark(long nowMillis) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(nowMillis);
+    c.set(Calendar.MINUTE, 0);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    if (c.getTimeInMillis() <= nowMillis) {
+      c.add(Calendar.HOUR_OF_DAY, 1);
+    }
+    return c.getTimeInMillis();
+  }
+
+  /**
+   * Alarm 30-min / 1-hour buttons: next half-hour, then the next hour mark
+   * after that so the 1-hour button is never earlier than the 30-min one.
+   */
+  public static long[] nagButtons(long nowMillis) {
+    long thirty = nextHalfHour(nowMillis);
+    long hour = nextHourMark(nowMillis);
+    if (hour <= thirty) {
+      hour = thirty + 60L * 60_000L;
+    }
+    return new long[] { thirty, hour };
+  }
+
+  /**
+   * 8:00 PM tonight, or morning tomorrow once it is already past {@code lateHour}
+   * (7 PM) or tonight has passed.
+   */
+  public static long tonightOrMorning(
+    long nowMillis,
+    int tonightHour,
+    int tonightMinute,
+    int morningHour,
+    int morningMinute,
+    int lateHour) {
+    Calendar now = Calendar.getInstance();
+    now.setTimeInMillis(nowMillis);
+    Calendar tonight = (Calendar) now.clone();
+    tonight.set(Calendar.HOUR_OF_DAY, clampHour(tonightHour));
+    tonight.set(Calendar.MINUTE, clampMinute(tonightMinute));
+    tonight.set(Calendar.SECOND, 0);
+    tonight.set(Calendar.MILLISECOND, 0);
+    if (now.get(Calendar.HOUR_OF_DAY) >= clampHour(lateHour)
+        || tonight.getTimeInMillis() <= nowMillis) {
+      return nextClock(nowMillis, morningHour, morningMinute);
+    }
+    return tonight.getTimeInMillis();
+  }
+
+  public static long nextClock(int hour, int minute) {
+    return nextClock(System.currentTimeMillis(), hour, minute);
+  }
+
+  public static long nextClock(long nowMillis, int hour, int minute) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(nowMillis);
+    c.set(Calendar.HOUR_OF_DAY, clampHour(hour));
+    c.set(Calendar.MINUTE, clampMinute(minute));
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    if (c.getTimeInMillis() <= nowMillis) {
+      c.add(Calendar.DAY_OF_MONTH, 1);
+    }
+    return c.getTimeInMillis();
+  }
+
+  private static int clampHour(int hour) {
+    if (hour < 0) {
+      return 0;
+    }
+    if (hour > 23) {
+      return 23;
+    }
+    return hour;
+  }
+
+  private static int clampMinute(int minute) {
+    if (minute < 0) {
+      return 0;
+    }
+    if (minute > 59) {
+      return 59;
+    }
+    return minute;
+  }
+
   /** 9th September, 2026 */
   public static String prettyDate(Calendar calendar) {
     if (calendar == null) {
@@ -353,17 +474,7 @@ public final class DateUtils {
     return System.currentTimeMillis() + hours * 60L * 60L * 1000L;
   }
 
-  public static long nextClock(int hour, int minute) {
-    Calendar c = Calendar.getInstance();
-    c.set(Calendar.HOUR_OF_DAY, hour);
-    c.set(Calendar.MINUTE, minute);
-    c.set(Calendar.SECOND, 0);
-    c.set(Calendar.MILLISECOND, 0);
-    if (!c.after(Calendar.getInstance())) {
-      c.add(Calendar.DAY_OF_MONTH, 1);
-    }
-    return c.getTimeInMillis();
-  }
+
 
   public static String monthDayLabel(int month1to12, int day) {
     if (month1to12 < 1 || month1to12 > 12) {

@@ -34,6 +34,7 @@ public class MemberEditActivity extends AppCompatActivity {
   private Spinner gender;
   private CheckBox skipCaption;
   private CheckBox previousPastor;
+  private CheckBox contactSaved;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -69,6 +70,8 @@ public class MemberEditActivity extends AppCompatActivity {
     gender = findViewById(R.id.spinner_gender);
     skipCaption = findViewById(R.id.skip_caption);
     previousPastor = findViewById(R.id.previous_pastor);
+    contactSaved = findViewById(R.id.contact_saved);
+    contactSaved.setVisibility(View.VISIBLE);
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       this, R.array.months, R.layout.spinner_item);
     months.setDropDownViewResource(R.layout.spinner_item);
@@ -107,6 +110,7 @@ public class MemberEditActivity extends AppCompatActivity {
     day.setSelection(Math.max(0, existing.birthDay - 1));
     skipCaption.setChecked(existing.skipCaption);
     previousPastor.setChecked(Member.isPastor(existing));
+    contactSaved.setChecked(existing.contactSaved);
     if (existing.phone != null) {
       phone.setText(existing.phone);
     }
@@ -144,6 +148,7 @@ public class MemberEditActivity extends AppCompatActivity {
     final int birthDay = dayOfMonth;
     final boolean pastor = previousPastor.isChecked();
     final boolean skip = skipCaption.isChecked();
+    final boolean saved = contactSaved.isChecked();
     String rawPhone = phone.getText() == null ? "" : phone.getText().toString().trim();
     if (AlumniDesk.nigeriaDigits(rawPhone).length() == 13) {
       rawPhone = AlumniDesk.nigeriaDigits(rawPhone);
@@ -175,6 +180,7 @@ public class MemberEditActivity extends AppCompatActivity {
       member.birthMonth = birthMonth;
       member.birthDay = birthDay;
       member.skipCaption = skip;
+      member.contactSaved = saved;
       member.desk = pastor ? Member.DESK_PASTOR : "";
       member.phone = phoneValue;
       member.honorific = honor;

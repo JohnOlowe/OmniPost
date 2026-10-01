@@ -28,6 +28,7 @@ import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.scheduler.Weekdays;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.DeskBackup;
@@ -92,8 +93,20 @@ public class SettingsFragment extends Fragment {
     binding.rowWarning.getRoot().setOnClickListener(v -> pickWarning());
     paintChoice(binding.rowDraftLead, R.string.setting_draft_lead, draftLeadLabel(Prefs.draftLeadDays(ctx)));
     binding.rowDraftLead.getRoot().setOnClickListener(v -> pickDraftLead());
-    paintChoice(binding.rowDraft, R.string.setting_draft, draftLabel(Prefs.draftHour(ctx)));
+    paintChoice(binding.rowDraft, R.string.setting_draft, Weekdays.clock(Prefs.draftHour(ctx), 0));
     binding.rowDraft.getRoot().setOnClickListener(v -> pickDraftHour());
+    paintChoice(
+      binding.rowTonight,
+      R.string.setting_tonight,
+      Weekdays.clock(Prefs.tonightHour(ctx), Prefs.tonightMinute(ctx)));
+    binding.rowTonight.getRoot().setOnClickListener(v -> pickTonight());
+    paintChoice(
+      binding.rowMorning,
+      R.string.setting_morning,
+      Weekdays.clock(Prefs.morningHour(ctx), Prefs.morningMinute(ctx)));
+    binding.rowMorning.getRoot().setOnClickListener(v -> pickMorning());
+    paintChoice(binding.rowLate, R.string.setting_late, Weekdays.clock(Prefs.lateHour(ctx), 0));
+    binding.rowLate.getRoot().setOnClickListener(v -> pickLate());
     paintSwitch(
       binding.rowSeed,
       R.string.setting_seed,
@@ -228,19 +241,46 @@ public class SettingsFragment extends Fragment {
   }
 
   private void pickDraftHour() {
-    int[] values = new int[] {7, 8, 9, 10, 18, 19, 20, 21};
+    Context ctx = requireContext();
+    SnoozeChooser.pickClock(ctx, Prefs.draftHour(ctx), 0, (hour, minute) -> {
+      Prefs.setDraftHour(ctx, hour);
+      bindDesk();
+      rearmQuiet();
+    });
+  }
+
+  private void pickTonight() {
+    Context ctx = requireContext();
+    SnoozeChooser.pickClock(ctx, Prefs.tonightHour(ctx), Prefs.tonightMinute(ctx), (hour, minute) -> {
+      Prefs.setTonight(ctx, hour, minute);
+      bindDesk();
+    });
+  }
+
+  private void pickMorning() {
+    Context ctx = requireContext();
+    SnoozeChooser.pickClock(ctx, Prefs.morningHour(ctx), Prefs.morningMinute(ctx), (hour, minute) -> {
+      Prefs.setMorning(ctx, hour, minute);
+      bindDesk();
+    });
+  }
+
+  private void pickLate() {
+    int[] values = new int[] {18, 19, 20, 21, 22};
     String[] labels = new String[] {
-      draftLabel(7), draftLabel(8), draftLabel(9), draftLabel(10),
-      draftLabel(18), draftLabel(19), draftLabel(20), draftLabel(21)
+      Weekdays.clock(18, 0),
+      Weekdays.clock(19, 0),
+      Weekdays.clock(20, 0),
+      Weekdays.clock(21, 0),
+      Weekdays.clock(22, 0)
     };
-    int selected = indexOf(values, Prefs.draftHour(requireContext()));
+    int selected = indexOf(values, Prefs.lateHour(requireContext()));
     new MaterialAlertDialogBuilder(requireContext())
-      .setTitle(R.string.setting_draft)
+      .setTitle(R.string.setting_late)
       .setSingleChoiceItems(labels, selected, (d, which) -> {
-        Prefs.setDraftHour(requireContext(), values[which]);
+        Prefs.setLateHour(requireContext(), values[which]);
         d.dismiss();
         bindDesk();
-        rearmQuiet();
       })
       .setNegativeButton(android.R.string.cancel, null)
       .show();
@@ -357,14 +397,6 @@ public class SettingsFragment extends Fragment {
 
   private String ringLabel(int minutes) {
     return getString(R.string.ring_for, minutes);
-  }
-
-  private String draftLabel(int hour) {
-    if (hour < 12) {
-      return getString(R.string.draft_morning, hour);
-    }
-    int twelve = hour > 12 ? hour - 12 : hour;
-    return getString(R.string.draft_evening, twelve);
   }
 
   private static int indexOf(String[] values, String target) {

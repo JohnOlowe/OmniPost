@@ -25,6 +25,8 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     void onDm(Member member);
 
     void onDelete(Member member);
+
+    void onToggleSaved(Member member);
   }
 
   static final class Row {
@@ -50,10 +52,15 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
 
   private final Listener listener;
   private final List<Row> rows = new ArrayList<>();
+  private boolean savedChip;
 
   public MemberAdapter(Listener listener) {
     this.listener = listener;
     setHasStableIds(true);
+  }
+
+  public void setSavedChip(boolean savedChip) {
+    this.savedChip = savedChip;
   }
 
   public void submit(List<BirthdayHorizon.Section> sections) {
@@ -90,7 +97,7 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     if (holder instanceof HeaderHolder) {
       ((HeaderHolder) holder).bind(row.header, row.subtitle);
     } else if (holder instanceof Holder) {
-      ((Holder) holder).bind(row.member, listener);
+      ((Holder) holder).bind(row.member, listener, savedChip);
     }
   }
 
@@ -137,7 +144,7 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
       this.binding = binding;
     }
 
-    void bind(Member member, Listener listener) {
+    void bind(Member member, Listener listener, boolean savedChip) {
       binding.name.setText(member.name);
       String when = DateUtils.monthDayLabel(member.birthMonth, member.birthDay);
       if (Member.isAlumni(member)) {
@@ -148,6 +155,15 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
         }
       }
       binding.when.setText(when);
+      if (savedChip && Member.isAlumni(member)) {
+        binding.btnSaved.setVisibility(View.VISIBLE);
+        binding.btnSaved.setText(
+          member.contactSaved ? R.string.contact_saved : R.string.contact_not_saved);
+        binding.btnSaved.setOnClickListener(v -> listener.onToggleSaved(member));
+      } else {
+        binding.btnSaved.setVisibility(View.GONE);
+        binding.btnSaved.setOnClickListener(null);
+      }
       binding.getRoot().setOnClickListener(v -> listener.onEdit(member));
       binding.getRoot().setOnLongClickListener(v -> {
         if (Member.isAlumni(member)) {

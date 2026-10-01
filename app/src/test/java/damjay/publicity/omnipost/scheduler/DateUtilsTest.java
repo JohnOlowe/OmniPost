@@ -191,4 +191,44 @@ public class DateUtilsTest {
     assertEquals(27, draft.get(Calendar.DAY_OF_MONTH));
     assertEquals(20, draft.get(Calendar.HOUR_OF_DAY));
   }
+
+  @Test
+  public void nagButtonsSnapFromNowNeverInvert() {
+    long at524 = local(17, 24).getTimeInMillis();
+    long[] buttons = DateUtils.nagButtons(at524);
+    assertEquals(local(17, 30).getTimeInMillis(), buttons[0]);
+    assertEquals(local(18, 0).getTimeInMillis(), buttons[1]);
+    assertTrue(buttons[1] > buttons[0]);
+
+    long at530 = local(17, 30).getTimeInMillis();
+    long[] onTheMark = DateUtils.nagButtons(at530);
+    assertEquals(local(18, 0).getTimeInMillis(), onTheMark[0]);
+    assertEquals(local(19, 0).getTimeInMillis(), onTheMark[1]);
+    assertTrue(onTheMark[1] > onTheMark[0]);
+  }
+
+  @Test
+  public void tonightOrMorningFlipsAfterLateHour() {
+    long sixPm = local(18, 0).getTimeInMillis();
+    long evening = DateUtils.tonightOrMorning(sixPm, 20, 0, 7, 0, 19);
+    assertEquals(local(20, 0).getTimeInMillis(), evening);
+
+    long sevenPm = local(19, 0).getTimeInMillis();
+    long morning = DateUtils.tonightOrMorning(sevenPm, 20, 0, 7, 0, 19);
+    Calendar got = Calendar.getInstance();
+    got.setTimeInMillis(morning);
+    assertEquals(7, got.get(Calendar.HOUR_OF_DAY));
+    assertEquals(0, got.get(Calendar.MINUTE));
+    Calendar now = local(19, 0);
+    assertTrue(got.after(now));
+  }
+
+  private static Calendar local(int hour, int minute) {
+    Calendar c = Calendar.getInstance();
+    c.set(Calendar.HOUR_OF_DAY, hour);
+    c.set(Calendar.MINUTE, minute);
+    c.set(Calendar.SECOND, 0);
+    c.set(Calendar.MILLISECOND, 0);
+    return c;
+  }
 }

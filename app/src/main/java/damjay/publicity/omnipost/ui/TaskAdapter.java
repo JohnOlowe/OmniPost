@@ -12,6 +12,7 @@ import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemTaskBinding;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.TaskSections;
+import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
 import java.util.ArrayList;
@@ -72,8 +73,12 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
   }
 
   public void submit(List<Task> tasks, boolean postedMode) {
+    submit(tasks, postedMode, System.currentTimeMillis(), ScheduleTimes.WARNING_LEAD_MS);
+  }
+
+  public void submit(List<Task> tasks, boolean postedMode, long now, long warningLeadMs) {
     rows.clear();
-    List<TaskSections.Section> sections = TaskSections.group(tasks, postedMode);
+    List<TaskSections.Section> sections = TaskSections.group(tasks, postedMode, now, warningLeadMs);
     for (TaskSections.Section section : sections) {
       rows.add(new Row(section.title, section.subtitle));
       for (Task task : section.tasks) {

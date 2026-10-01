@@ -47,6 +47,19 @@
         tools:text="31 August"/>
     </LinearLayout>
 
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_saved"
+      style="@style/Widget.Material3.Button.TextButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:minWidth="0dp"
+      android:padding="6dp"
+      android:text="@string/contact_not_saved"
+      android:textAllCaps="false"
+      android:textColor="@color/gold"
+      android:textSize="12sp"
+      android:visibility="gone"/>
+
     <ImageButton
       android:id="@+id/btn_delete"
       android:layout_width="40dp"

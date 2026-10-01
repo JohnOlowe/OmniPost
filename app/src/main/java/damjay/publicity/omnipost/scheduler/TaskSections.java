@@ -60,9 +60,9 @@ public final class TaskSections {
     List<Task> soon = new ArrayList<>();
     List<Task> rest = new ArrayList<>();
     for (Task task : source) {
-      if (TaskStatus.needsYou(task.status)) {
+      if (TaskStatus.needsYou(task, now)) {
         nowList.add(task);
-      } else if (isSoon(task, now)) {
+      } else if (isSoon(task, now, warningLeadMs)) {
         soon.add(task);
       } else {
         rest.add(task);
@@ -81,10 +81,18 @@ public final class TaskSections {
     return out;
   }
 
-  private static boolean isSoon(Task task, long now) {
-    return TaskStatus.SCHEDULED.equals(task.status)
-        && task.postAtMillis > now
-        && task.postAtMillis <= now + NEXT_WINDOW_MS;
+  private static boolean isSoon(Task task, long now, long warningLeadMs) {
+    if (task == null || TaskStatus.POSTED.equals(task.status) || TaskStatus.needsYou(task, now)) {
+      return false;
+    }
+    if (TaskStatus.READY.equals(task.status) && task.postAtMillis > now) {
+      return true;
+    }
+    if (!TaskStatus.SCHEDULED.equals(task.status)) {
+      return false;
+    }
+    long ring = TaskStatus.nextRingMillis(task, now, warningLeadMs);
+    return ring > now && ring <= now + NEXT_WINDOW_MS;
   }
 
   /**

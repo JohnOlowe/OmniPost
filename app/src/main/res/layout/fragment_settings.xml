@@ -57,6 +57,18 @@
       layout="@layout/item_setting_row"/>
 
     <include
+      android:id="@+id/row_tonight"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_morning"
+      layout="@layout/item_setting_row"/>
+
+    <include
+      android:id="@+id/row_late"
+      layout="@layout/item_setting_row"/>
+
+    <include
       android:id="@+id/row_seed"
       layout="@layout/item_switch_row"/>
 

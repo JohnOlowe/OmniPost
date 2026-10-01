@@ -6,7 +6,12 @@ import android.content.Context;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.scheduler.DateUtils;
+import damjay.publicity.omnipost.util.Prefs;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public final class SnoozeChooser {
   public interface Callback {
@@ -21,6 +26,16 @@ public final class SnoozeChooser {
   public static final long ONE_HOUR_MS = 60L * 60_000L;
   public static final long THREE_HOUR_MS = 3L * 60L * 60_000L;
 
+  static final class Option {
+    final String label;
+    final long at;
+
+    Option(String label, long at) {
+      this.label = label;
+      this.at = at;
+    }
+  }
+
   private SnoozeChooser() {}
 
   public static void show(Context context, Callback callback) {
@@ -29,43 +44,85 @@ public final class SnoozeChooser {
 
   public static void show(Context context, long originMillis, Callback callback) {
     long now = System.currentTimeMillis();
-    long thirty = DateUtils.nagFromOrigin(originMillis, THIRTY_MIN_MS, now);
-    long hour = DateUtils.nagFromOrigin(originMillis, ONE_HOUR_MS, now);
-    long three = DateUtils.nagFromOrigin(originMillis, THREE_HOUR_MS, now);
-    CharSequence[] items = new CharSequence[] {
-      context.getString(R.string.nag_by, DateUtils.prettyClock(thirty)),
-      context.getString(R.string.nag_by, DateUtils.prettyClock(hour)),
-      context.getString(R.string.nag_by, DateUtils.prettyClock(three)),
-      context.getString(R.string.snooze_tonight),
-      context.getString(R.string.snooze_tomorrow),
-      context.getString(R.string.snooze_pick)
-    };
+    List<Option> options = options(context, originMillis, now);
+    CharSequence[] items = new CharSequence[options.size() + 1];
+    for (int i = 0; i < options.size(); i++) {
+      items[i] = options.get(i).label;
+    }
+    items[options.size()] = context.getString(R.string.snooze_pick);
     new MaterialAlertDialogBuilder(context)
       .setTitle(R.string.nag_later)
       .setItems(items, (d, which) -> {
-        switch (which) {
-          case 0:
-            callback.onChosen(thirty);
-            break;
-          case 1:
-            callback.onChosen(hour);
-            break;
-          case 2:
-            callback.onChosen(three);
-            break;
-          case 3:
-            callback.onChosen(DateUtils.nextClock(20, 0));
-            break;
-          case 4:
-            callback.onChosen(DateUtils.nextClock(7, 0));
-            break;
-          default:
-            pickDateTime(context, callback);
-            break;
+        if (which < 0) {
+          return;
         }
+        if (which >= options.size()) {
+          pickDateTime(context, callback);
+          return;
+        }
+        callback.onChosen(options.get(which).at);
       })
       .setNegativeButton(android.R.string.cancel, null)
       .show();
+  }
+
+  static List<Option> options(Context context, long originMillis, long now) {
+    int tonightH = Prefs.tonightHour(context);
+    int tonightM = Prefs.tonightMinute(context);
+    int morningH = Prefs.morningHour(context);
+    int morningM = Prefs.morningMinute(context);
+    int lateH = Prefs.lateHour(context);
+    Map<Long, String> unique = new LinkedHashMap<>();
+    put(unique, DateUtils.plusMinutes(now, 30),
+      context.getString(R.string.nag_in_minutes, 30, DateUtils.prettyClock(DateUtils.plusMinutes(now, 30))));
+    put(unique, DateUtils.plusMinutes(now, 60),
+      context.getString(R.string.nag_in_hour, DateUtils.prettyClock(DateUtils.plusMinutes(now, 60))));
+    long two = DateUtils.plusMinutes(now, 120);
+    Calendar twoCal = Calendar.getInstance();
+    twoCal.setTimeInMillis(two);
+    Calendar nowCal = Calendar.getInstance();
+    nowCal.setTimeInMillis(now);
+    boolean farTwo = nowCal.get(Calendar.HOUR_OF_DAY) >= lateH
+      && (twoCal.get(Calendar.HOUR_OF_DAY) >= 22
+        || twoCal.get(Calendar.DAY_OF_YEAR) != nowCal.get(Calendar.DAY_OF_YEAR)
+        || twoCal.get(Calendar.YEAR) != nowCal.get(Calendar.YEAR));
+    if (farTwo) {
+      long morning = DateUtils.nextClock(now, morningH, morningM);
+      put(unique, morning,
+        context.getString(R.string.snooze_tomorrow_at, DateUtils.prettyClock(morning)));
+    } else {
+      put(unique, two, context.getString(R.string.nag_in_hours, 2, DateUtils.prettyClock(two)));
+    }
+    long evening = DateUtils.tonightOrMorning(now, tonightH, tonightM, morningH, morningM, lateH);
+    Calendar eve = Calendar.getInstance();
+    eve.setTimeInMillis(evening);
+    boolean tomorrow = eve.get(Calendar.DAY_OF_YEAR) != nowCal.get(Calendar.DAY_OF_YEAR)
+      || eve.get(Calendar.YEAR) != nowCal.get(Calendar.YEAR);
+    put(unique, evening, tomorrow
+      ? context.getString(R.string.snooze_tomorrow_at, DateUtils.prettyClock(evening))
+      : context.getString(R.string.snooze_tonight_at, DateUtils.prettyClock(evening)));
+    long originThirty = originMillis + THIRTY_MIN_MS;
+    if (originThirty > now + 60_000L) {
+      put(unique, originThirty,
+        context.getString(R.string.nag_by, DateUtils.prettyClock(originThirty)));
+    }
+    long originHour = originMillis + ONE_HOUR_MS;
+    if (originHour > now + 60_000L) {
+      put(unique, originHour,
+        context.getString(R.string.nag_by, DateUtils.prettyClock(originHour)));
+    }
+    List<Option> out = new ArrayList<>();
+    for (Map.Entry<Long, String> entry : unique.entrySet()) {
+      out.add(new Option(entry.getValue(), entry.getKey()));
+    }
+    return out;
+  }
+
+  private static void put(Map<Long, String> unique, long at, String label) {
+    long key = at / 60_000L * 60_000L;
+    if (!unique.containsKey(key)) {
+      unique.put(key, label);
+    }
   }
 
   public static void pickClock(Context context, int hour, int minute, ClockCallback callback) {

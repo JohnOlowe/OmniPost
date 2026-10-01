@@ -21,7 +21,7 @@ public final class AlumniContacts {
       return out.toString();
     }
     for (Member member : members) {
-      if (member == null || !Member.isAlumni(member) || !AlumniDesk.hasPhone(member)) {
+      if (member == null || !Member.isAlumni(member) || !AlumniDesk.hasPhone(member) || member.contactSaved) {
         continue;
       }
       String notes = Member.isPastor(member) ? "Previous pastor" : "";
@@ -59,12 +59,16 @@ public final class AlumniContacts {
   }
 
   public static int withPhone(List<Member> members) {
+    return withPhone(members, false);
+  }
+
+  public static int withPhone(List<Member> members, boolean includeSaved) {
     int n = 0;
     if (members == null) {
       return 0;
     }
     for (Member member : members) {
-      if (Member.isAlumni(member) && AlumniDesk.hasPhone(member)) {
+      if (Member.isAlumni(member) && AlumniDesk.hasPhone(member) && (includeSaved || !member.contactSaved)) {
         n++;
       }
     }

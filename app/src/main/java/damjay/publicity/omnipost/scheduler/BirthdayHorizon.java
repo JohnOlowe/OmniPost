@@ -52,6 +52,40 @@ public final class BirthdayHorizon {
     }
   }
 
+  public static boolean nameMatches(Member member, String query) {
+    if (member == null) {
+      return false;
+    }
+    String q = query == null ? "" : query.trim().toLowerCase(Locale.US);
+    if (q.isEmpty()) {
+      return true;
+    }
+    return contains(member.name, q)
+      || contains(member.firstName, q)
+      || contains(member.lastName, q)
+      || contains(member.phone, q)
+      || contains(member.honorific, q)
+      || contains(member.email, q);
+  }
+
+  public static boolean sheetMatches(AlumniSheet.Row row, String query) {
+    if (row == null) {
+      return false;
+    }
+    String q = query == null ? "" : query.trim().toLowerCase(Locale.US);
+    if (q.isEmpty()) {
+      return true;
+    }
+    return contains(row.displayName(), q)
+      || contains(row.firstName, q)
+      || contains(row.lastName, q)
+      || contains(row.phone, q);
+  }
+
+  private static boolean contains(String value, String query) {
+    return value != null && value.toLowerCase(Locale.US).contains(query);
+  }
+
   private BirthdayHorizon() {}
 
   public static Calendar nextAt(Member member, Calendar now) {

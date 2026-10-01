@@ -88,8 +88,8 @@ public class AlarmActivity extends AppCompatActivity {
         });
       });
     });
-    binding.btnNag30.setOnClickListener(v -> snoozeTo(nagAt(SnoozeChooser.THIRTY_MIN_MS)));
-    binding.btnNagHour.setOnClickListener(v -> snoozeTo(nagAt(SnoozeChooser.ONE_HOUR_MS)));
+    binding.btnNag30.setOnClickListener(v -> snoozeTo(nagButtons()[0]));
+    binding.btnNagHour.setOnClickListener(v -> snoozeTo(nagButtons()[1]));
     binding.btnSnooze.setOnClickListener(v -> {
       acknowledge();
       SnoozeChooser.show(this, originMillis(), until -> snoozeTo(until));
@@ -163,18 +163,17 @@ public class AlarmActivity extends AppCompatActivity {
   }
 
   private void paintNagButtons() {
-    long thirty = nagAt(SnoozeChooser.THIRTY_MIN_MS);
-    long hour = nagAt(SnoozeChooser.ONE_HOUR_MS);
-    binding.btnNag30.setText(getString(R.string.nag_by, DateUtils.prettyClock(thirty)));
-    binding.btnNagHour.setText(getString(R.string.nag_by, DateUtils.prettyClock(hour)));
+    long[] buttons = nagButtons();
+    binding.btnNag30.setText(getString(R.string.nag_by, DateUtils.prettyClock(buttons[0])));
+    binding.btnNagHour.setText(getString(R.string.nag_by, DateUtils.prettyClock(buttons[1])));
+  }
+
+  private long[] nagButtons() {
+    return DateUtils.nagButtons(System.currentTimeMillis());
   }
 
   private long originMillis() {
     return postAt > 0L ? postAt : System.currentTimeMillis();
-  }
-
-  private long nagAt(long offsetMs) {
-    return DateUtils.nagFromOrigin(originMillis(), offsetMs, System.currentTimeMillis());
   }
 
   private void snoozeTo(long until) {

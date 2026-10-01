@@ -28,6 +28,11 @@ public final class Prefs {
   private static final String LAST_HOME = "last_home";
   public static final String HOME_FELLOWSHIP = "fellowship";
   public static final String HOME_ALUMNI = "alumni";
+  private static final String TONIGHT_HOUR = "tonight_hour";
+  private static final String TONIGHT_MINUTE = "tonight_minute";
+  private static final String MORNING_HOUR = "morning_hour";
+  private static final String MORNING_MINUTE = "morning_minute";
+  private static final String LATE_HOUR = "late_hour";
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
@@ -185,6 +190,38 @@ public final class Prefs {
 
   public static void setLastHome(Context ctx, String home) {
     sp(ctx).edit().putString(LAST_HOME, home == null ? "" : home).apply();
+  }
+
+  public static int tonightHour(Context ctx) {
+    return sp(ctx).getInt(TONIGHT_HOUR, 20);
+  }
+
+  public static int tonightMinute(Context ctx) {
+    return sp(ctx).getInt(TONIGHT_MINUTE, 0);
+  }
+
+  public static void setTonight(Context ctx, int hour, int minute) {
+    sp(ctx).edit().putInt(TONIGHT_HOUR, hour).putInt(TONIGHT_MINUTE, minute).apply();
+  }
+
+  public static int morningHour(Context ctx) {
+    return sp(ctx).getInt(MORNING_HOUR, 7);
+  }
+
+  public static int morningMinute(Context ctx) {
+    return sp(ctx).getInt(MORNING_MINUTE, 0);
+  }
+
+  public static void setMorning(Context ctx, int hour, int minute) {
+    sp(ctx).edit().putInt(MORNING_HOUR, hour).putInt(MORNING_MINUTE, minute).apply();
+  }
+
+  public static int lateHour(Context ctx) {
+    return sp(ctx).getInt(LATE_HOUR, 19);
+  }
+
+  public static void setLateHour(Context ctx, int hour) {
+    sp(ctx).edit().putInt(LATE_HOUR, hour).apply();
   }
 
   public static String alumniCaptionsJson(Context ctx) {

@@ -30,6 +30,7 @@ import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -466,7 +467,11 @@ public class TasksFragment extends Fragment {
     }
     boolean postedMode = desk == DESK_POSTED;
     List<Task> source = onlyAlumni(postedMode ? posted : active, false);
-    adapter.submit(source, postedMode);
+    adapter.submit(
+      source,
+      postedMode,
+      System.currentTimeMillis(),
+      Prefs.warningLeadMs(requireContext()));
     binding.empty.setText(postedMode ? R.string.empty_posted : R.string.empty_tasks);
     binding.empty.setVisibility(source.isEmpty() ? View.VISIBLE : View.GONE);
     binding.howItWorks.setText(R.string.how_it_works);

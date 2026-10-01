@@ -147,4 +147,13 @@
     android:layout_marginTop="8dp"
     android:text="@string/alumni_previous_pastor"
     android:textColor="@color/cream"/>
+
+  <CheckBox
+    android:id="@+id/contact_saved"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/contact_saved_hint"
+    android:textColor="@color/cream"
+    android:visibility="gone"/>
 </LinearLayout>

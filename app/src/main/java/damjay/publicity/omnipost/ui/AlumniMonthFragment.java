@@ -5,6 +5,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,6 +19,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentAlumniMonthBinding;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniMonth;
+import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
@@ -31,6 +34,7 @@ import java.util.Set;
 public class AlumniMonthFragment extends Fragment {
   private FragmentAlumniMonthBinding binding;
   private AlumniMonthAdapter adapter;
+  private final List<Member> roster = new ArrayList<>();
   private final List<Member> birthday = new ArrayList<>();
   private final List<Member> wave = new ArrayList<>();
   private final List<AlumniSend> sends = new ArrayList<>();
@@ -38,6 +42,7 @@ public class AlumniMonthFragment extends Fragment {
   private int month;
   private int yearMonth;
   private Map<String, String> bag;
+  private String query = "";
 
   @Nullable
   @Override
@@ -76,6 +81,19 @@ public class AlumniMonthFragment extends Fragment {
       waveSent = checkedId == R.id.chip_sent;
       paint();
     });
+    binding.search.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        query = s == null ? "" : s.toString();
+        paint();
+      }
+    });
     binding.btnGroup.setOnClickListener(v -> {
       String group = AlumniCopy.group(month, Calendar.getInstance(), bag);
       WhatsAppRouter.copyToClipboard(requireContext(), group);
@@ -87,8 +105,12 @@ public class AlumniMonthFragment extends Fragment {
     });
     AppDatabase db = AppDatabase.get(requireContext());
     db.memberDao().observeAll().observe(getViewLifecycleOwner(), members -> {
+      roster.clear();
       birthday.clear();
       wave.clear();
+      if (members != null) {
+        roster.addAll(members);
+      }
       birthday.addAll(AlumniMonth.birthdayPeople(members, month));
       wave.addAll(AlumniMonth.wavePeople(members, month));
       paint();
@@ -153,9 +175,14 @@ public class AlumniMonthFragment extends Fragment {
         : getString(R.string.alumni_people_left, left));
     String group = AlumniCopy.group(month, Calendar.getInstance(), bag);
     binding.groupPreview.setText(group);
-    List<Member> waveView = waveSent
+    List<Member> birthdayView = filterNames(birthday);
+    List<Member> waveSource = waveSent
       ? AlumniMonth.sentWave(wave, sends)
       : AlumniMonth.pendingWave(wave, sends);
+    if (!query.trim().isEmpty()) {
+      waveSource = restMatches(birthdayView);
+    }
+    List<Member> waveView = filterNames(waveSource);
     Set<String> sentKeys = new HashSet<>();
     for (AlumniSend send : sends) {
       if (send != null) {
@@ -163,7 +190,7 @@ public class AlumniMonthFragment extends Fragment {
       }
     }
     adapter.submit(
-      birthday,
+      birthdayView,
       waveView,
       sentKeys,
       bag,
@@ -172,7 +199,43 @@ public class AlumniMonthFragment extends Fragment {
       getString(R.string.alumni_section_birthday_sub),
       getString(R.string.alumni_section_wave),
       getString(R.string.alumni_section_wave_sub));
-    binding.empty.setVisibility(View.GONE);
+    boolean empty = birthdayView.isEmpty() && waveView.isEmpty();
+    binding.empty.setVisibility(empty && !query.trim().isEmpty() ? View.VISIBLE : View.GONE);
+    if (empty && !query.trim().isEmpty()) {
+      binding.empty.setText(R.string.search_empty);
+    }
+  }
+
+  private List<Member> restMatches(List<Member> birthdayView) {
+    java.util.Set<Long> seen = new HashSet<>();
+    for (Member member : birthdayView) {
+      if (member != null) {
+        seen.add(member.id);
+      }
+    }
+    List<Member> out = new ArrayList<>();
+    for (Member member : roster) {
+      if (member == null || seen.contains(member.id) || !Member.isAlumni(member)) {
+        continue;
+      }
+      if (BirthdayHorizon.nameMatches(member, query)) {
+        out.add(member);
+      }
+    }
+    return out;
+  }
+
+  private List<Member> filterNames(List<Member> source) {
+    List<Member> out = new ArrayList<>();
+    if (source == null) {
+      return out;
+    }
+    for (Member member : source) {
+      if (BirthdayHorizon.nameMatches(member, query)) {
+        out.add(member);
+      }
+    }
+    return out;
   }
 
   @Override

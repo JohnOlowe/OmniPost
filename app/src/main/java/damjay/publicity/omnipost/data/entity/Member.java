@@ -74,6 +74,9 @@ public class Member {
   @NonNull
   public String captionDetails = "";
 
+  /** True after this number is already in the President's contacts. Skip Save All. */
+  public boolean contactSaved;
+
   public static boolean isAlumni(Member member) {
     return member != null && KIND_ALUMNI.equals(member.kind);
   }

@@ -59,6 +59,12 @@ public class AlumniMatchTest {
     assertTrue(csv.contains("Previous pastor"));
     assertFalse(csv.contains("No Number"));
     assertEquals(2, AlumniContacts.withPhone(people));
+    ada.contactSaved = true;
+    String skipped = AlumniContacts.csv(people);
+    assertFalse(skipped.contains("Ada Okafor"));
+    assertTrue(skipped.contains("Pastor Tobi Ade"));
+    assertEquals(1, AlumniContacts.withPhone(people));
+    assertEquals(2, AlumniContacts.withPhone(people, true));
   }
 
   private static Member alumni(String name, int month, int day) {
