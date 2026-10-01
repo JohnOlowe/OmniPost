@@ -264,11 +264,9 @@ public class BirthdaysFragment extends Fragment {
       return;
     }
     Context ctx = requireContext();
-    binding.rowAlumniCaptions.title.setText(R.string.alumni_captions);
-    binding.rowAlumniCaptions.hint.setText(R.string.alumni_captions_hint);
-    binding.rowAlumniCaptions.toggle.setOnCheckedChangeListener(null);
-    binding.rowAlumniCaptions.toggle.setChecked(!Prefs.alumniSkipCaption(ctx));
-    binding.rowAlumniCaptions.toggle.setOnCheckedChangeListener(this::onAlumniCaptionsToggled);
+    binding.captionsToggle.setOnCheckedChangeListener(null);
+    binding.captionsToggle.setChecked(!Prefs.alumniSkipCaption(ctx));
+    binding.captionsToggle.setOnCheckedChangeListener(this::onAlumniCaptionsToggled);
   }
 
   private void onAlumniCaptionsToggled(CompoundButton button, boolean wantCaptions) {
@@ -458,7 +456,7 @@ public class BirthdaysFragment extends Fragment {
       boolean empty = rows.isEmpty();
       binding.empty.setText(R.string.alumni_pair_empty);
       binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
-      binding.rowAlumniCaptions.getRoot().setVisibility(View.GONE);
+      binding.captionsToggle.setVisibility(View.GONE);
       binding.alumniActions.setVisibility(View.VISIBLE);
       binding.fab.setVisibility(View.GONE);
       return;
@@ -480,7 +478,7 @@ public class BirthdaysFragment extends Fragment {
     }
     binding.empty.setText(searching() || (empty && roster == 0) ? emptyText : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
-    binding.rowAlumniCaptions.getRoot().setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.captionsToggle.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
     binding.alumniActions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
     binding.fab.setVisibility(View.VISIBLE);
     binding.fab.setContentDescription(getString(

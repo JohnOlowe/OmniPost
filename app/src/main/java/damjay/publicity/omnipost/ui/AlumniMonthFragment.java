@@ -173,8 +173,6 @@ public class AlumniMonthFragment extends Fragment {
       left == 0
         ? getString(R.string.alumni_people_done)
         : getString(R.string.alumni_people_left, left));
-    String group = AlumniCopy.group(month, Calendar.getInstance(), bag);
-    binding.groupPreview.setText(group);
     List<Member> birthdayView = filterNames(birthday);
     List<Member> waveSource = waveSent
       ? AlumniMonth.sentWave(wave, sends)

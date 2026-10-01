@@ -5,199 +5,259 @@
   android:layout_width="match_parent"
   android:layout_height="match_parent">
 
-  <LinearLayout
+  <com.google.android.material.appbar.AppBarLayout
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:layout_height="wrap_content"
+    android:background="@color/navy_950"
+    app:elevation="0dp">
 
     <com.google.android.material.tabs.TabLayout
       android:id="@+id/tabs"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:background="@color/navy_950"
+      android:minHeight="40dp"
+      app:tabGravity="fill"
       app:tabIndicatorColor="@color/gold"
       app:tabMode="scrollable"
-      app:tabGravity="fill"
+      app:tabPaddingEnd="10dp"
+      app:tabPaddingStart="10dp"
       app:tabSelectedTextColor="@color/gold"
       app:tabTextColor="@color/text_muted"/>
 
-    <com.google.android.material.textfield.TextInputLayout
+    <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="8dp"
-      android:layout_marginEnd="16dp"
-      android:hint="@string/search_people">
+      android:orientation="vertical"
+      android:paddingBottom="2dp"
+      app:layout_scrollFlags="scroll|enterAlways|snap">
 
-      <com.google.android.material.textfield.TextInputEditText
+      <EditText
         android:id="@+id/search"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="12dp"
+        android:background="@drawable/bg_search"
+        android:hint="@string/search_people"
         android:imeOptions="actionDone"
+        android:importantForAutofill="no"
         android:inputType="textPersonName|textCapWords"
-        android:textColor="@color/cream"/>
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <HorizontalScrollView
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:scrollbars="none">
-
-      <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/horizon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="4dp"
-        app:selectionRequired="true"
-        app:singleSelection="true">
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/chip_today"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/horizon_today"
-          android:textColor="@color/cream"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/chip_week"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/horizon_week"
-          android:textColor="@color/cream"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/chip_fortnight"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/horizon_fortnight"
-          android:textColor="@color/cream"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/chip_month"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/horizon_month"
-          android:textColor="@color/cream"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/chip_all"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/horizon_all"
-          android:textColor="@color/cream"/>
-      </com.google.android.material.button.MaterialButtonToggleGroup>
-    </HorizontalScrollView>
-
-    <com.google.android.material.button.MaterialButton
-      android:id="@+id/btn_copy_birthdays"
-      style="@style/Widget.Material3.Button.OutlinedButton"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="4dp"
-      android:layout_marginEnd="16dp"
-      android:text="@string/copy_birthday_list"
-      android:textColor="@color/gold"
-      app:strokeColor="@color/navy_700"/>
-
-    <include
-      android:id="@+id/row_alumni_captions"
-      layout="@layout/item_switch_row"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="4dp"
-      android:layout_marginEnd="16dp"
-      android:visibility="gone"/>
-
-    <HorizontalScrollView
-      android:id="@+id/alumni_actions"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:paddingStart="12dp"
-      android:paddingEnd="12dp"
-      android:scrollbars="none"
-      android:visibility="gone">
+        android:maxLines="1"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textColor="@color/cream"
+        android:textColorHint="@color/text_muted"
+        android:textSize="14sp"/>
 
       <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="4dp"
+        android:paddingEnd="8dp">
+
+        <HorizontalScrollView
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:scrollbars="none">
+
+          <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/horizon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/chip_today"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:text="@string/horizon_today"
+              android:textColor="@color/cream"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/chip_week"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:text="@string/horizon_week"
+              android:textColor="@color/cream"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/chip_fortnight"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:text="@string/horizon_fortnight"
+              android:textColor="@color/cream"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/chip_month"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:text="@string/horizon_month"
+              android:textColor="@color/cream"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/chip_all"
+              style="@style/Widget.Material3.Button.OutlinedButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:text="@string/horizon_all"
+              android:textColor="@color/cream"
+              android:textSize="12sp"/>
+          </com.google.android.material.button.MaterialButtonToggleGroup>
+        </HorizontalScrollView>
 
         <com.google.android.material.button.MaterialButton
-          android:id="@+id/btn_import_alumni"
-          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:id="@+id/btn_copy_birthdays"
+          style="@style/Widget.Material3.Button.TextButton"
           android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:layout_margin="4dp"
-          android:text="@string/alumni_import"
+          android:layout_height="36dp"
+          android:insetTop="0dp"
+          android:insetBottom="0dp"
+          android:minHeight="36dp"
+          android:minWidth="0dp"
+          android:paddingStart="8dp"
+          android:paddingEnd="8dp"
+          android:text="@string/copy_birthday_list"
           android:textColor="@color/gold"
-          app:strokeColor="@color/navy_700"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/btn_pair_alumni"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:layout_margin="4dp"
-          android:text="@string/alumni_pair"
-          android:textColor="@color/gold"
-          app:strokeColor="@color/navy_700"/>
-
-        <com.google.android.material.button.MaterialButton
-          android:id="@+id/btn_save_alumni"
-          style="@style/Widget.Material3.Button.OutlinedButton"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:layout_margin="4dp"
-          android:text="@string/alumni_save_all"
-          android:textColor="@color/gold"
-          app:strokeColor="@color/navy_700"/>
+          android:textSize="12sp"/>
       </LinearLayout>
-    </HorizontalScrollView>
 
-    <FrameLayout
-      android:layout_width="match_parent"
-      android:layout_height="0dp"
-      android:layout_weight="1">
-
-      <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="16dp"
-        android:paddingBottom="88dp"
-        tools:listitem="@layout/item_member"/>
-
-      <TextView
-        android:id="@+id/empty"
+      <LinearLayout
+        android:id="@+id/alumni_actions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_margin="32dp"
-        android:gravity="center"
-        android:text="@string/empty_birthdays"
-        android:textColor="@color/text_muted"
-        android:textSize="15sp"
-        android:visibility="gone"/>
-    </FrameLayout>
-  </LinearLayout>
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:visibility="gone">
+
+        <HorizontalScrollView
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:scrollbars="none">
+
+          <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/btn_import_alumni"
+              style="@style/Widget.Material3.Button.TextButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:minWidth="0dp"
+              android:text="@string/alumni_import"
+              android:textColor="@color/gold"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/btn_pair_alumni"
+              style="@style/Widget.Material3.Button.TextButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:minWidth="0dp"
+              android:text="@string/alumni_pair"
+              android:textColor="@color/gold"
+              android:textSize="12sp"/>
+
+            <com.google.android.material.button.MaterialButton
+              android:id="@+id/btn_save_alumni"
+              style="@style/Widget.Material3.Button.TextButton"
+              android:layout_width="wrap_content"
+              android:layout_height="36dp"
+              android:insetTop="0dp"
+              android:insetBottom="0dp"
+              android:minHeight="36dp"
+              android:minWidth="0dp"
+              android:text="@string/alumni_save_all"
+              android:textColor="@color/gold"
+              android:textSize="12sp"/>
+          </LinearLayout>
+        </HorizontalScrollView>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+          android:id="@+id/captions_toggle"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:minHeight="36dp"
+          android:text="@string/alumni_captions"
+          android:textColor="@color/cream"
+          android:textSize="12sp"/>
+      </LinearLayout>
+    </LinearLayout>
+  </com.google.android.material.appbar.AppBarLayout>
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/list"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:paddingStart="12dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="88dp"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:listitem="@layout/item_member"/>
+
+  <TextView
+    android:id="@+id/empty"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:layout_margin="32dp"
+    android:gravity="center"
+    android:text="@string/empty_birthdays"
+    android:textColor="@color/text_muted"
+    android:textSize="15sp"
+    android:visibility="gone"/>
 
   <com.google.android.material.floatingactionbutton.FloatingActionButton
     android:id="@+id/fab"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="bottom|end"
-    android:layout_margin="20dp"
+    android:layout_margin="16dp"
     android:contentDescription="@string/add_member"
     app:backgroundTint="@color/gold"
     app:srcCompat="@drawable/ic_add"
