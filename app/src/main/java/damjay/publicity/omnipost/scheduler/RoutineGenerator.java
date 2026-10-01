@@ -523,7 +523,7 @@ public final class RoutineGenerator {
     int month = post.get(Calendar.MONTH) + 1;
     List<Member> wave = new ArrayList<>();
     for (Member member : alumni) {
-      if (AlumniDesk.inWave(member, month)) {
+      if (AlumniDesk.inWave(member, month) && member.birthMonth != month) {
         wave.add(member);
       }
     }

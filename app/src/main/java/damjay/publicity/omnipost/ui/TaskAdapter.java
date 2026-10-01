@@ -159,7 +159,9 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.description.setText(task.description);
       }
-      if (task.skipCaption) {
+      if (TaskTypes.isAlumniDesk(task.type)) {
+        binding.btnDraft.setText(R.string.alumni_open_desk);
+      } else if (task.skipCaption) {
         binding.btnDraft.setText(R.string.open_whatsapp);
       } else {
         binding.btnDraft.setText(

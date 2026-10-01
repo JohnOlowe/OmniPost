@@ -34,9 +34,9 @@ public final class ScheduleTimes {
   public static final int ALUMNI_PHOTO_HOUR = 10;
   /** Keep the 1st-of-month HNM card through the 5th. */
   public static final int ALUMNI_MONTH_CATCHUP_DAYS = 4;
-  public static final int ALUMNI_WAVE_DAY = 5;
-  /** Keep the bi-monthly DM wave a week after the 5th. */
-  public static final int ALUMNI_WAVE_CATCHUP_DAYS = 7;
+  /** Start the personal DMs on the 1st with the new-month card; finish by the 5th. */
+  public static final int ALUMNI_WAVE_DAY = 1;
+  public static final int ALUMNI_WAVE_CATCHUP_DAYS = 4;
 
   private ScheduleTimes() {}
 }

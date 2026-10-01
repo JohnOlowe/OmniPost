@@ -70,6 +70,12 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.AlumniDmActivity"
+      android:exported="false"
+      android:label="@string/alumni_desk_title"
+      android:parentActivityName=".MainActivity"/>
+
+    <activity
       android:name=".ui.InstagramConvertActivity"
       android:exported="false"
       android:label="@string/instagram_title"

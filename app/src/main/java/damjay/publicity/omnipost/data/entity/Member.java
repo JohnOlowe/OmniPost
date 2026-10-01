@@ -8,6 +8,8 @@ import androidx.room.PrimaryKey;
 public class Member {
   public static final String KIND_MEMBER = "member";
   public static final String KIND_ALUMNI = "alumni";
+  public static final String GENDER_MALE = "male";
+  public static final String GENDER_FEMALE = "female";
 
   @PrimaryKey(autoGenerate = true)
   public long id;
@@ -24,9 +26,30 @@ public class Member {
   @NonNull
   public String phone = "";
 
+  @NonNull
+  public String firstName = "";
+
+  @NonNull
+  public String lastName = "";
+
+  @NonNull
+  public String gender = "";
+
+  @NonNull
+  public String email = "";
+
+  @NonNull
+  public String positionHeld = "";
+
+  @NonNull
+  public String gradSet = "";
+
   /** Empty = still chasing. {@code got} / {@code none} settle the photo nag. */
   @NonNull
   public String photoStatus = "";
+
+  /** True after the first personal DM of this tenure has gone out. */
+  public boolean introduced;
 
   @NonNull
   public String kind = KIND_MEMBER;

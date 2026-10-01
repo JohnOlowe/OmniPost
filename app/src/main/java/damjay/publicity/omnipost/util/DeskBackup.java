@@ -355,7 +355,14 @@ public final class DeskBackup {
       o.put("notes", nz(member.notes));
       o.put("kind", nz(member.kind));
       o.put("phone", nz(member.phone));
+      o.put("firstName", nz(member.firstName));
+      o.put("lastName", nz(member.lastName));
+      o.put("gender", nz(member.gender));
+      o.put("email", nz(member.email));
+      o.put("positionHeld", nz(member.positionHeld));
+      o.put("gradSet", nz(member.gradSet));
       o.put("photoStatus", nz(member.photoStatus));
+      o.put("introduced", member.introduced);
       o.put("skipCaption", member.skipCaption);
       out.put(o);
     }
@@ -469,7 +476,14 @@ public final class DeskBackup {
         member.kind = Member.KIND_MEMBER;
       }
       member.phone = str(o, "phone");
+      member.firstName = str(o, "firstName");
+      member.lastName = str(o, "lastName");
+      member.gender = str(o, "gender");
+      member.email = str(o, "email");
+      member.positionHeld = str(o, "positionHeld");
+      member.gradSet = str(o, "gradSet");
       member.photoStatus = str(o, "photoStatus");
+      member.introduced = o.optBoolean("introduced", false);
       member.skipCaption = o.optBoolean("skipCaption", false);
       out.add(member);
     }

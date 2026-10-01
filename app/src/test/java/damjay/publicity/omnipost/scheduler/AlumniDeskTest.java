@@ -84,10 +84,10 @@ public class AlumniDeskTest {
     born.add(ada);
     born.add(bob);
     String brief = AlumniDesk.monthBrief("October", born);
-    assertTrue(brief.contains("Happy New Month"));
+    assertTrue(brief.contains("birthday month"));
     assertTrue(brief.contains("Ada · 08031234567"));
     assertTrue(brief.contains("Bob"));
-    assertTrue(brief.contains("DMs and in the group"));
+    assertTrue(brief.contains("Batches of 10"));
   }
 
   private static Member alumni(String name, int month, int day) {

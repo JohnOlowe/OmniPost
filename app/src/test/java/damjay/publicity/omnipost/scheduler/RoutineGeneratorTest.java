@@ -561,6 +561,31 @@ public class RoutineGeneratorTest {
   }
 
   @Test
+  public void octoberFirstMintsMonthAndWaveTogether() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.OCTOBER, 1, 8, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Member ada = alumni(9, "Ada", 10, 2);
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(ada));
+    boolean month = false;
+    boolean wave = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.ALUMNI_MONTH + "|2026-10").equals(task.occurrenceKey)) {
+        month = true;
+      }
+      if ((TaskTypes.ALUMNI_WAVE + "|2026-10").equals(task.occurrenceKey)) {
+        wave = true;
+      }
+    }
+    assertTrue(month);
+    assertTrue(wave);
+  }
+
+  @Test
   public void settledPhotoIsNotMinted() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);

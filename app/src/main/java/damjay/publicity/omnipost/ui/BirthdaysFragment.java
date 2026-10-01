@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.ui;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,8 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Spinner;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -21,11 +24,16 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
+import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
+import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -45,6 +53,8 @@ public class BirthdaysFragment extends Fragment {
   private int memberCount;
   private int alumniCount;
   private boolean ignoreChip;
+  private final ActivityResultLauncher<String[]> sheetLauncher =
+    registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onSheetPicked);
 
   @Nullable
   @Override
@@ -57,6 +67,14 @@ public class BirthdaysFragment extends Fragment {
       @Override
       public void onEdit(Member member) {
         showEditor(member);
+      }
+
+      @Override
+      public void onDm(Member member) {
+        android.content.Intent intent = new android.content.Intent(requireContext(), AlumniDmActivity.class);
+        intent.putExtra(ExtraKeys.MEMBER_ID, member.id);
+        intent.putExtra(ExtraKeys.ALUMNI_MODE, AlumniCopy.kindFor(member, Calendar.getInstance().get(Calendar.MONTH) + 1));
+        startActivity(intent);
       }
 
       @Override
@@ -108,6 +126,15 @@ public class BirthdaysFragment extends Fragment {
       paint();
     });
     paintAlumniSwitch();
+    binding.btnImportAlumni.setOnClickListener(v ->
+      new MaterialAlertDialogBuilder(requireContext())
+        .setTitle(R.string.alumni_import)
+        .setMessage(R.string.alumni_import_hint)
+        .setPositiveButton(R.string.alumni_import, (d, w) -> sheetLauncher.launch(new String[] {
+          "text/csv", "text/comma-separated-values", "text/plain", "text/*", "*/*"
+        }))
+        .setNegativeButton(android.R.string.cancel, null)
+        .show());
     AppDatabase.get(requireContext())
       .memberDao()
       .observeAll()
@@ -233,6 +260,7 @@ public class BirthdaysFragment extends Fragment {
         : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
     binding.rowAlumniCaptions.getRoot().setVisibility(alumni ? View.VISIBLE : View.GONE);
+    binding.btnImportAlumni.setVisibility(alumni ? View.VISIBLE : View.GONE);
     binding.fab.setContentDescription(getString(alumni ? R.string.add_alumni : R.string.add_member));
   }
 
@@ -243,8 +271,10 @@ public class BirthdaysFragment extends Fragment {
     Spinner month = view.findViewById(R.id.spinner_month);
     Spinner day = view.findViewById(R.id.spinner_day);
     Spinner photo = view.findViewById(R.id.spinner_photo);
+    Spinner gender = view.findViewById(R.id.spinner_gender);
     View phoneLayout = view.findViewById(R.id.layout_phone);
     View photoLabel = view.findViewById(R.id.label_photo);
+    View genderLabel = view.findViewById(R.id.label_gender);
     CheckBox skipCaption = view.findViewById(R.id.skip_caption);
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);
@@ -262,6 +292,10 @@ public class BirthdaysFragment extends Fragment {
       requireContext(), R.array.alumni_photo_status, R.layout.spinner_item);
     photos.setDropDownViewResource(R.layout.spinner_item);
     photo.setAdapter(photos);
+    ArrayAdapter<CharSequence> genders = ArrayAdapter.createFromResource(
+      requireContext(), R.array.alumni_gender, R.layout.spinner_item);
+    genders.setDropDownViewResource(R.layout.spinner_item);
+    gender.setAdapter(genders);
     boolean alumniTab = Member.KIND_ALUMNI.equals(kind);
     if (existing != null) {
       name.setText(existing.name);
@@ -272,6 +306,13 @@ public class BirthdaysFragment extends Fragment {
         phone.setText(existing.phone);
       }
       photo.setSelection(AlumniDesk.photoSpinnerIndex(existing));
+      if (Member.GENDER_MALE.equals(existing.gender)) {
+        gender.setSelection(1);
+      } else if (Member.GENDER_FEMALE.equals(existing.gender)) {
+        gender.setSelection(2);
+      } else {
+        gender.setSelection(0);
+      }
     } else {
       skipCaption.setChecked(alumniTab && Prefs.alumniSkipCaption(requireContext()));
     }
@@ -280,6 +321,8 @@ public class BirthdaysFragment extends Fragment {
     phoneLayout.setVisibility(alumniVis);
     photoLabel.setVisibility(alumniVis);
     photo.setVisibility(alumniVis);
+    genderLabel.setVisibility(alumniVis);
+    gender.setVisibility(alumniVis);
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(
         existing == null
@@ -305,7 +348,12 @@ public class BirthdaysFragment extends Fragment {
         member.skipCaption = skipCaption.isChecked();
         if (alumni) {
           member.phone = phone.getText() == null ? "" : phone.getText().toString().trim();
+          if (AlumniDesk.nigeriaDigits(member.phone).length() == 13) {
+            member.phone = AlumniDesk.nigeriaDigits(member.phone);
+          }
           member.photoStatus = AlumniDesk.photoStatusFromIndex(photo.getSelectedItemPosition());
+          int g = gender.getSelectedItemPosition();
+          member.gender = g == 1 ? Member.GENDER_MALE : g == 2 ? Member.GENDER_FEMALE : "";
         }
         AppExecutors.disk().execute(() -> {
           AppDatabase db = AppDatabase.get(requireContext());
@@ -313,8 +361,11 @@ public class BirthdaysFragment extends Fragment {
           if (member.id == 0L && alumni) {
             Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, member.name);
             if (prior != null) {
-              if (AlumniDesk.digits(member.phone).length() >= 7) {
-                prior.phone = member.phone;
+              if (AlumniDesk.nigeriaDigits(member.phone).length() == 13) {
+                prior.phone = AlumniDesk.nigeriaDigits(member.phone);
+              }
+              if (member.gender != null && !member.gender.isEmpty()) {
+                prior.gender = member.gender;
               }
               if (member.photoStatus != null && !member.photoStatus.isEmpty()) {
                 prior.photoStatus = member.photoStatus;
@@ -345,6 +396,58 @@ public class BirthdaysFragment extends Fragment {
       })
       .setNegativeButton(android.R.string.cancel, null)
       .show();
+  }
+
+  private void onSheetPicked(Uri uri) {
+    if (uri == null) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      try (InputStream in = app.getContentResolver().openInputStream(uri)) {
+        if (in == null) {
+          throw new java.io.IOException("sheet");
+        }
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        byte[] chunk = new byte[4096];
+        int n;
+        int total = 0;
+        while ((n = in.read(chunk)) > 0) {
+          buf.write(chunk, 0, n);
+          total += n;
+          if (total > 2_000_000) {
+            throw new java.io.IOException("sheet");
+          }
+        }
+        byte[] bytes = buf.toByteArray();
+        if (bytes.length >= 2 && bytes[0] == 'P' && bytes[1] == 'K') {
+          AppExecutors.main(() -> {
+            if (isAdded()) {
+              Toast.makeText(requireContext(), R.string.alumni_import_xlsx, Toast.LENGTH_LONG).show();
+            }
+          });
+          return;
+        }
+        String csv = new String(bytes, StandardCharsets.UTF_8);
+        ScheduleCoordinator.AlumniImport stats = ScheduleCoordinator.importAlumniSheet(app, csv);
+        AppExecutors.main(() -> {
+          if (!isAdded()) {
+            return;
+          }
+          Toast.makeText(
+            requireContext(),
+            getString(R.string.alumni_import_ok, stats.filled, stats.added, stats.skipped),
+            Toast.LENGTH_LONG)
+            .show();
+        });
+      } catch (Exception e) {
+        AppExecutors.main(() -> {
+          if (isAdded()) {
+            Toast.makeText(requireContext(), R.string.alumni_import_failed, Toast.LENGTH_LONG).show();
+          }
+        });
+      }
+    });
   }
 
   private static int maxDay(int month1to12) {

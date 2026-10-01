@@ -129,6 +129,12 @@ public class TasksFragment extends Fragment {
 
       @Override
       public void onForward(Task task) {
+        if (TaskTypes.isAlumniDesk(task.type)) {
+          Intent desk = new Intent(requireContext(), AlumniDmActivity.class);
+          desk.putExtra(ExtraKeys.TASK_ID, task.id);
+          startActivity(desk);
+          return;
+        }
         if (!WhatsAppRouter.openApp(requireContext())) {
           Toast.makeText(requireContext(), R.string.whatsapp_missing, Toast.LENGTH_LONG).show();
         }

@@ -17,7 +17,7 @@ public final class AlumniDesk {
   private AlumniDesk() {}
 
   public static boolean hasPhone(Member member) {
-    return digits(member == null ? "" : member.phone).length() >= 7;
+    return nigeriaDigits(member == null ? "" : member.phone).length() == 13;
   }
 
   public static String digits(String phone) {
@@ -32,6 +32,32 @@ public final class AlumniDesk {
       }
     }
     return out.toString();
+  }
+
+  /** 234 + 10-digit national number. Accepts 0803…, 803…, 234803…, +234 803… */
+  public static String nigeriaDigits(String phone) {
+    String d = digits(phone);
+    if (d.startsWith("2340") && d.length() >= 14) {
+      d = "234" + d.substring(4);
+    }
+    if (d.startsWith("234") && d.length() >= 13) {
+      return d.substring(0, 13);
+    }
+    if (d.startsWith("0") && d.length() >= 11) {
+      return "234" + d.substring(1, 11);
+    }
+    if (d.length() == 10) {
+      return "234" + d;
+    }
+    return d;
+  }
+
+  public static String displayPhone(String phone) {
+    String d = nigeriaDigits(phone);
+    if (d.length() == 13 && d.startsWith("234")) {
+      return "0" + d.substring(3);
+    }
+    return phone == null ? "" : phone.trim();
   }
 
   public static boolean photoSettled(Member member) {
@@ -99,7 +125,7 @@ public final class AlumniDesk {
       photo = "If they still have not sent a picture: NO PICTURE. Send details to the designer. Ask media for the design.";
     }
     String tag = hasPhone(member)
-      ? "Tag them — number is on their card."
+      ? "Tag them — number is on their card (" + displayPhone(member.phone) + ")."
       : "No number — do not tag. Fill the number on this name; do not add a second card.";
     return photo + " " + tag + " ARO reaches out. President saves the contact.";
   }
@@ -109,7 +135,7 @@ public final class AlumniDesk {
       return "";
     }
     String tag = hasPhone(member)
-      ? "DM " + member.phone.trim() + "."
+      ? "DM " + displayPhone(member.phone) + "."
       : "No number in the database — do not tag. If they reply with a name that is already here, fill the number on that card.";
     return "Two days to the birthday. Ask for a picture. If they do not answer: NO PICTURE. "
       + tag
@@ -118,13 +144,11 @@ public final class AlumniDesk {
 
   public static String monthBrief(String monthName, List<Member> birthdayMonth) {
     StringBuilder out = new StringBuilder();
-    out.append("Welcome to ")
-      .append(monthName)
-      .append(" — birthday month.\n\n");
-    out.append("Happy New Month. Please send a picture for your birthday flyer.\n");
-    out.append("Say that in DMs and in the group.\n\n");
-    out.append("First time in their DM: introduce yourself as the Alumni Relations Officer.\n");
-    out.append("If WhatsApp is blocking you: send Happy Sunday, or Happy New Month by the 5th.\n");
+    out.append("First outreach · ").append(monthName).append(" birthday month.\n\n");
+    out.append("1. Copy the group greeting from the desk (October includes Independence Day).\n");
+    out.append("2. DM birthday-month people: intro as Alumni Relations Officer + picture ask. Batches of 10–15, not 100 identical texts.\n");
+    out.append("3. Each caption already has Sir/Ma, their name, and a wording tweak.\n");
+    out.append("If WhatsApp blocks you: Happy Sunday, or finish by the 5th.\n");
     out.append("Do not tag anyone without a number. Never a second card for the same name.\n");
     out.append("ARO reaches out. President saves the contact.\n\n");
     appendLists(out, birthdayMonth, 40);
@@ -135,10 +159,10 @@ public final class AlumniDesk {
     StringBuilder out = new StringBuilder();
     out.append("Alumni DM wave · ")
       .append(monthName)
-      .append(" (half the desk). Everyone gets a message once every two months.\n\n");
-    out.append("The Alumni tab marks who is in this wave.\n");
-    out.append("Personalized. First DM: you are the Alumni Relations Officer.\n");
-    out.append("If WhatsApp blocks you: Happy Sunday, or Happy New Month by the 5th.\n");
+      .append(" (half the desk). Everyone once every two months.\n\n");
+    out.append("Open the desk on this card. Batches of 10–15. Skip birthday-month people — they already got the picture ask.\n");
+    out.append("First DM: you are the Alumni Relations Officer. Captions use Sir/Ma and their name.\n");
+    out.append("If WhatsApp blocks you: Happy Sunday, or finish by the 5th.\n");
     out.append("Beyond Limits: ARO asks for support; the President asks former presidents.\n");
     out.append("No number → do not tag.\n\n");
     appendLists(out, wave, 12);
@@ -151,7 +175,7 @@ public final class AlumniDesk {
     }
     StringBuilder out = new StringBuilder();
     if (hasPhone(member)) {
-      out.append(member.phone.trim());
+      out.append(displayPhone(member.phone));
     } else if (Member.isAlumni(member)) {
       out.append("no number");
     }
@@ -191,7 +215,7 @@ public final class AlumniDesk {
       out.append("— none with a number yet.\n");
     } else {
       for (Member member : tag) {
-        out.append("• ").append(member.name).append(" · ").append(member.phone.trim()).append('\n');
+        out.append("• ").append(member.name).append(" · ").append(displayPhone(member.phone)).append('\n');
       }
     }
     out.append("\nNo number — do not tag (").append(skip.size()).append("):\n");

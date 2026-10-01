@@ -4,6 +4,8 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 
 public final class WhatsAppRouter {
   public static final String PACKAGE_WHATSAPP = "com.whatsapp";
@@ -17,6 +19,26 @@ public final class WhatsAppRouter {
     if (clipboard != null) {
       clipboard.setPrimaryClip(ClipData.newPlainText("OmniPost", text == null ? "" : text));
     }
+  }
+
+  /**
+   * Copies the caption, then opens that number's chat in WhatsApp (never the
+   * share sheet). Long captions stay on the clipboard so the URL does not explode.
+   */
+  public static boolean openChat(Context context, String phone, String text) {
+    copyToClipboard(context, text);
+    String digits = AlumniDesk.nigeriaDigits(phone);
+    if (digits.length() == 13) {
+      Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + digits));
+      view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      if (launch(context, view, PACKAGE_WHATSAPP)) {
+        return true;
+      }
+      if (launch(context, view, PACKAGE_WHATSAPP_BUSINESS)) {
+        return true;
+      }
+    }
+    return openApp(context);
   }
 
   /** Opens WhatsApp itself so the user can forward a chat — no caption attached. */

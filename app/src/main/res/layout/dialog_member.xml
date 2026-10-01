@@ -42,6 +42,19 @@
     android:layout_width="match_parent"
     android:layout_height="48dp"/>
 
+  <TextView
+    android:id="@+id/label_gender"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/alumni_gender"
+    android:textColor="@color/text_muted"/>
+
+  <Spinner
+    android:id="@+id/spinner_gender"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"/>
+
   <com.google.android.material.textfield.TextInputLayout
     android:id="@+id/layout_phone"
     android:layout_width="match_parent"

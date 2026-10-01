@@ -142,6 +142,30 @@
   <string name="alumni_filled_existing">Filled the number on the name that was already here. No second card.</string>
   <string name="alumni_photo_saved">Picture in. Photo nag stopped.</string>
   <string name="alumni_photo_none_saved">NO PICTURE. Send details to the designer.</string>
+  <string name="alumni_import">Import alumni sheet</string>
+  <string name="alumni_import_hint">Google Sheets → File → Download → CSV. Column A can be empty. B–I: first name, last name, gender, email, WhatsApp number, birthday, position, graduation set. Existing names get their number filled — never a second card.</string>
+  <string name="alumni_import_ok">Sheet in. Filled %1$d existing names, added %2$d, skipped %3$d empty rows.</string>
+  <string name="alumni_import_failed">Could not read that file. Export the sheet as CSV and try again.</string>
+  <string name="alumni_import_xlsx">That looks like an Excel file. In Google Sheets: File → Download → Comma-separated values (.csv).</string>
+  <string name="alumni_desk_title">Alumni DMs</string>
+  <string name="alumni_desk_hint">Batches of 10–15. Each caption is a little different. Paste after WhatsApp opens. Never tag without a number.</string>
+  <string name="alumni_desk_empty">Nobody in this list. Import the sheet, or pick another card.</string>
+  <string name="alumni_desk_birthday">Birthday month DMs</string>
+  <string name="alumni_desk_wave">New month wave</string>
+  <string name="alumni_desk_photo">Picture reminder</string>
+  <string name="alumni_open_desk">Open desk</string>
+  <string name="alumni_group_title">Group greeting</string>
+  <string name="alumni_copy_group">Copy group greeting</string>
+  <string name="alumni_copy_dm">Copy DM</string>
+  <string name="alumni_copied_dm">Caption copied. Paste it in the chat.</string>
+  <string name="alumni_copied_chat">Caption copied. Paste it when the chat opens.</string>
+  <string name="alumni_copied_group">Group greeting copied. Open the alumni group and paste.</string>
+  <string name="alumni_gender">Gender (Sir / Ma)</string>
+  <string-array name="alumni_gender">
+    <item>Not sure</item>
+    <item>Male — Sir</item>
+    <item>Female — Ma</item>
+  </string-array>
   <string-array name="alumni_photo_status">
     <item>Still chasing a picture</item>
     <item>Got a picture</item>

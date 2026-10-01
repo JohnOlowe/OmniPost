@@ -8,6 +8,8 @@ public final class ExtraKeys {
   public static final String VAR_ID = "extra_var_id";
   public static final String TASK_TITLE = "extra_task_title";
   public static final String POST_AT = "extra_post_at";
+  public static final String ALUMNI_MODE = "extra_alumni_mode";
+  public static final String MEMBER_ID = "extra_member_id";
 
   private ExtraKeys() {}
 }

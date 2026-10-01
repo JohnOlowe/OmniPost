@@ -677,6 +677,98 @@ public final class ScheduleCoordinator {
     }
   }
 
+  public static final class AlumniImport {
+    public int added;
+    public int filled;
+    public int skipped;
+  }
+
+  public static AlumniImport importAlumniSheet(Context context, String csv) {
+    AlumniImport stats = new AlumniImport();
+    if (context == null) {
+      return stats;
+    }
+    AlumniSheet.Result parsed = AlumniSheet.parse(csv);
+    stats.skipped = parsed.skipped;
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    boolean skip = Prefs.alumniSkipCaption(app);
+    for (AlumniSheet.Row row : parsed.rows) {
+      if (row == null) {
+        continue;
+      }
+      String name = row.displayName();
+      if (name.isEmpty()) {
+        stats.skipped++;
+        continue;
+      }
+      Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, name);
+      if (prior == null && !row.firstName.isEmpty() && !row.lastName.isEmpty()) {
+        prior = db.memberDao().findByKindAndNameIgnoreCase(
+          Member.KIND_ALUMNI, row.lastName + " " + row.firstName);
+      }
+      if (prior != null) {
+        fillAlumni(prior, row);
+        db.memberDao().update(prior);
+        stats.filled++;
+        continue;
+      }
+      Member member = new Member();
+      member.kind = Member.KIND_ALUMNI;
+      member.skipCaption = skip;
+      member.name = name;
+      fillAlumni(member, row);
+      db.memberDao().insert(member);
+      stats.added++;
+    }
+    bootstrap(app);
+    return stats;
+  }
+
+  private static void fillAlumni(Member member, AlumniSheet.Row row) {
+    if (member == null || row == null) {
+      return;
+    }
+    if (!row.firstName.isEmpty()) {
+      member.firstName = row.firstName;
+    }
+    if (!row.lastName.isEmpty()) {
+      member.lastName = row.lastName;
+    }
+    if (AlumniDesk.nigeriaDigits(row.phone).length() == 13) {
+      member.phone = AlumniDesk.nigeriaDigits(row.phone);
+    }
+    if (!row.gender.isEmpty()) {
+      member.gender = row.gender;
+    }
+    if (!row.email.isEmpty()) {
+      member.email = row.email;
+    }
+    if (!row.position.isEmpty()) {
+      member.positionHeld = row.position;
+    }
+    if (!row.gradSet.isEmpty()) {
+      member.gradSet = row.gradSet;
+    }
+    if (row.birthMonth > 0 && row.birthDay > 0 && member.birthMonth <= 0) {
+      member.birthMonth = row.birthMonth;
+      member.birthDay = row.birthDay;
+    }
+  }
+
+  public static void markAlumniIntroduced(Context context, long memberId) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    AppDatabase db = AppDatabase.get(context.getApplicationContext());
+    Member member = db.memberDao().getById(memberId);
+    if (member == null || member.introduced) {
+      return;
+    }
+    member.introduced = true;
+    db.memberDao().update(member);
+  }
+
   public static void setAlumniPhoto(Context context, long memberId, String status) {
     if (context == null || memberId <= 0L) {
       return;
