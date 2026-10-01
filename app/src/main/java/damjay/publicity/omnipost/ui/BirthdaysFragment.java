@@ -606,10 +606,9 @@ public class BirthdaysFragment extends Fragment {
         member.skipCaption = skipCaption.isChecked();
         if (alumni) {
           member.desk = previousPastor.isChecked() ? Member.DESK_PASTOR : "";
-          member.phone = phone.getText() == null ? "" : phone.getText().toString().trim();
-          if (AlumniDesk.nigeriaDigits(member.phone).length() == 13) {
-            member.phone = AlumniDesk.nigeriaDigits(member.phone);
-          }
+          String rawPhone = phone.getText() == null ? "" : phone.getText().toString().trim();
+          String storedPhone = AlumniDesk.storePhone(rawPhone);
+          member.phone = storedPhone.isEmpty() ? rawPhone : storedPhone;
           member.photoStatus = AlumniDesk.photoStatusFromIndex(photo.getSelectedItemPosition());
           int g = gender.getSelectedItemPosition();
           member.gender = g == 1 ? Member.GENDER_MALE : g == 2 ? Member.GENDER_FEMALE : "";
@@ -622,8 +621,8 @@ public class BirthdaysFragment extends Fragment {
           if (member.id == 0L && alumni) {
             Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, member.name);
             if (prior != null) {
-              if (AlumniDesk.nigeriaDigits(member.phone).length() == 13) {
-                prior.phone = AlumniDesk.nigeriaDigits(member.phone);
+              if (AlumniDesk.hasPhone(member.phone)) {
+                prior.phone = AlumniDesk.storePhone(member.phone);
               }
               if (member.gender != null && !member.gender.isEmpty()) {
                 prior.gender = member.gender;

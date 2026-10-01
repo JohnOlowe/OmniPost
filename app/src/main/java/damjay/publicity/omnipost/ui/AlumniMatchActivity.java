@@ -129,7 +129,7 @@ public class AlumniMatchActivity extends AppCompatActivity {
         String bday = row.birthMonth > 0
           ? DateUtils.monthDayLabel(row.birthMonth, row.birthDay)
           : itemView.getContext().getString(R.string.alumni_no_sheet_birthday);
-        String phone = AlumniDesk.nigeriaDigits(row.phone).length() == 13
+        String phone = AlumniDesk.hasPhone(row.phone)
           ? AlumniDesk.displayPhone(row.phone)
           : itemView.getContext().getString(R.string.alumni_no_number_short);
         meta.setText(itemView.getContext().getString(R.string.alumni_sheet_line, bday, phone));

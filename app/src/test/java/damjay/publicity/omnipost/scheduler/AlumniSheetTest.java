@@ -119,6 +119,22 @@ public class AlumniSheetTest {
     assertEquals("2348031234567", AlumniDesk.nigeriaDigits("8031234567"));
     assertEquals("2348031234567", AlumniDesk.nigeriaDigits("2348031234567"));
     assertEquals("08031234567", AlumniDesk.displayPhone("2348031234567"));
+    assertEquals("12025550100", AlumniDesk.storePhone("+1 202-555-0100"));
+    assertEquals("12025550100", AlumniDesk.whatsAppDigits("+1 202 555 0100"));
+    assertEquals("+1 2025550100", AlumniDesk.displayPhone("+1 202 555 0100"));
+    assertTrue(AlumniDesk.hasPhone("+1 202 555 0100"));
+    assertEquals("447700900123", AlumniDesk.storePhone("+44 7700 900123"));
+    assertFalse(AlumniDesk.hasPhone("123"));
+  }
+
+  @Test
+  public void plusOneOnTheSheetIsNotForcedToNigeria() {
+    String csv = ",First Name,Last Name,Gender,Email address,Phone number (preferably Whatsapp contact),Birthday (Just month and day),Position held(if any),Graduation set\n"
+      + ",Ada,Diaspora,Female,ada@x.com,+1 202-555-0100,May 31st,,2015\n";
+    AlumniSheet.Result got = AlumniSheet.parse(csv);
+    assertEquals(1, got.rows.size());
+    assertEquals("12025550100", got.rows.get(0).phone);
+    assertEquals("+1 2025550100", AlumniDesk.displayPhone(got.rows.get(0).phone));
   }
 
   private static void assertBirth(String raw, int month, int day) {

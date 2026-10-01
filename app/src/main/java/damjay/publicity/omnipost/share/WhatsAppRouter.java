@@ -27,8 +27,8 @@ public final class WhatsAppRouter {
    */
   public static boolean openChat(Context context, String phone, String text) {
     copyToClipboard(context, text);
-    String digits = AlumniDesk.nigeriaDigits(phone);
-    if (digits.length() == 13) {
+    String digits = AlumniDesk.whatsAppDigits(phone);
+    if (AlumniDesk.hasPhone(digits)) {
       Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + digits));
       view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
       if (launch(context, view, PACKAGE_WHATSAPP)) {

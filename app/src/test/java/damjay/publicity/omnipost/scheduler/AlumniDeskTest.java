@@ -19,6 +19,17 @@ public class AlumniDeskTest {
     none.phone = "0803 123 4567";
     assertTrue(AlumniDesk.hasPhone(none));
     assertEquals("08031234567", AlumniDesk.digits(none.phone));
+    none.phone = "+1 202 555 0100";
+    assertTrue(AlumniDesk.hasPhone(none));
+    assertEquals("12025550100", AlumniDesk.storePhone(none.phone));
+    assertEquals("+1 2025550100", AlumniDesk.displayPhone(none.phone));
+    none.phone = "1 (416) 555-0199";
+    assertTrue(AlumniDesk.hasPhone(none));
+    assertEquals("14165550199", AlumniDesk.whatsAppDigits(none.phone));
+    none.phone = "+44 7700 900123";
+    assertTrue(AlumniDesk.hasPhone(none));
+    assertEquals("447700900123", AlumniDesk.storePhone(none.phone));
+    assertEquals("+447700900123", AlumniDesk.displayPhone(none.phone));
     String brief = AlumniDesk.birthdayBrief(none);
     assertTrue(brief.contains("Tag them"));
     none.phone = "";

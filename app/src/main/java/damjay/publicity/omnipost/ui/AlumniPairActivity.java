@@ -100,7 +100,7 @@ public class AlumniPairActivity extends AppCompatActivity {
     String sheetDay = sheet.birthMonth > 0
       ? DateUtils.monthDayLabel(sheet.birthMonth, sheet.birthDay)
       : getString(R.string.alumni_no_sheet_birthday);
-    String phone = AlumniDesk.nigeriaDigits(sheet.phone).length() == 13
+    String phone = AlumniDesk.hasPhone(sheet.phone)
       ? AlumniDesk.displayPhone(sheet.phone)
       : getString(R.string.alumni_no_number_short);
     subtitle.setText(getString(R.string.alumni_pair_sheet, sheetDay, phone));

@@ -83,9 +83,9 @@ public final class AlumniPending {
       }
       if (row != null
           && row.displayName().equalsIgnoreCase(item.displayName())
-          && (AlumniDesk.nigeriaDigits(row.phone).isEmpty()
-            || AlumniDesk.nigeriaDigits(item.phone).isEmpty()
-            || AlumniDesk.nigeriaDigits(row.phone).equals(AlumniDesk.nigeriaDigits(item.phone)))) {
+          && (AlumniDesk.whatsAppDigits(row.phone).isEmpty()
+            || AlumniDesk.whatsAppDigits(item.phone).isEmpty()
+            || AlumniDesk.whatsAppDigits(row.phone).equals(AlumniDesk.whatsAppDigits(item.phone)))) {
         continue;
       }
       keep.add(item);

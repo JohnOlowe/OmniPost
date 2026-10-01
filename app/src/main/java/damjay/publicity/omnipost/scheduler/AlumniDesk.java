@@ -17,7 +17,12 @@ public final class AlumniDesk {
   private AlumniDesk() {}
 
   public static boolean hasPhone(Member member) {
-    return nigeriaDigits(member == null ? "" : member.phone).length() == 13;
+    return hasPhone(member == null ? "" : member.phone);
+  }
+
+  public static boolean hasPhone(String phone) {
+    String d = whatsAppDigits(phone);
+    return d.length() >= 10 && d.length() <= 15;
   }
 
   public static String digits(String phone) {
@@ -32,6 +37,53 @@ public final class AlumniDesk {
       }
     }
     return out.toString();
+  }
+
+  /**
+   * Digits for storage and wa.me. Nigeria stays 234… . +1 / 1 + area code stays
+   * NANP. Other +country numbers keep their country code.
+   */
+  public static String whatsAppDigits(String phone) {
+    if (phone == null) {
+      return "";
+    }
+    String trimmed = phone.trim();
+    if (trimmed.isEmpty()) {
+      return "";
+    }
+    boolean plus = trimmed.startsWith("+") || trimmed.startsWith("00");
+    String d = digits(trimmed);
+    if (d.startsWith("00") && d.length() > 2) {
+      d = d.substring(2);
+      plus = true;
+    }
+    if (d.startsWith("2340") && d.length() >= 14) {
+      return "234" + d.substring(4, 14);
+    }
+    if (d.startsWith("234") && d.length() >= 13) {
+      return d.substring(0, 13);
+    }
+    if (isNanp(d)) {
+      return d.substring(0, 11);
+    }
+    if (plus && d.length() >= 10 && d.length() <= 15) {
+      return d;
+    }
+    return nigeriaDigits(trimmed);
+  }
+
+  /** Empty if the number is not usable. Otherwise {@link #whatsAppDigits}. */
+  public static String storePhone(String phone) {
+    String d = whatsAppDigits(phone);
+    return d.length() >= 10 && d.length() <= 15 ? d : "";
+  }
+
+  private static boolean isNanp(String d) {
+    return d != null
+      && d.length() >= 11
+      && d.charAt(0) == '1'
+      && d.charAt(1) >= '2'
+      && d.charAt(1) <= '9';
   }
 
   /** 234 + 10-digit national number. Accepts 0803…, 803…, 234803…, +234 803… */
@@ -53,9 +105,15 @@ public final class AlumniDesk {
   }
 
   public static String displayPhone(String phone) {
-    String d = nigeriaDigits(phone);
+    String d = whatsAppDigits(phone);
     if (d.length() == 13 && d.startsWith("234")) {
       return "0" + d.substring(3);
+    }
+    if (isNanp(d)) {
+      return "+1 " + d.substring(1);
+    }
+    if (d.length() >= 10) {
+      return "+" + d;
     }
     return phone == null ? "" : phone.trim();
   }

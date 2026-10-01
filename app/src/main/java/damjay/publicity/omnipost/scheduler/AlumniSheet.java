@@ -317,7 +317,7 @@ public final class AlumniSheet {
     row.lastName = cell(cells, cols[1]);
     row.gender = genderOf(cell(cells, cols[2]));
     row.email = cell(cells, cols[3]);
-    row.phone = AlumniDesk.nigeriaDigits(cell(cells, cols[4]));
+    row.phone = AlumniDesk.storePhone(cell(cells, cols[4]));
     int[] bday = birthdayOf(cell(cells, cols[5]));
     if (bday != null) {
       row.birthMonth = bday[0];

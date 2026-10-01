@@ -824,8 +824,8 @@ public final class ScheduleCoordinator {
     if (name.isEmpty() || !name.equals(b.displayName().toLowerCase(Locale.US))) {
       return false;
     }
-    String phone = AlumniDesk.nigeriaDigits(a.phone);
-    String other = AlumniDesk.nigeriaDigits(b.phone);
+    String phone = AlumniDesk.whatsAppDigits(a.phone);
+    String other = AlumniDesk.whatsAppDigits(b.phone);
     return phone.isEmpty() || other.isEmpty() || phone.equals(other);
   }
 
@@ -839,8 +839,8 @@ public final class ScheduleCoordinator {
     if (!row.lastName.isEmpty()) {
       member.lastName = row.lastName;
     }
-    if (AlumniDesk.nigeriaDigits(row.phone).length() == 13) {
-      member.phone = AlumniDesk.nigeriaDigits(row.phone);
+    if (AlumniDesk.hasPhone(row.phone)) {
+      member.phone = AlumniDesk.storePhone(row.phone);
     }
     if (!row.gender.isEmpty()) {
       member.gender = row.gender;

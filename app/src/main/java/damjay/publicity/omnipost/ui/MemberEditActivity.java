@@ -292,10 +292,8 @@ public class MemberEditActivity extends AppCompatActivity {
     final boolean skip = skipCaption.isChecked();
     final boolean saved = contactSaved.isChecked();
     String rawPhone = phone.getText() == null ? "" : phone.getText().toString().trim();
-    if (AlumniDesk.nigeriaDigits(rawPhone).length() == 13) {
-      rawPhone = AlumniDesk.nigeriaDigits(rawPhone);
-    }
-    final String phoneValue = rawPhone;
+    String storedPhone = AlumniDesk.storePhone(rawPhone);
+    final String phoneValue = storedPhone.isEmpty() ? rawPhone : storedPhone;
     final String honor = honorific.getText() == null ? "" : honorific.getText().toString().trim();
     final String emailValue = textOf(email);
     final String positionValue = textOf(position);
