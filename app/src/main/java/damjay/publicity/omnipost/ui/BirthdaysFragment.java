@@ -491,7 +491,6 @@ public class BirthdaysFragment extends Fragment {
       skipCaption.setChecked(alumniTab && Prefs.alumniSkipCaption(requireContext()));
       previousPastor.setChecked(tab == TAB_PASTORS);
     }
-    boolean alumni = existing != null ? Member.isAlumni(existing) : alumniTab;
     int alumniVis = alumni ? View.VISIBLE : View.GONE;
     phoneLayout.setVisibility(alumniVis);
     photoLabel.setVisibility(alumniVis);
