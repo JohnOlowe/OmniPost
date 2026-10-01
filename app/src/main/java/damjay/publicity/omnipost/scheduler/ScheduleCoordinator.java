@@ -961,6 +961,53 @@ public final class ScheduleCoordinator {
     task.description = "No caption — open WhatsApp and forward.";
   }
 
+  /** Update birthday / photo card titles after a name fix without rebuilding every alarm. */
+  public static void retitleMember(Context context, Member member) {
+    if (context == null || member == null || member.id <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    List<Task> tasks = db.taskDao().getActiveForMember(member.id);
+    if (tasks == null) {
+      return;
+    }
+    String birthday = member.name + "'s Birthday";
+    String photo = "Picture from " + member.name;
+    for (Task task : tasks) {
+      if (task == null || task.titleLocked) {
+        continue;
+      }
+      boolean dirty = false;
+      if (TaskTypes.BIRTHDAY.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+        if (!birthday.equals(task.title)) {
+          task.title = birthday;
+          dirty = true;
+        }
+        String brief = Member.isAlumni(member)
+          ? AlumniDesk.birthdayBrief(member)
+          : task.description;
+        if (Member.isAlumni(member) && brief != null && !brief.equals(task.description)) {
+          task.description = brief;
+          dirty = true;
+        }
+      } else if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+        if (!photo.equals(task.title)) {
+          task.title = photo;
+          dirty = true;
+        }
+        String brief = AlumniDesk.photoBrief(member);
+        if (brief != null && !brief.equals(task.description)) {
+          task.description = brief;
+          dirty = true;
+        }
+      }
+      if (dirty) {
+        db.taskDao().update(task);
+      }
+    }
+  }
+
   public static void cancelMemberTasks(Context context, long memberId) {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);

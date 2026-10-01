@@ -56,6 +56,8 @@
   <string name="add_pastor">Add previous pastor</string>
   <string name="edit_alumni">Edit alumni</string>
   <string name="save_alumni">Save alumni</string>
+  <string name="alumni_saving">Saving…</string>
+  <string name="alumni_saved">Saved</string>
   <string name="skip_caption">No caption — just forward in WhatsApp</string>
   <string name="rename_post">Rename this post</string>
   <string name="rename_hint">Post name</string>

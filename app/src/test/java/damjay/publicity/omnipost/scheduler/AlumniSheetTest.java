@@ -89,6 +89,30 @@ public class AlumniSheetTest {
   }
 
   @Test
+  public void fixingANameDoesNotRebuildAlarms() {
+    Member before = new Member();
+    before.name = "Adeola Olow";
+    before.birthMonth = 10;
+    before.birthDay = 1;
+    before.kind = Member.KIND_ALUMNI;
+    before.photoStatus = "";
+    before.desk = "";
+    Member after = new Member();
+    after.name = "Adeola Olowe";
+    after.birthMonth = 10;
+    after.birthDay = 1;
+    after.kind = Member.KIND_ALUMNI;
+    after.photoStatus = "";
+    after.desk = "";
+    assertFalse(Member.scheduleFieldsDiffer(before, after));
+    after.birthDay = 2;
+    assertTrue(Member.scheduleFieldsDiffer(before, after));
+    after.birthDay = 1;
+    after.desk = Member.DESK_PASTOR;
+    assertTrue(Member.scheduleFieldsDiffer(before, after));
+  }
+
+  @Test
   public void nigeriaPhoneShapes() {
     assertEquals("2348031234567", AlumniDesk.nigeriaDigits("0803 123 4567"));
     assertEquals("2348031234567", AlumniDesk.nigeriaDigits("+2348031234567"));

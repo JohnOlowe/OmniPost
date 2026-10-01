@@ -72,7 +72,7 @@ public class MemberEditActivity extends AppCompatActivity {
   private RadioButton nameSheet;
   private String rosterName = "";
   private String sheetName = "";
-  private boolean painted;
+  private boolean saving;
 
   public static void open(Context context, @Nullable Member member, boolean pastorDefault) {
     Intent intent = new Intent(context, MemberEditActivity.class);
@@ -111,10 +111,6 @@ public class MemberEditActivity extends AppCompatActivity {
     bindForm();
     if (memberId > 0L) {
       paintFromIntent();
-      AppExecutors.query().execute(() -> {
-        Member existing = AppDatabase.get(this).memberDao().getById(memberId);
-        AppExecutors.main(() -> fill(existing));
-      });
     } else {
       skipCaption.setChecked(Prefs.alumniSkipCaption(this));
       previousPastor.setChecked(pastorDefault);
@@ -210,39 +206,6 @@ public class MemberEditActivity extends AppCompatActivity {
     android.widget.TextView title = findViewById(R.id.title);
     title.setText(R.string.edit_alumni);
     paintNameChoice(rosterName);
-    painted = true;
-  }
-
-  private void fill(Member existing) {
-    if (existing == null) {
-      if (painted) {
-        return;
-      }
-      Toast.makeText(this, R.string.alumni_desk_empty, Toast.LENGTH_SHORT).show();
-      finish();
-      return;
-    }
-    android.widget.TextView title = findViewById(R.id.title);
-    title.setText(R.string.edit_alumni);
-    rosterName = existing.name == null ? "" : existing.name.trim();
-    sheetName = AlumniSheet.sheetName(existing);
-    name.setText(existing.name);
-    month.setSelection(Math.max(0, existing.birthMonth - 1));
-    day.setSelection(Math.max(0, existing.birthDay - 1));
-    skipCaption.setChecked(existing.skipCaption);
-    previousPastor.setChecked(Member.isPastor(existing));
-    contactSaved.setChecked(existing.contactSaved);
-    phone.setText(AlumniDesk.displayPhone(existing.phone));
-    honorific.setText(existing.honorific);
-    setText(email, existing.email);
-    setText(position, existing.positionHeld);
-    setText(gradSet, existing.gradSet);
-    captionHnm.setText(existing.captionHnm);
-    captionDetails.setText(existing.captionDetails);
-    photo.setSelection(AlumniDesk.photoSpinnerIndex(existing));
-    setGender(existing.gender);
-    paintNameChoice(rosterName);
-    painted = true;
   }
 
   private void paintNameChoice(String current) {
@@ -310,13 +273,10 @@ public class MemberEditActivity extends AppCompatActivity {
   }
 
   private void save() {
-    String value = name.getText() == null ? "" : name.getText().toString().trim();
-    if (nameChoiceBox != null && nameChoiceBox.getVisibility() == View.VISIBLE) {
-      String picked = nameSheet.isChecked() ? sheetName : rosterName;
-      if (picked != null && !picked.trim().isEmpty()) {
-        value = picked.trim();
-      }
+    if (saving) {
+      return;
     }
+    String value = name.getText() == null ? "" : name.getText().toString().trim();
     if (value.isEmpty()) {
       return;
     }
@@ -347,8 +307,13 @@ public class MemberEditActivity extends AppCompatActivity {
     final String genderValue = g == 1 ? Member.GENDER_MALE : g == 2 ? Member.GENDER_FEMALE : "";
     final String finalName = value;
     final long id = memberId;
-    AppExecutors.disk().execute(() -> {
-      AppDatabase db = AppDatabase.get(this);
+    saving = true;
+    findViewById(R.id.btn_save).setEnabled(false);
+    final Context app = getApplicationContext();
+    Toast.makeText(this, R.string.alumni_saving, Toast.LENGTH_SHORT).show();
+    finish();
+    AppExecutors.query().execute(() -> {
+      AppDatabase db = AppDatabase.get(app);
       Member member = id > 0L ? db.memberDao().getById(id) : null;
       boolean merged = false;
       if (member == null) {
@@ -361,6 +326,14 @@ public class MemberEditActivity extends AppCompatActivity {
           member.kind = Member.KIND_ALUMNI;
         }
       }
+      String oldName = member.name;
+      Member scheduleSnap = new Member();
+      scheduleSnap.birthMonth = member.birthMonth;
+      scheduleSnap.birthDay = member.birthDay;
+      scheduleSnap.skipCaption = member.skipCaption;
+      scheduleSnap.desk = member.desk;
+      scheduleSnap.kind = member.kind;
+      scheduleSnap.photoStatus = member.photoStatus;
       member.name = finalName;
       member.kind = Member.KIND_ALUMNI;
       member.birthMonth = birthMonth;
@@ -377,20 +350,29 @@ public class MemberEditActivity extends AppCompatActivity {
       member.captionDetails = details.trim();
       member.photoStatus = photoStatus;
       member.gender = genderValue;
-      if (member.id == 0L) {
+      boolean insert = member.id == 0L;
+      if (insert) {
         member.id = db.memberDao().insert(member);
       } else {
         db.memberDao().update(member);
-        ScheduleCoordinator.cancelMemberTasks(this, member.id);
       }
-      ScheduleCoordinator.bootstrap(this);
+      boolean reschedule = insert || Member.scheduleFieldsDiffer(scheduleSnap, member);
+      boolean nameChanged = oldName == null || !finalName.equals(oldName);
       boolean showMerged = merged;
-      AppExecutors.main(() -> {
-        if (showMerged) {
-          Toast.makeText(this, R.string.alumni_filled_existing, Toast.LENGTH_LONG).show();
-        }
-        finish();
-      });
+      AppExecutors.main(() -> Toast.makeText(
+        app,
+        showMerged ? R.string.alumni_filled_existing : R.string.alumni_saved,
+        showMerged ? Toast.LENGTH_LONG : Toast.LENGTH_SHORT).show());
+      if (reschedule) {
+        AppExecutors.disk().execute(() -> {
+          if (!insert) {
+            ScheduleCoordinator.cancelMemberTasks(app, member.id);
+          }
+          ScheduleCoordinator.bootstrap(app);
+        });
+      } else if (nameChanged) {
+        ScheduleCoordinator.retitleMember(app, member);
+      }
     });
   }
 

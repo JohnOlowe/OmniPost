@@ -88,4 +88,26 @@ public class Member {
   public static String kindOf(Member member) {
     return isAlumni(member) ? KIND_ALUMNI : KIND_MEMBER;
   }
+
+  /**
+   * Birthday, photo nag, pastor desk, or skip-caption changes need the alarm
+   * rebuild. A name / phone / caption tweak does not.
+   */
+  public static boolean scheduleFieldsDiffer(Member before, Member after) {
+    if (before == null || after == null) {
+      return true;
+    }
+    return before.birthMonth != after.birthMonth
+      || before.birthDay != after.birthDay
+      || before.skipCaption != after.skipCaption
+      || !eq(before.desk, after.desk)
+      || !eq(before.kind, after.kind)
+      || !eq(before.photoStatus, after.photoStatus);
+  }
+
+  private static boolean eq(String a, String b) {
+    String left = a == null ? "" : a;
+    String right = b == null ? "" : b;
+    return left.equals(right);
+  }
 }
