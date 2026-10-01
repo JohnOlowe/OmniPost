@@ -47,16 +47,24 @@ public class AlumniMatchActivity extends AppCompatActivity {
   @Override
   protected void onResume() {
     super.onResume();
+    if (AlumniPending.cached()) {
+      showPending(AlumniPending.load(this));
+      return;
+    }
     AppExecutors.disk().execute(() -> {
       List<AlumniSheet.Row> pending = AlumniPending.load(this);
-      AppExecutors.main(() -> {
-        rows.clear();
-        rows.addAll(pending);
-        adapter.submit(rows);
-        empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
-        subtitle.setText(getString(R.string.alumni_pair_count, rows.size()));
-      });
+      AppExecutors.main(() -> showPending(pending));
     });
+  }
+
+  private void showPending(List<AlumniSheet.Row> pending) {
+    rows.clear();
+    if (pending != null) {
+      rows.addAll(pending);
+    }
+    adapter.submit(rows);
+    empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
+    subtitle.setText(getString(R.string.alumni_pair_count, rows.size()));
   }
 
   static class Adapter extends RecyclerView.Adapter<Adapter.Holder> {

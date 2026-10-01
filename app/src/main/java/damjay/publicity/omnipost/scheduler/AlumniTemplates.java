@@ -12,6 +12,8 @@ import java.util.Map;
 public final class AlumniTemplates {
   public static final String OFFICER = "officer";
   public static final String ROLE = "role";
+  public static final String MALE_TITLE = "male_title";
+  public static final String FEMALE_TITLE = "female_title";
   public static final String INTRO = "intro";
   public static final String HNM = "hnm";
   public static final String HNM_B = "hnm_b";
@@ -21,7 +23,7 @@ public final class AlumniTemplates {
   public static final String GROUP = "group";
 
   public static final String[] KEYS = {
-    OFFICER, ROLE, INTRO, HNM, HNM_B, HNM_C, DETAILS, PHOTO, GROUP
+    OFFICER, ROLE, MALE_TITLE, FEMALE_TITLE, INTRO, HNM, HNM_B, HNM_C, DETAILS, PHOTO, GROUP
   };
 
   private AlumniTemplates() {}
@@ -32,6 +34,12 @@ public final class AlumniTemplates {
     }
     if (ROLE.equals(key)) {
       return "Role line";
+    }
+    if (MALE_TITLE.equals(key)) {
+      return "Male title (Mr)";
+    }
+    if (FEMALE_TITLE.equals(key)) {
+      return "Female title (Ma)";
     }
     if (INTRO.equals(key)) {
       return "First hello";
@@ -82,6 +90,12 @@ public final class AlumniTemplates {
     }
     if (ROLE.equals(key)) {
       return AlumniCopy.ROLE;
+    }
+    if (MALE_TITLE.equals(key)) {
+      return "Mr";
+    }
+    if (FEMALE_TITLE.equals(key)) {
+      return "Ma";
     }
     if (INTRO.equals(key)) {
       return "I am {officer}, the new Alumni Relations Officer of FSFUI. Part of my joy this tenure is staying in touch with our alumni personally, so you will be hearing from me from time to time.\n";
@@ -170,7 +184,7 @@ public final class AlumniTemplates {
     }
     String officer = pick(bag, OFFICER);
     String role = pick(bag, ROLE);
-    String who = AlumniCopy.greetingName(member);
+    String who = AlumniCopy.greetingName(member, bag);
     if (who.isEmpty()) {
       who = "friend";
     }

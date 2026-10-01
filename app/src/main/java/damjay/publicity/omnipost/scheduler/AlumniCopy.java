@@ -5,7 +5,7 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.Map;
 
-/** Personal DMs for the alumni desk. Sir/Ma, their name, and a wording tweak so WhatsApp does not eat identical walls of text. */
+/** Personal DMs for the alumni desk. Mr/Ma, full name, and a wording tweak so WhatsApp does not eat identical walls of text. */
 public final class AlumniCopy {
   public static final String OFFICER = "Olowe John";
   public static final String ROLE = "Alumni Relations Officer, FSFUI";
@@ -19,14 +19,21 @@ public final class AlumniCopy {
   private AlumniCopy() {}
 
   public static String honorific(Member member) {
+    return honorific(member, null);
+  }
+
+  public static String honorific(Member member, Map<String, String> bag) {
+    if (member != null && member.honorific != null && !member.honorific.trim().isEmpty()) {
+      return member.honorific.trim();
+    }
     if (member == null || member.gender == null) {
       return "";
     }
     if (Member.GENDER_FEMALE.equals(member.gender)) {
-      return "Ma";
+      return AlumniTemplates.pick(bag, AlumniTemplates.FEMALE_TITLE);
     }
     if (Member.GENDER_MALE.equals(member.gender)) {
-      return "Sir";
+      return AlumniTemplates.pick(bag, AlumniTemplates.MALE_TITLE);
     }
     return "";
   }
@@ -50,15 +57,22 @@ public final class AlumniCopy {
   }
 
   public static String greetingName(Member member) {
-    String title = honorific(member);
-    String first = firstName(member);
-    if (!title.isEmpty() && !first.isEmpty()) {
-      return title + " " + first;
+    return greetingName(member, null);
+  }
+
+  public static String greetingName(Member member, Map<String, String> bag) {
+    String title = honorific(member, bag);
+    String full = member == null || member.name == null ? "" : member.name.trim();
+    if (full.isEmpty()) {
+      full = firstName(member);
+    }
+    if (!title.isEmpty() && !full.isEmpty()) {
+      return title + " " + full;
     }
     if (!title.isEmpty()) {
       return title;
     }
-    return first;
+    return full;
   }
 
   public static int variant(Member member) {
@@ -123,12 +137,10 @@ public final class AlumniCopy {
   }
 
   public static String hnm(Member member, int month1to12, Calendar now, Map<String, String> bag) {
-    return AlumniTemplates.fill(
-      AlumniTemplates.pick(bag, AlumniTemplates.hnmKey(member)),
-      member,
-      month1to12,
-      now,
-      bag);
+    String template = member != null && member.captionHnm != null && !member.captionHnm.trim().isEmpty()
+      ? member.captionHnm
+      : AlumniTemplates.pick(bag, AlumniTemplates.hnmKey(member));
+    return AlumniTemplates.fill(template, member, month1to12, now, bag);
   }
 
   public static String details(Member member, int month1to12) {
@@ -136,12 +148,10 @@ public final class AlumniCopy {
   }
 
   public static String details(Member member, int month1to12, Calendar now, Map<String, String> bag) {
-    return AlumniTemplates.fill(
-      AlumniTemplates.pick(bag, AlumniTemplates.DETAILS),
-      member,
-      month1to12,
-      now,
-      bag);
+    String template = member != null && member.captionDetails != null && !member.captionDetails.trim().isEmpty()
+      ? member.captionDetails
+      : AlumniTemplates.pick(bag, AlumniTemplates.DETAILS);
+    return AlumniTemplates.fill(template, member, month1to12, now, bag);
   }
 
   public static String photo(Member member) {

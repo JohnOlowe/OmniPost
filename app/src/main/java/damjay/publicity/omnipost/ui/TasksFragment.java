@@ -41,7 +41,6 @@ public class TasksFragment extends Fragment {
   private final List<Task> posted = new ArrayList<>();
   private static final int DESK_POST = 0;
   private static final int DESK_POSTED = 1;
-  private static final int DESK_ALUMNI = 2;
   private int desk = DESK_POST;
 
   @Nullable
@@ -133,9 +132,7 @@ public class TasksFragment extends Fragment {
       @Override
       public void onForward(Task task) {
         if (TaskTypes.isAlumniDesk(task.type)) {
-          Intent desk = new Intent(requireContext(), AlumniDmActivity.class);
-          desk.putExtra(ExtraKeys.TASK_ID, task.id);
-          startActivity(desk);
+          startActivity(Homes.alumniForTask(requireContext(), task));
           return;
         }
         if (!WhatsAppRouter.openApp(requireContext())) {
@@ -160,17 +157,11 @@ public class TasksFragment extends Fragment {
       if (!isChecked) {
         return;
       }
-      if (checkedId == R.id.chip_posted) {
-        desk = DESK_POSTED;
-      } else if (checkedId == R.id.chip_alumni) {
-        desk = DESK_ALUMNI;
-      } else {
-        desk = DESK_POST;
-      }
+      desk = checkedId == R.id.chip_posted ? DESK_POSTED : DESK_POST;
       render();
     });
-    binding.btnAlumniCaptions.setOnClickListener(v ->
-      startActivity(new Intent(requireContext(), AlumniCaptionsActivity.class)));
+    binding.chipAlumni.setVisibility(View.GONE);
+    binding.btnAlumniCaptions.setVisibility(View.GONE);
     binding.fab.setOnClickListener(v -> showAddChooser());
     AppDatabase db = AppDatabase.get(requireContext());
     db.taskDao().observeActive().observe(getViewLifecycleOwner(), list -> {
@@ -473,23 +464,13 @@ public class TasksFragment extends Fragment {
     if (binding == null) {
       return;
     }
-    boolean alumniDesk = desk == DESK_ALUMNI;
     boolean postedMode = desk == DESK_POSTED;
-    List<Task> source;
-    if (alumniDesk) {
-      source = onlyAlumni(active, true);
-      source.addAll(onlyAlumni(posted, true));
-    } else {
-      source = onlyAlumni(postedMode ? posted : active, false);
-    }
+    List<Task> source = onlyAlumni(postedMode ? posted : active, false);
     adapter.submit(source, postedMode);
-    int empty = postedMode
-      ? R.string.empty_posted
-      : alumniDesk ? R.string.empty_alumni_tasks : R.string.empty_tasks;
-    binding.empty.setText(empty);
+    binding.empty.setText(postedMode ? R.string.empty_posted : R.string.empty_tasks);
     binding.empty.setVisibility(source.isEmpty() ? View.VISIBLE : View.GONE);
-    binding.howItWorks.setText(alumniDesk ? R.string.how_alumni_desk : R.string.how_it_works);
-    binding.btnAlumniCaptions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.howItWorks.setText(R.string.how_it_works);
+    binding.btnAlumniCaptions.setVisibility(View.GONE);
     binding.fab.setVisibility(desk == DESK_POST ? View.VISIBLE : View.GONE);
   }
 

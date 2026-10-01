@@ -11,10 +11,89 @@ import org.json.JSONObject;
 /** Sheet rows that did not match a roster name yet. */
 public final class AlumniPending {
   private static final String FILE = "alumni_pending.json";
+  private static final Object LOCK = new Object();
+  private static List<AlumniSheet.Row> cache;
 
   private AlumniPending() {}
 
   public static List<AlumniSheet.Row> load(Context context) {
+    synchronized (LOCK) {
+      if (cache == null) {
+        cache = readDisk(context);
+      }
+      return copy(cache);
+    }
+  }
+
+  public static void save(Context context, List<AlumniSheet.Row> rows) {
+    if (context == null) {
+      return;
+    }
+    List<AlumniSheet.Row> next = copy(rows);
+    synchronized (LOCK) {
+      cache = next;
+    }
+    File file = new File(context.getApplicationContext().getFilesDir(), FILE);
+    JSONArray arr = new JSONArray();
+    if (rows != null) {
+      for (AlumniSheet.Row row : rows) {
+        if (row == null) {
+          continue;
+        }
+        try {
+          JSONObject o = new JSONObject();
+          o.put("firstName", nz(row.firstName));
+          o.put("lastName", nz(row.lastName));
+          o.put("gender", nz(row.gender));
+          o.put("email", nz(row.email));
+          o.put("phone", nz(row.phone));
+          o.put("position", nz(row.position));
+          o.put("gradSet", nz(row.gradSet));
+          o.put("birthMonth", row.birthMonth);
+          o.put("birthDay", row.birthDay);
+          arr.put(o);
+        } catch (Exception ignored) {
+          // skip
+        }
+      }
+    }
+    try {
+      write(file, arr.toString().getBytes(StandardCharsets.UTF_8));
+    } catch (Exception ignored) {
+      // leave previous file
+    }
+  }
+
+  public static void clear(Context context) {
+    save(context, new ArrayList<>());
+  }
+
+  public static boolean cached() {
+    synchronized (LOCK) {
+      return cache != null;
+    }
+  }
+
+  public static void drop(Context context, AlumniSheet.Row row) {
+    List<AlumniSheet.Row> leftover = load(context);
+    List<AlumniSheet.Row> keep = new ArrayList<>();
+    for (AlumniSheet.Row item : leftover) {
+      if (item == null) {
+        continue;
+      }
+      if (row != null
+          && row.displayName().equalsIgnoreCase(item.displayName())
+          && (AlumniDesk.nigeriaDigits(row.phone).isEmpty()
+            || AlumniDesk.nigeriaDigits(item.phone).isEmpty()
+            || AlumniDesk.nigeriaDigits(row.phone).equals(AlumniDesk.nigeriaDigits(item.phone)))) {
+        continue;
+      }
+      keep.add(item);
+    }
+    save(context, keep);
+  }
+
+  private static List<AlumniSheet.Row> readDisk(Context context) {
     List<AlumniSheet.Row> out = new ArrayList<>();
     if (context == null) {
       return out;
@@ -51,43 +130,13 @@ public final class AlumniPending {
     return out;
   }
 
-  public static void save(Context context, List<AlumniSheet.Row> rows) {
-    if (context == null) {
-      return;
+  private static List<AlumniSheet.Row> copy(List<AlumniSheet.Row> source) {
+    List<AlumniSheet.Row> out = new ArrayList<>();
+    if (source == null) {
+      return out;
     }
-    File file = new File(context.getApplicationContext().getFilesDir(), FILE);
-    JSONArray arr = new JSONArray();
-    if (rows != null) {
-      for (AlumniSheet.Row row : rows) {
-        if (row == null) {
-          continue;
-        }
-        try {
-          JSONObject o = new JSONObject();
-          o.put("firstName", nz(row.firstName));
-          o.put("lastName", nz(row.lastName));
-          o.put("gender", nz(row.gender));
-          o.put("email", nz(row.email));
-          o.put("phone", nz(row.phone));
-          o.put("position", nz(row.position));
-          o.put("gradSet", nz(row.gradSet));
-          o.put("birthMonth", row.birthMonth);
-          o.put("birthDay", row.birthDay);
-          arr.put(o);
-        } catch (Exception ignored) {
-          // skip
-        }
-      }
-    }
-    try {
-      write(file, arr.toString().getBytes(StandardCharsets.UTF_8));
-    } catch (Exception ignored) {
-      // leave previous file
-    }
-  }
-
-  public static void clear(Context context) {
-    save(context, new ArrayList<>());
+    out.addAll(source);
+    return out;
   }
 
   private static String nz(String value) {

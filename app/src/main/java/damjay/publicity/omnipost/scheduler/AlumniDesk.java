@@ -149,7 +149,7 @@ public final class AlumniDesk {
     out.append("First outreach · ").append(monthName).append(" birthday month.\n\n");
     out.append("1. Copy the group greeting from the desk (October includes Independence Day).\n");
     out.append("2. DM birthday-month people: intro as Alumni Relations Officer + picture ask. Batches of 10–15, not 100 identical texts.\n");
-    out.append("3. Each caption already has Sir/Ma, their name, and a wording tweak.\n");
+    out.append("3. Each caption already has Mr/Ma, their full name, and a wording tweak.\n");
     out.append("If WhatsApp blocks you: Happy Sunday, or finish by the 5th.\n");
     out.append("Do not tag anyone without a number. Never a second card for the same name.\n");
     out.append("ARO reaches out. President saves the contact.\n\n");
@@ -163,7 +163,7 @@ public final class AlumniDesk {
       .append(monthName)
       .append(" (half the desk). Everyone once every two months.\n\n");
     out.append("Open the desk on this card. Batches of 10–15. Skip birthday-month people — they already got the picture ask.\n");
-    out.append("First DM: you are the Alumni Relations Officer. Captions use Sir/Ma and their name.\n");
+    out.append("First DM: you are the Alumni Relations Officer. Captions use Mr/Ma and their full name.\n");
     out.append("If WhatsApp blocks you: Happy Sunday, or finish by the 5th.\n");
     out.append("Beyond Limits: ARO asks for support; the President asks former presidents.\n");
     out.append("No number → do not tag.\n\n");

@@ -56,13 +56,10 @@ public class AlumniPairActivity extends AppCompatActivity {
           : getString(R.string.alumni_no_number_short);
         subtitle.setText(getString(R.string.alumni_pair_sheet, sheetDay, phone));
         Adapter adapter = new Adapter(suggestions, sheetDay, picked -> {
-          AppExecutors.disk().execute(() -> {
-            ScheduleCoordinator.pairAlumni(this, row, picked.id);
-            AppExecutors.main(() -> {
-              Toast.makeText(this, R.string.alumni_paired, Toast.LENGTH_LONG).show();
-              finish();
-            });
-          });
+          AlumniPending.drop(this, row);
+          AppExecutors.disk().execute(() -> ScheduleCoordinator.pairAlumni(this, row, picked.id));
+          Toast.makeText(this, R.string.alumni_paired, Toast.LENGTH_LONG).show();
+          finish();
         });
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
@@ -70,17 +67,17 @@ public class AlumniPairActivity extends AppCompatActivity {
         empty.setText(R.string.alumni_pair_no_suggestions);
         View actions = findViewById(R.id.pair_actions);
         actions.setVisibility(View.VISIBLE);
-        findViewById(R.id.btn_new_card).setOnClickListener(v -> AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.addAlumniFromSheet(this, row);
-          AppExecutors.main(() -> {
-            Toast.makeText(this, R.string.alumni_pair_added, Toast.LENGTH_LONG).show();
-            finish();
-          });
-        }));
-        findViewById(R.id.btn_drop).setOnClickListener(v -> AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.dropPendingRow(this, row);
-          AppExecutors.main(this::finish);
-        }));
+        findViewById(R.id.btn_new_card).setOnClickListener(v -> {
+          AlumniPending.drop(this, row);
+          AppExecutors.disk().execute(() -> ScheduleCoordinator.addAlumniFromSheet(this, row));
+          Toast.makeText(this, R.string.alumni_pair_added, Toast.LENGTH_LONG).show();
+          finish();
+        });
+        findViewById(R.id.btn_drop).setOnClickListener(v -> {
+          AlumniPending.drop(this, row);
+          AppExecutors.disk().execute(() -> ScheduleCoordinator.dropPendingRow(this, row));
+          finish();
+        });
       });
     });
   }

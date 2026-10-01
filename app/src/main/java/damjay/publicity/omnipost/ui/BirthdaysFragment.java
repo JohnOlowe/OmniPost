@@ -31,6 +31,8 @@ import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
 import damjay.publicity.omnipost.scheduler.AlumniContacts;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniPending;
+import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
@@ -47,12 +49,26 @@ import java.util.List;
 import java.util.Map;
 
 public class BirthdaysFragment extends Fragment {
+  public static final String ARG_ALUMNI_HOME = "alumni_home";
+
+  public static BirthdaysFragment alumniPeople() {
+    BirthdaysFragment fragment = new BirthdaysFragment();
+    Bundle args = new Bundle();
+    args.putBoolean(ARG_ALUMNI_HOME, true);
+    fragment.setArguments(args);
+    return fragment;
+  }
+
   private FragmentBirthdaysBinding binding;
   private MemberAdapter adapter;
+  private AlumniMatchActivity.Adapter pairAdapter;
   private final List<Member> all = new ArrayList<>();
+  private final List<AlumniSheet.Row> pending = new ArrayList<>();
+  private boolean alumniHome;
   private static final int TAB_MEMBERS = 0;
   private static final int TAB_ALUMNI = 1;
   private static final int TAB_PASTORS = 2;
+  private static final int TAB_PAIR = 3;
 
   private final Map<Integer, List<BirthdayHorizon.Section>> memberByHorizon = new HashMap<>();
   private final Map<Integer, List<BirthdayHorizon.Section>> alumniByHorizon = new HashMap<>();
@@ -74,6 +90,7 @@ public class BirthdaysFragment extends Fragment {
     @Nullable ViewGroup container,
     @Nullable Bundle savedInstanceState) {
     binding = FragmentBirthdaysBinding.inflate(inflater, container, false);
+    alumniHome = getArguments() != null && getArguments().getBoolean(ARG_ALUMNI_HOME, false);
     adapter = new MemberAdapter(new MemberAdapter.Listener() {
       @Override
       public void onEdit(Member member) {
@@ -82,10 +99,10 @@ public class BirthdaysFragment extends Fragment {
 
       @Override
       public void onDm(Member member) {
-        android.content.Intent intent = new android.content.Intent(requireContext(), AlumniDmActivity.class);
-        intent.putExtra(ExtraKeys.MEMBER_ID, member.id);
-        intent.putExtra(ExtraKeys.ALUMNI_MODE, AlumniCopy.kindFor(member, Calendar.getInstance().get(Calendar.MONTH) + 1));
-        startActivity(intent);
+        Intent desk = Homes.alumni(requireContext());
+        desk.putExtra(ExtraKeys.MEMBER_ID, member.id);
+        desk.putExtra(ExtraKeys.ALUMNI_MODE, AlumniCopy.kindFor(member, Calendar.getInstance().get(Calendar.MONTH) + 1));
+        startActivity(desk);
       }
 
       @Override
@@ -108,13 +125,24 @@ public class BirthdaysFragment extends Fragment {
     binding.list.setAdapter(adapter);
     binding.list.setHasFixedSize(true);
     binding.list.setItemAnimator(null);
-    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_members));
-    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
-    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_pastors));
+    pairAdapter = new AlumniMatchActivity.Adapter(index -> {
+      Intent intent = new Intent(requireContext(), AlumniPairActivity.class);
+      intent.putExtra(ExtraKeys.PENDING_INDEX, index);
+      startActivity(intent);
+    });
+    if (alumniHome) {
+      binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
+      binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_pastors));
+      binding.tabs.addTab(binding.tabs.newTab().setText(R.string.alumni_pair));
+      tab = TAB_ALUMNI;
+    } else {
+      binding.tabs.setVisibility(View.GONE);
+      tab = TAB_MEMBERS;
+    }
     binding.tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
       @Override
       public void onTabSelected(TabLayout.Tab selected) {
-        tab = selected.getPosition();
+        tab = alumniHome ? tabOfAlumni(selected.getPosition()) : TAB_MEMBERS;
         syncHorizonChip();
         paint();
       }
@@ -167,6 +195,47 @@ public class BirthdaysFragment extends Fragment {
     return binding.getRoot();
   }
 
+  @Override
+  public void onResume() {
+    super.onResume();
+    if (alumniHome) {
+      reloadPending();
+    }
+  }
+
+  private static int tabOfAlumni(int position) {
+    if (position == 1) {
+      return TAB_PASTORS;
+    }
+    if (position == 2) {
+      return TAB_PAIR;
+    }
+    return TAB_ALUMNI;
+  }
+
+  private void reloadPending() {
+    if (AlumniPending.cached()) {
+      applyPending(AlumniPending.load(requireContext()));
+      return;
+    }
+    AppExecutors.disk().execute(() -> {
+      List<AlumniSheet.Row> rows = AlumniPending.load(requireContext());
+      AppExecutors.main(() -> applyPending(rows));
+    });
+  }
+
+  private void applyPending(List<AlumniSheet.Row> rows) {
+    if (!isAdded() || pairAdapter == null) {
+      return;
+    }
+    pending.clear();
+    if (rows != null) {
+      pending.addAll(rows);
+    }
+    pairAdapter.submit(pending);
+    paint();
+  }
+
   private void paintAlumniSwitch() {
     if (binding == null) {
       return;
@@ -197,7 +266,7 @@ public class BirthdaysFragment extends Fragment {
   }
 
   private void syncHorizonChip() {
-    if (binding == null) {
+    if (binding == null || tab == TAB_PAIR) {
       return;
     }
     int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
@@ -318,7 +387,26 @@ public class BirthdaysFragment extends Fragment {
     if (binding == null) {
       return;
     }
-    boolean alumniDesk = tab != TAB_MEMBERS;
+    boolean pairTab = tab == TAB_PAIR;
+    boolean alumniDesk = alumniHome;
+    binding.horizon.setVisibility(pairTab ? View.GONE : View.VISIBLE);
+    binding.btnCopyBirthdays.setVisibility(pairTab ? View.GONE : View.VISIBLE);
+    if (pairTab) {
+      if (binding.list.getAdapter() != pairAdapter) {
+        binding.list.setAdapter(pairAdapter);
+      }
+      pairAdapter.submit(pending);
+      boolean empty = pending.isEmpty();
+      binding.empty.setText(R.string.alumni_pair_empty);
+      binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
+      binding.rowAlumniCaptions.getRoot().setVisibility(View.GONE);
+      binding.alumniActions.setVisibility(View.VISIBLE);
+      binding.fab.setVisibility(View.GONE);
+      return;
+    }
+    if (binding.list.getAdapter() != adapter) {
+      binding.list.setAdapter(adapter);
+    }
     List<BirthdayHorizon.Section> sections = currentSections();
     adapter.submit(sections);
     int roster = tab == TAB_PASTORS ? pastorCount : tab == TAB_ALUMNI ? alumniCount : memberCount;
@@ -333,6 +421,7 @@ public class BirthdaysFragment extends Fragment {
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
     binding.rowAlumniCaptions.getRoot().setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
     binding.alumniActions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.fab.setVisibility(View.VISIBLE);
     binding.fab.setContentDescription(getString(
       tab == TAB_PASTORS
         ? R.string.add_pastor
@@ -340,6 +429,14 @@ public class BirthdaysFragment extends Fragment {
   }
 
   private void showEditor(@Nullable Member existing) {
+    boolean alumni = existing != null ? Member.isAlumni(existing) : alumniHome;
+    if (alumni) {
+      Intent intent = new Intent(requireContext(), MemberEditActivity.class);
+      intent.putExtra(ExtraKeys.MEMBER_ID, existing == null ? 0L : existing.id);
+      intent.putExtra(ExtraKeys.PASTOR_DEFAULT, tab == TAB_PASTORS);
+      startActivity(intent);
+      return;
+    }
     View view = getLayoutInflater().inflate(R.layout.dialog_member, null, false);
     TextInputEditText name = view.findViewById(R.id.input_name);
     TextInputEditText phone = view.findViewById(R.id.input_phone);
@@ -372,7 +469,7 @@ public class BirthdaysFragment extends Fragment {
       requireContext(), R.array.alumni_gender, R.layout.spinner_item);
     genders.setDropDownViewResource(R.layout.spinner_item);
     gender.setAdapter(genders);
-    boolean alumniTab = tab != TAB_MEMBERS;
+    boolean alumniTab = alumniHome;
     if (existing != null) {
       name.setText(existing.name);
       month.setSelection(Math.max(0, existing.birthMonth - 1));
@@ -402,6 +499,18 @@ public class BirthdaysFragment extends Fragment {
     genderLabel.setVisibility(alumniVis);
     gender.setVisibility(alumniVis);
     previousPastor.setVisibility(alumniVis);
+    View honor = view.findViewById(R.id.layout_honorific);
+    View hnm = view.findViewById(R.id.layout_caption_hnm);
+    View details = view.findViewById(R.id.layout_caption_details);
+    if (honor != null) {
+      honor.setVisibility(alumniVis);
+    }
+    if (hnm != null) {
+      hnm.setVisibility(alumniVis);
+    }
+    if (details != null) {
+      details.setVisibility(alumniVis);
+    }
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(
         existing == null

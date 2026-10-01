@@ -34,8 +34,7 @@
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:letterSpacing="0.02"
-        android:text="@string/app_name"
+        android:text="@string/home_alumni"
         android:textColor="@color/cream"
         android:textSize="22sp"
         android:textStyle="bold"/>
@@ -43,7 +42,7 @@
       <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/app_tagline"
+        android:text="@string/app_tagline_alumni"
         android:textColor="@color/gold"
         android:textSize="12sp"/>
     </LinearLayout>
@@ -53,7 +52,7 @@
       style="@style/Widget.Material3.Button.TextButton"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:text="@string/switch_to_alumni"
+      android:text="@string/switch_to_fellowship"
       android:textColor="@color/gold"/>
   </LinearLayout>
 
@@ -78,5 +77,5 @@
     app:itemRippleColor="@color/gold_soft"
     app:itemTextColor="@color/bottom_nav_color"
     app:labelVisibilityMode="labeled"
-    app:menu="@menu/bottom_nav"/>
+    app:menu="@menu/alumni_nav"/>
 </LinearLayout>

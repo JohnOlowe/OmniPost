@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:orientation="vertical"
+  android:paddingTop="8dp">
+
+  <TextView
+    android:id="@+id/leftover"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginEnd="16dp"
+    android:textColor="@color/gold"
+    android:textSize="16sp"
+    android:textStyle="bold"
+    tools:text="12 people left this month"/>
+
+  <TextView
+    android:id="@+id/hint"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginEnd="16dp"
+    android:text="@string/alumni_month_hint"
+    android:textColor="@color/text_muted"
+    android:textSize="12sp"/>
+
+  <com.google.android.material.card.MaterialCardView
+    android:id="@+id/group_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginEnd="16dp"
+    app:cardBackgroundColor="@color/navy_800"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/navy_700"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="14dp">
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/alumni_group_title"
+        android:textColor="@color/gold"
+        android:textStyle="bold"/>
+
+      <TextView
+        android:id="@+id/group_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="5"
+        android:textColor="@color/cream"
+        android:textSize="13sp"/>
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="@color/whatsapp"
+        android:text="@string/alumni_copy_group"
+        android:textColor="@color/cream"/>
+    </LinearLayout>
+  </com.google.android.material.card.MaterialCardView>
+
+  <com.google.android.material.button.MaterialButtonToggleGroup
+    android:id="@+id/wave_filter"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="16dp"
+    android:layout_marginTop="10dp"
+    app:selectionRequired="true"
+    app:singleSelection="true">
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/chip_to_send"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/alumni_wave_to_send"
+      android:textColor="@color/cream"/>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/chip_sent"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/alumni_wave_sent"
+      android:textColor="@color/cream"/>
+  </com.google.android.material.button.MaterialButtonToggleGroup>
+
+  <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1">
+
+    <androidx.recyclerview.widget.RecyclerView
+      android:id="@+id/list"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:clipToPadding="false"
+      android:padding="16dp"/>
+
+    <TextView
+      android:id="@+id/empty"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_gravity="center"
+      android:layout_margin="32dp"
+      android:gravity="center"
+      android:text="@string/alumni_desk_empty"
+      android:textColor="@color/text_muted"
+      android:visibility="gone"/>
+  </FrameLayout>
+</LinearLayout>

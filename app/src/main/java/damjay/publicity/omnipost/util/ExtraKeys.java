@@ -12,6 +12,9 @@ public final class ExtraKeys {
   public static final String MEMBER_ID = "extra_member_id";
   public static final String PENDING_INDEX = "extra_pending_index";
   public static final String CAPTION_KEY = "extra_caption_key";
+  public static final String TASK_TYPE = "extra_task_type";
+  public static final String SHOW_GATE = "extra_show_gate";
+  public static final String PASTOR_DEFAULT = "extra_pastor_default";
 
   private ExtraKeys() {}
 }

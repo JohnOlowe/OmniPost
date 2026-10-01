@@ -17,14 +17,14 @@ public class AlumniCopyTest {
     String adaHnm = AlumniCopy.hnm(ada, 10, oct, null);
     String adaDetails = AlumniCopy.details(ada, 10, oct, null);
     String tobiHnm = AlumniCopy.hnm(tobi, 10, oct, null);
-    assertTrue(adaHnm.contains("Ma Ada"));
+    assertTrue(adaHnm.contains("Ma Ada Okafor"));
     assertTrue(adaHnm.contains("Happy New Month"));
     assertFalse(adaHnm.toLowerCase().contains("picture"));
-    assertTrue(adaDetails.contains("Ma Ada"));
+    assertTrue(adaDetails.contains("Ma Ada Okafor"));
     assertTrue(adaDetails.toLowerCase().contains("picture"));
     assertTrue(adaDetails.toLowerCase().contains("birth date")
       || adaDetails.toLowerCase().contains("name written"));
-    assertTrue(tobiHnm.contains("Sir Tobi"));
+    assertTrue(tobiHnm.contains("Mr Tobi Ade"));
     assertTrue(tobiHnm.contains("Alumni Relations Officer") || tobiHnm.contains("Olowe John"));
     assertFalse(tobiHnm.toLowerCase().contains("picture"));
     assertFalse(adaHnm.equals(tobiHnm));
@@ -58,7 +58,7 @@ public class AlumniCopyTest {
   public void photoReminderStaysShort() {
     Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
     String photo = AlumniCopy.photo(ada);
-    assertTrue(photo.contains("Ma Ada"));
+    assertTrue(photo.contains("Ma Ada Okafor"));
     assertTrue(photo.toLowerCase().contains("picture"));
     assertFalse(photo.contains("Independence"));
   }
@@ -68,8 +68,27 @@ public class AlumniCopyTest {
     Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
     Calendar oct = cal(2026, Calendar.OCTOBER, 1);
     String got = AlumniTemplates.fill("Hello {who}, welcome to {month}.", ada, 10, oct, null);
-    assertTrue(got.contains("Hello Ma Ada, welcome to October."));
+    assertTrue(got.contains("Hello Ma Ada Okafor, welcome to October."));
     assertFalse(got.contains("{who}"));
+  }
+
+  @Test
+  public void honorificOverrideUsesFullName() {
+    Member ada = person("Adeola Olowe", Member.GENDER_FEMALE, 10, 2);
+    ada.honorific = "Dr";
+    Calendar oct = cal(2026, Calendar.OCTOBER, 1);
+    assertTrue(AlumniCopy.greetingName(ada).equals("Dr Adeola Olowe"));
+    String hnm = AlumniCopy.hnm(ada, 10, oct, null);
+    assertTrue(hnm.contains("Dr Adeola Olowe"));
+    assertFalse(hnm.contains("Ma Adeola"));
+  }
+
+  @Test
+  public void perPersonCaptionBeatsGeneralTemplate() {
+    Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
+    ada.captionHnm = "Ping {who} only.";
+    Calendar oct = cal(2026, Calendar.OCTOBER, 1);
+    assertTrue(AlumniCopy.hnm(ada, 10, oct, null).equals("Ping Ma Ada Okafor only."));
   }
 
   private static Member person(String name, String gender, int month, int day) {

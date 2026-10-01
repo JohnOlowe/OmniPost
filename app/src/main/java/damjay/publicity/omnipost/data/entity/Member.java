@@ -62,6 +62,18 @@ public class Member {
   /** Alumni greetings are forwarded in WhatsApp; no caption to write. */
   public boolean skipCaption;
 
+  /** Per-person title. Empty = Mr / Ma from gender. */
+  @NonNull
+  public String honorific = "";
+
+  /** Per-person Happy New Month. Empty = general template. */
+  @NonNull
+  public String captionHnm = "";
+
+  /** Per-person details ask. Empty = general template. */
+  @NonNull
+  public String captionDetails = "";
+
   public static boolean isAlumni(Member member) {
     return member != null && KIND_ALUMNI.equals(member.kind);
   }

@@ -23,6 +23,7 @@ import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
@@ -36,6 +37,7 @@ public class AlarmActivity extends AppCompatActivity {
   private long postAt;
   private boolean selected;
   private boolean skipCaption;
+  private boolean alumniDesk;
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -46,6 +48,13 @@ public class AlarmActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
     binding.btnDraft.setOnClickListener(v -> {
       acknowledge();
+      if (alumniDesk) {
+        Intent desk = Homes.alumni(this);
+        desk.putExtra(ExtraKeys.TASK_ID, taskId);
+        startActivity(desk);
+        finish();
+        return;
+      }
       if (skipCaption) {
         if (!WhatsAppRouter.openApp(this)) {
           Toast.makeText(this, R.string.whatsapp_missing, Toast.LENGTH_LONG).show();
@@ -195,9 +204,13 @@ public class AlarmActivity extends AppCompatActivity {
         binding.title.setText(task.title);
         postAt = task.postAtMillis;
         skipCaption = task.skipCaption;
+        alumniDesk = TaskTypes.isAlumniDesk(task.type);
         boolean pending = TaskStatus.captionWorkPending(task);
-        binding.btnReady.setVisibility(pending ? View.VISIBLE : View.GONE);
-        if (skipCaption) {
+        binding.btnReady.setVisibility(pending && !alumniDesk ? View.VISIBLE : View.GONE);
+        if (alumniDesk) {
+          binding.btnDraft.setText(R.string.alumni_open_desk);
+          binding.subtitle.setText(R.string.alumni_month_hint);
+        } else if (skipCaption) {
           binding.btnDraft.setText(R.string.open_whatsapp);
           binding.subtitle.setText(R.string.no_caption_post);
         }

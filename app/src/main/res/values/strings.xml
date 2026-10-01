@@ -2,6 +2,35 @@
 <resources>
   <string name="app_name">OmniPost</string>
   <string name="app_tagline">Fellowship posting desk</string>
+  <string name="app_tagline_alumni">Alumni relations desk</string>
+  <string name="home_fellowship">Fellowship</string>
+  <string name="home_alumni">Alumni</string>
+  <string name="home_pick_title">Two homes. OmniPost remembers the last one.</string>
+  <string name="home_pick_fellowship_hint">Tasks, member birthdays, and Settings. Alumni DMs stay in the other home.</string>
+  <string name="home_pick_alumni_hint">This month’s DMs, people, and captions. Birthday people always get two messages.</string>
+  <string name="switch_to_alumni">Alumni</string>
+  <string name="switch_to_fellowship">Fellowship</string>
+  <string name="alumni_this_month">This month</string>
+  <string name="alumni_people">People</string>
+  <string name="alumni_captions_tab">Captions</string>
+  <string name="alumni_people_left">%1$d people left this month</string>
+  <string name="alumni_people_done">Everyone for this month is marked sent</string>
+  <string name="alumni_month_hint">Open WhatsApp does not mean sent. Mark I’ve sent on each message. Birthday people are first — Happy New Month and the picture/details ask. Pastors skip HNM. Wave is half the rest.</string>
+  <string name="alumni_wave_to_send">To send</string>
+  <string name="alumni_wave_sent">Sent</string>
+  <string name="alumni_ive_sent">I’ve sent</string>
+  <string name="alumni_sent_undo">Undo sent</string>
+  <string name="alumni_message_sent">Marked sent</string>
+  <string name="alumni_message_undone">Send undone</string>
+  <string name="alumni_section_birthday">Birthday this month</string>
+  <string name="alumni_section_birthday_sub">Always two DMs: HNM (not pastors) and pictures/details</string>
+  <string name="alumni_section_wave">New month wave</string>
+  <string name="alumni_section_wave_sub">Half of alumni, not previous pastors, not this month’s birthday people</string>
+  <string name="alumni_honorific">Title (blank = Mr / Ma)</string>
+  <string name="alumni_caption_hnm_person">This person’s Happy New Month (blank = general)</string>
+  <string name="alumni_caption_details_person">This person’s details ask (blank = general)</string>
+  <string name="alumni_wave_empty_send">Wave is clear. Birthday people still sit above if they owe a DM.</string>
+  <string name="alumni_wave_empty_sent">Nothing marked sent in the wave yet.</string>
   <string name="nav_tasks">Tasks</string>
   <string name="nav_drafts">Drafts</string>
   <string name="nav_birthdays">Birthdays</string>
@@ -168,14 +197,14 @@
   <string name="alumni_details_label">Ask for details</string>
   <string name="alumni_edit_captions">Edit alumni captions</string>
   <string name="alumni_edit_captions_short">Captions</string>
-  <string name="alumni_edit_captions_hint">These are the copy-ready templates. {who} becomes Sir Ada or Ma Ada. Three Happy New Month variants so WhatsApp does not collapse identical walls of text.</string>
+  <string name="alumni_edit_captions_hint">These are the copy-ready templates. {who} becomes Mr Adeola Olowe or Ma Adeola Olowe — title plus full name. Change Mr / Ma here, or override one person. Three Happy New Month variants so WhatsApp does not collapse identical walls of text.</string>
   <string name="alumni_caption_tokens">{who} {first} {month} {nth} {officer} {role} {intro} {birthday} {independence}</string>
   <string name="alumni_caption_saved">Caption saved. DMs will use this wording.</string>
   <string name="alumni_caption_reset">Back to the original wording.</string>
   <string name="alumni_copied_dm">Caption copied. Paste it in the chat.</string>
   <string name="alumni_copied_chat">Caption copied. Paste it when the chat opens.</string>
   <string name="alumni_copied_group">Group greeting copied. Open the alumni group and paste.</string>
-  <string name="alumni_gender">Gender (Sir / Ma)</string>
+  <string name="alumni_gender">Gender (Mr / Ma)</string>
   <string name="alumni_previous_pastor">Previous pastor — skip monthly / wave HNM</string>
   <string name="alumni_pair">Pair names</string>
   <string name="alumni_pair_title">Pair sheet names</string>
@@ -208,7 +237,7 @@
   <string name="alumni_save_failed">Could not share the contacts file.</string>
   <string-array name="alumni_gender">
     <item>Not sure</item>
-    <item>Male — Sir</item>
+    <item>Male — Mr</item>
     <item>Female — Ma</item>
   </string-array>
   <string-array name="alumni_photo_status">

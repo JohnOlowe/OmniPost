@@ -41,14 +41,21 @@
     </provider>
 
     <activity
-      android:name=".MainActivity"
+      android:name=".ui.GateActivity"
       android:exported="true"
       android:launchMode="singleTop"
-      android:windowSoftInputMode="adjustResize">
+      android:theme="@style/AppTheme">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
+    </activity>
+
+    <activity
+      android:name=".MainActivity"
+      android:exported="true"
+      android:launchMode="singleTop"
+      android:windowSoftInputMode="adjustResize">
       <intent-filter>
         <action android:name="android.intent.action.SET_ALARM"/>
         <category android:name="android.intent.category.DEFAULT"/>
@@ -80,10 +87,24 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.AlumniHomeActivity"
+      android:exported="false"
+      android:label="@string/home_alumni"
+      android:launchMode="singleTop"
+      android:parentActivityName=".ui.GateActivity"/>
+
+    <activity
+      android:name=".ui.MemberEditActivity"
+      android:exported="false"
+      android:label="@string/edit_alumni"
+      android:parentActivityName=".ui.AlumniHomeActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlumniDmActivity"
       android:exported="false"
       android:label="@string/alumni_desk_title"
-      android:parentActivityName=".MainActivity"/>
+      android:parentActivityName=".ui.AlumniHomeActivity"/>
 
     <activity
       android:name=".ui.AlumniCaptionsActivity"

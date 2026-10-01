@@ -7,11 +7,13 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
+import damjay.publicity.omnipost.data.dao.AlumniSendDao;
 import damjay.publicity.omnipost.data.dao.CaptionVarDao;
 import damjay.publicity.omnipost.data.dao.DraftDao;
 import damjay.publicity.omnipost.data.dao.MemberDao;
 import damjay.publicity.omnipost.data.dao.SeriesDao;
 import damjay.publicity.omnipost.data.dao.TaskDao;
+import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.CaptionVar;
 import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Member;
@@ -19,8 +21,10 @@ import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 
 @Database(
-  entities = {Task.class, Draft.class, Member.class, Series.class, CaptionVar.class},
-  version = 11,
+  entities = {
+    Task.class, Draft.class, Member.class, Series.class, CaptionVar.class, AlumniSend.class
+  },
+  version = 12,
   exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -33,6 +37,8 @@ public abstract class AppDatabase extends RoomDatabase {
   public abstract SeriesDao seriesDao();
 
   public abstract CaptionVarDao captionVarDao();
+
+  public abstract AlumniSendDao alumniSendDao();
 
   static final Migration MIGRATION_1_2 = new Migration(1, 2) {
     @Override
@@ -147,6 +153,25 @@ public abstract class AppDatabase extends RoomDatabase {
     }
   };
 
+  static final Migration MIGRATION_11_12 = new Migration(11, 12) {
+    @Override
+    public void migrate(@NonNull SupportSQLiteDatabase db) {
+      db.execSQL("ALTER TABLE members ADD COLUMN honorific TEXT NOT NULL DEFAULT ''");
+      db.execSQL("ALTER TABLE members ADD COLUMN captionHnm TEXT NOT NULL DEFAULT ''");
+      db.execSQL("ALTER TABLE members ADD COLUMN captionDetails TEXT NOT NULL DEFAULT ''");
+      db.execSQL(
+        "CREATE TABLE IF NOT EXISTS alumni_sends ("
+          + "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "
+          + "memberId INTEGER NOT NULL, "
+          + "yearMonth INTEGER NOT NULL, "
+          + "kind TEXT NOT NULL, "
+          + "sentAt INTEGER NOT NULL)");
+      db.execSQL(
+        "CREATE UNIQUE INDEX IF NOT EXISTS index_alumni_sends_memberId_yearMonth_kind "
+          + "ON alumni_sends (memberId, yearMonth, kind)");
+    }
+  };
+
   private static volatile AppDatabase INSTANCE;
 
   public static AppDatabase get(Context context) {
@@ -159,7 +184,8 @@ public abstract class AppDatabase extends RoomDatabase {
               "omnipost.db")
             .addMigrations(
               MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6,
-              MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
+              MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11,
+              MIGRATION_11_12)
             .fallbackToDestructiveMigration()
             .build();
         }

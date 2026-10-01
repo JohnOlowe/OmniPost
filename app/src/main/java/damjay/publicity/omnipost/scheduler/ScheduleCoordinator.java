@@ -2,6 +2,7 @@ package damjay.publicity.omnipost.scheduler;
 
 import android.content.Context;
 import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.data.entity.Series;
@@ -869,6 +870,31 @@ public final class ScheduleCoordinator {
     }
     member.introduced = true;
     db.memberDao().update(member);
+  }
+
+  public static void markAlumniSent(Context context, long memberId, String kind) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    String value = AlumniSend.DETAILS.equals(kind) ? AlumniSend.DETAILS : AlumniSend.HNM;
+    Context app = context.getApplicationContext();
+    AlumniSend send = new AlumniSend();
+    send.memberId = memberId;
+    send.yearMonth = AlumniMonth.yearMonth(Calendar.getInstance());
+    send.kind = value;
+    send.sentAt = System.currentTimeMillis();
+    AppDatabase.get(app).alumniSendDao().upsert(send);
+    markAlumniIntroduced(app, memberId);
+  }
+
+  public static void unmarkAlumniSent(Context context, long memberId, String kind) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    String value = AlumniSend.DETAILS.equals(kind) ? AlumniSend.DETAILS : AlumniSend.HNM;
+    AppDatabase.get(context.getApplicationContext())
+      .alumniSendDao()
+      .delete(memberId, AlumniMonth.yearMonth(Calendar.getInstance()), value);
   }
 
   public static void setAlumniPhoto(Context context, long memberId, String status) {

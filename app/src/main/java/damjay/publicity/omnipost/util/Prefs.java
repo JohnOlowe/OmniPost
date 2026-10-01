@@ -25,6 +25,9 @@ public final class Prefs {
   private static final String RING_MIN = "ring_minutes";
   private static final String ALUMNI_SKIP = "alumni_skip_caption";
   private static final String ALUMNI_CAPS = "alumni_captions";
+  private static final String LAST_HOME = "last_home";
+  public static final String HOME_FELLOWSHIP = "fellowship";
+  public static final String HOME_ALUMNI = "alumni";
   private static final String SEED = "seed_captions";
   private static final String DESK = "desk_ongoing";
   private static final String FULLSCREEN = "full_screen";
@@ -174,6 +177,14 @@ public final class Prefs {
 
   public static void setAlumniSkipCaption(Context ctx, boolean skip) {
     sp(ctx).edit().putBoolean(ALUMNI_SKIP, skip).apply();
+  }
+
+  public static String lastHome(Context ctx) {
+    return sp(ctx).getString(LAST_HOME, "");
+  }
+
+  public static void setLastHome(Context ctx, String home) {
+    sp(ctx).edit().putString(LAST_HOME, home == null ? "" : home).apply();
   }
 
   public static String alumniCaptionsJson(Context ctx) {

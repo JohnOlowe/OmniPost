@@ -9,8 +9,10 @@ import com.google.android.material.badge.BadgeDrawable;
 import damjay.publicity.omnipost.databinding.ActivityMainBinding;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.ui.BirthdaysFragment;
 import damjay.publicity.omnipost.ui.DraftActivity;
+import damjay.publicity.omnipost.ui.Homes;
 import damjay.publicity.omnipost.ui.SettingsFragment;
 import damjay.publicity.omnipost.ui.TasksFragment;
 import damjay.publicity.omnipost.util.AppExecutors;
@@ -23,11 +25,17 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    Homes.rememberFellowship(this);
     binding = ActivityMainBinding.inflate(getLayoutInflater());
     setContentView(binding.getRoot());
     NotificationHelper.ensureChannels(this);
     SurvivalHelper.requestPostNotifications(this);
     AppExecutors.disk().execute(() -> ScheduleCoordinator.bootstrap(this));
+    binding.btnSwitchHome.setOnClickListener(v -> {
+      Homes.rememberAlumni(this);
+      startActivity(Homes.alumni(this));
+      finish();
+    });
 
     if (savedInstanceState == null) {
       show(new TasksFragment());
@@ -71,6 +79,12 @@ public class MainActivity extends AppCompatActivity {
 
   private void handleIncoming(Intent intent) {
     if (intent == null) {
+      return;
+    }
+    String type = intent.getStringExtra(ExtraKeys.TASK_TYPE);
+    if (TaskTypes.isAlumniDesk(type)) {
+      startActivity(Homes.alumni(this));
+      finish();
       return;
     }
     long taskId = intent.getLongExtra(ExtraKeys.TASK_ID, 0L);

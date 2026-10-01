@@ -93,9 +93,25 @@ public class DraftActivity extends AppCompatActivity {
         if (found != null && found.taskId > 0L) {
           linked = db.taskDao().getById(found.taskId);
         }
+        if (Homes.isAlumniTask(linked)) {
+          Task alumniTask = linked;
+          AppExecutors.main(() -> {
+            startActivity(Homes.alumniForTask(this, alumniTask));
+            finish();
+          });
+          return;
+        }
         applyLingeredTemplate(db, found, linked);
       } else if (taskId > 0L) {
         linked = db.taskDao().getById(taskId);
+        if (Homes.isAlumniTask(linked)) {
+          Task alumniTask = linked;
+          AppExecutors.main(() -> {
+            startActivity(Homes.alumniForTask(this, alumniTask));
+            finish();
+          });
+          return;
+        }
         found = db.draftDao().findByTaskId(taskId);
         if (found == null) {
           found = new Draft();
@@ -136,6 +152,11 @@ public class DraftActivity extends AppCompatActivity {
       }
       AppExecutors.main(() -> {
         if (isFinishing() || binding == null || draft == null) {
+          return;
+        }
+        if (Homes.isAlumniTask(task)) {
+          startActivity(Homes.alumniForTask(this, task));
+          finish();
           return;
         }
         binding.taskTitle.setText(draft.title);

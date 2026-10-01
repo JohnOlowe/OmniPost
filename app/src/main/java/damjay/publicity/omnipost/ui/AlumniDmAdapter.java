@@ -85,6 +85,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
           + " · "
           + phone
           + (member.introduced ? " · intro sent" : " · first DM"));
+      hideSentButtons();
       if (photo) {
         String caption = AlumniCopy.photo(member, now, bag);
         binding.blockHnm.setVisibility(View.VISIBLE);
@@ -113,6 +114,15 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
         binding.btnWhatsappDetails.setOnClickListener(v -> listener.onSend(member, details, true));
       } else {
         binding.blockDetails.setVisibility(View.GONE);
+      }
+    }
+
+    private void hideSentButtons() {
+      if (binding.btnSentHnm != null) {
+        binding.btnSentHnm.setVisibility(View.GONE);
+      }
+      if (binding.btnSentDetails != null) {
+        binding.btnSentDetails.setVisibility(View.GONE);
       }
     }
   }

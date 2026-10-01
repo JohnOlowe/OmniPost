@@ -79,7 +79,10 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
     oct.set(Calendar.MONTH, Calendar.OCTOBER);
     oct.set(Calendar.DAY_OF_MONTH, 1);
     String filled;
-    if (AlumniTemplates.OFFICER.equals(key) || AlumniTemplates.ROLE.equals(key)) {
+    if (AlumniTemplates.OFFICER.equals(key)
+        || AlumniTemplates.ROLE.equals(key)
+        || AlumniTemplates.MALE_TITLE.equals(key)
+        || AlumniTemplates.FEMALE_TITLE.equals(key)) {
       filled = template;
     } else {
       filled = AlumniTemplates.fill(template, sample, 10, oct, bag);
