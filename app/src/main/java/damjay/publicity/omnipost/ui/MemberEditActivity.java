@@ -314,18 +314,19 @@ public class MemberEditActivity extends AppCompatActivity {
     finish();
     AppExecutors.query().execute(() -> {
       AppDatabase db = AppDatabase.get(app);
-      Member member = id > 0L ? db.memberDao().getById(id) : null;
+      Member row = id > 0L ? db.memberDao().getById(id) : null;
       boolean merged = false;
-      if (member == null) {
+      if (row == null) {
         Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, finalName);
         if (prior != null) {
-          member = prior;
+          row = prior;
           merged = true;
         } else {
-          member = new Member();
-          member.kind = Member.KIND_ALUMNI;
+          row = new Member();
+          row.kind = Member.KIND_ALUMNI;
         }
       }
+      final Member member = row;
       String oldName = member.name;
       Member scheduleSnap = new Member();
       scheduleSnap.birthMonth = member.birthMonth;
