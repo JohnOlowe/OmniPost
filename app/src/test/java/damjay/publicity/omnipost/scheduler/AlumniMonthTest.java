@@ -91,6 +91,41 @@ public class AlumniMonthTest {
     assertEquals(0, AlumniMonth.peopleLeft(birthday, wave, adaHnm));
   }
 
+  @Test
+  public void sentChipHidesPeopleWhoStillOweAMessage() {
+    Member ada = alumni("Ada Okafor", 10);
+    ada.id = 21;
+    Member done = alumni("Chioma Bello", 10);
+    done.id = 22;
+    Member waveOpen = alumni("Tobi Ade", 2);
+    waveOpen.id = 23;
+    Member waveDone = alumni("Emeka Bello", 3);
+    waveDone.id = 24;
+    List<Member> birthday = new ArrayList<>();
+    birthday.add(ada);
+    birthday.add(done);
+    List<Member> wave = new ArrayList<>();
+    wave.add(waveOpen);
+    wave.add(waveDone);
+    List<AlumniSend> sends = new ArrayList<>();
+    sends.add(send(ada.id, AlumniSend.HNM));
+    sends.add(send(done.id, AlumniSend.HNM));
+    sends.add(send(done.id, AlumniSend.DETAILS));
+    sends.add(send(waveDone.id, AlumniSend.HNM));
+    List<Member> toSendBday = AlumniMonth.pendingBirthday(birthday, sends);
+    List<Member> sentBday = AlumniMonth.sentBirthday(birthday, sends);
+    List<Member> toSendWave = AlumniMonth.pendingWave(wave, sends);
+    List<Member> sentWave = AlumniMonth.sentWave(wave, sends);
+    assertEquals(1, toSendBday.size());
+    assertEquals(ada.id, toSendBday.get(0).id);
+    assertEquals(1, sentBday.size());
+    assertEquals(done.id, sentBday.get(0).id);
+    assertEquals(1, toSendWave.size());
+    assertEquals(waveOpen.id, toSendWave.get(0).id);
+    assertEquals(1, sentWave.size());
+    assertEquals(waveDone.id, sentWave.get(0).id);
+  }
+
   private static boolean contains(List<Member> list, long id) {
     for (Member member : list) {
       if (member.id == id) {

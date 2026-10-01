@@ -110,6 +110,32 @@ public final class AlumniMonth {
     return !sent(sends, member.id, AlumniSend.DETAILS);
   }
 
+  public static List<Member> pendingBirthday(List<Member> birthday, List<AlumniSend> sends) {
+    List<Member> out = new ArrayList<>();
+    if (birthday == null) {
+      return out;
+    }
+    for (Member member : birthday) {
+      if (owesBirthday(member, sends)) {
+        out.add(member);
+      }
+    }
+    return out;
+  }
+
+  public static List<Member> sentBirthday(List<Member> birthday, List<AlumniSend> sends) {
+    List<Member> out = new ArrayList<>();
+    if (birthday == null) {
+      return out;
+    }
+    for (Member member : birthday) {
+      if (member != null && !owesBirthday(member, sends)) {
+        out.add(member);
+      }
+    }
+    return out;
+  }
+
   public static List<Member> pendingWave(List<Member> wave, List<AlumniSend> sends) {
     List<Member> out = new ArrayList<>();
     if (wave == null) {

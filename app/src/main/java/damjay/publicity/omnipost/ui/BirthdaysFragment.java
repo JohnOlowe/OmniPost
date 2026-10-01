@@ -260,7 +260,23 @@ public class BirthdaysFragment extends Fragment {
       pending.addAll(rows);
     }
     pairAdapter.submit(pending);
+    final List<AlumniSheet.Row> waiting = new ArrayList<>(pending);
+    AppExecutors.query().execute(() -> AlumniMatch.prepare(waiting));
     paint();
+  }
+
+  private void paintPairCount() {
+    if (!alumniHome || binding == null || binding.tabs.getTabCount() < 3) {
+      return;
+    }
+    TabLayout.Tab pair = binding.tabs.getTabAt(2);
+    if (pair == null) {
+      return;
+    }
+    int n = pending.size();
+    pair.setText(n <= 0
+      ? getString(R.string.alumni_pair)
+      : getString(R.string.alumni_pair_tab_count, n));
   }
 
   private void paintAlumniSwitch() {
@@ -355,6 +371,8 @@ public class BirthdaysFragment extends Fragment {
       pastorByHorizon.put(horizon, BirthdayHorizon.group(pastors, now, horizon));
     }
     AlumniMatch.rememberRoster(all);
+    final List<AlumniSheet.Row> waiting = new ArrayList<>(pending);
+    AppExecutors.query().execute(() -> AlumniMatch.prepare(waiting));
   }
 
   private List<BirthdayHorizon.Section> currentSections() {
@@ -452,6 +470,7 @@ public class BirthdaysFragment extends Fragment {
     boolean hideHorizon = pairTab || searching();
     binding.horizon.setVisibility(hideHorizon ? View.GONE : View.VISIBLE);
     binding.btnCopyBirthdays.setVisibility(pairTab ? View.GONE : View.VISIBLE);
+    paintPairCount();
     if (pairTab) {
       if (binding.list.getAdapter() != pairAdapter) {
         binding.list.setAdapter(pairAdapter);
@@ -459,7 +478,7 @@ public class BirthdaysFragment extends Fragment {
       List<AlumniSheet.Row> rows = pendingMatches();
       pairAdapter.submit(rows);
       boolean empty = rows.isEmpty();
-      binding.empty.setText(R.string.alumni_pair_empty);
+      binding.empty.setText(searching() ? R.string.search_empty : R.string.alumni_pair_empty);
       binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
       binding.captionsToggle.setVisibility(View.GONE);
       binding.alumniActions.setVisibility(View.VISIBLE);

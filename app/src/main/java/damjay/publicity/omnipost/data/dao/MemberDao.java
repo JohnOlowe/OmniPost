@@ -22,6 +22,9 @@ public interface MemberDao {
   @Query("SELECT * FROM members ORDER BY birthMonth ASC, birthDay ASC")
   List<Member> getAllSync();
 
+  @Query("SELECT * FROM members WHERE kind = :kind ORDER BY name ASC")
+  List<Member> getByKindSync(String kind);
+
   @Query("SELECT * FROM members WHERE id = :id LIMIT 1")
   Member getById(long id);
 

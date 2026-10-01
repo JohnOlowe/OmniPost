@@ -18,6 +18,7 @@ import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentAlumniMonthBinding;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
+import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniMonth;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
@@ -111,6 +112,7 @@ public class AlumniMonthFragment extends Fragment {
       if (members != null) {
         roster.addAll(members);
       }
+      AlumniMatch.rememberRoster(members);
       birthday.addAll(AlumniMonth.birthdayPeople(members, month));
       wave.addAll(AlumniMonth.wavePeople(members, month));
       paint();
@@ -173,7 +175,10 @@ public class AlumniMonthFragment extends Fragment {
       left == 0
         ? getString(R.string.alumni_people_done)
         : getString(R.string.alumni_people_left, left));
-    List<Member> birthdayView = filterNames(birthday);
+    List<Member> birthdaySource = waveSent
+      ? AlumniMonth.sentBirthday(birthday, sends)
+      : AlumniMonth.pendingBirthday(birthday, sends);
+    List<Member> birthdayView = filterNames(birthdaySource);
     List<Member> waveSource = waveSent
       ? AlumniMonth.sentWave(wave, sends)
       : AlumniMonth.pendingWave(wave, sends);
@@ -198,9 +203,15 @@ public class AlumniMonthFragment extends Fragment {
       getString(R.string.alumni_section_wave),
       getString(R.string.alumni_section_wave_sub));
     boolean empty = birthdayView.isEmpty() && waveView.isEmpty();
-    binding.empty.setVisibility(empty && !query.trim().isEmpty() ? View.VISIBLE : View.GONE);
-    if (empty && !query.trim().isEmpty()) {
-      binding.empty.setText(R.string.search_empty);
+    binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
+    if (empty) {
+      if (!query.trim().isEmpty()) {
+        binding.empty.setText(R.string.search_empty);
+      } else if (waveSent) {
+        binding.empty.setText(R.string.alumni_sent_empty);
+      } else {
+        binding.empty.setText(R.string.alumni_people_done);
+      }
     }
   }
 

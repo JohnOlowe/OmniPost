@@ -1,5 +1,6 @@
 package damjay.publicity.omnipost.ui;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
@@ -7,8 +8,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import damjay.publicity.omnipost.R;
+import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ActivityAlumniHomeBinding;
 import damjay.publicity.omnipost.notify.NotificationHelper;
+import damjay.publicity.omnipost.scheduler.AlumniMatch;
+import damjay.publicity.omnipost.scheduler.AlumniPending;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.SurvivalHelper;
@@ -25,6 +30,14 @@ public class AlumniHomeActivity extends AppCompatActivity {
     NotificationHelper.ensureChannels(this);
     SurvivalHelper.requestPostNotifications(this);
     AppExecutors.disk().execute(() -> ScheduleCoordinator.bootstrap(this));
+    AppExecutors.query().execute(() -> {
+      Context app = getApplicationContext();
+      if (!AlumniMatch.hasRoster()) {
+        AlumniMatch.rememberRoster(
+          AppDatabase.get(app).memberDao().getByKindSync(Member.KIND_ALUMNI));
+      }
+      AlumniMatch.prepare(AlumniPending.load(app));
+    });
     binding.btnSwitchHome.setOnClickListener(v -> {
       Homes.rememberFellowship(this);
       startActivity(Homes.fellowship(this));

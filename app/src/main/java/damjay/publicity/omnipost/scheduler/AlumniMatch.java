@@ -4,9 +4,9 @@ import damjay.publicity.omnipost.data.entity.Member;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Attach a sheet row to a roster card. Roster name and birthday stay;
@@ -15,7 +15,7 @@ import java.util.Set;
 public final class AlumniMatch {
   private static final Object LOCK = new Object();
   private static List<Indexed> cached = Collections.emptyList();
-  private static boolean hasRoster;
+  private static Map<String, List<Suggestion>> prepared = Collections.emptyMap();
 
   private AlumniMatch() {}
 
@@ -56,17 +56,48 @@ public final class AlumniMatch {
     }
     synchronized (LOCK) {
       cached = next;
-      hasRoster = true;
+      prepared = Collections.emptyMap();
     }
   }
 
   public static boolean hasRoster() {
     synchronized (LOCK) {
-      return hasRoster;
+      return !cached.isEmpty();
+    }
+  }
+
+  public static void prepare(List<AlumniSheet.Row> pending) {
+    List<Indexed> roster;
+    synchronized (LOCK) {
+      roster = cached;
+    }
+    if (roster.isEmpty()) {
+      return;
+    }
+    Map<String, List<Suggestion>> next = new HashMap<>();
+    if (pending != null) {
+      for (AlumniSheet.Row row : pending) {
+        if (row == null) {
+          continue;
+        }
+        next.put(key(row), rank(row, roster, 8));
+      }
+    }
+    synchronized (LOCK) {
+      prepared = next;
     }
   }
 
   public static List<Suggestion> suggest(AlumniSheet.Row row, int limit) {
+    if (row != null) {
+      String id = key(row);
+      synchronized (LOCK) {
+        List<Suggestion> hit = prepared.get(id);
+        if (hit != null) {
+          return new ArrayList<>(hit);
+        }
+      }
+    }
     List<Indexed> roster;
     synchronized (LOCK) {
       roster = cached;
@@ -147,11 +178,10 @@ public final class AlumniMatch {
     if (indexed.member == null || sheetTokens.isEmpty() || indexed.tokens.isEmpty()) {
       return item;
     }
-    Set<String> shared = new HashSet<>(sheetTokens);
-    shared.retainAll(indexed.tokens);
+    int shared = sharedCount(sheetTokens, indexed.tokens);
     int max = Math.max(sheetTokens.size(), indexed.tokens.size());
-    item.score = (shared.size() * 50) / max;
-    if (shared.size() == sheetTokens.size() && shared.size() == indexed.tokens.size()) {
+    item.score = (shared * 50) / max;
+    if (shared == sheetTokens.size() && shared == indexed.tokens.size()) {
       item.score += 25;
     }
     if (!sheetLast.isEmpty() && sheetLast.equals(indexed.last)) {
@@ -178,6 +208,20 @@ public final class AlumniMatch {
       item.score = 100;
     }
     return item;
+  }
+
+  private static int sharedCount(List<String> sheet, List<String> roster) {
+    int n = 0;
+    for (int i = 0; i < sheet.size(); i++) {
+      String token = sheet.get(i);
+      for (int j = 0; j < roster.size(); j++) {
+        if (token.equals(roster.get(j))) {
+          n++;
+          break;
+        }
+      }
+    }
+    return n;
   }
 
   public static List<String> tokens(String name) {
@@ -235,5 +279,18 @@ public final class AlumniMatch {
       return "";
     }
     return token.length() <= 3 ? token : token.substring(0, 3);
+  }
+
+  static String key(AlumniSheet.Row row) {
+    if (row == null) {
+      return "";
+    }
+    return row.displayName()
+      + "|"
+      + (row.phone == null ? "" : row.phone)
+      + "|"
+      + row.birthMonth
+      + "|"
+      + row.birthDay;
   }
 }

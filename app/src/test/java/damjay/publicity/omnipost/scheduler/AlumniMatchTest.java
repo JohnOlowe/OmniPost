@@ -48,6 +48,22 @@ public class AlumniMatchTest {
   }
 
   @Test
+  public void prepareRanksBeforeTheTap() {
+    List<Member> roster = new ArrayList<>();
+    roster.add(alumni("Chioma Okafor", 3, 4));
+    roster.add(alumni("Tobi Ade", 12, 28));
+    AlumniMatch.rememberRoster(roster);
+    AlumniSheet.Row row = row("Chioma Ada Okafor", 3, 4);
+    List<AlumniSheet.Row> pending = new ArrayList<>();
+    pending.add(row);
+    AlumniMatch.prepare(pending);
+    List<AlumniMatch.Suggestion> got = AlumniMatch.suggest(row, 8);
+    assertEquals(1, got.size());
+    assertEquals("Chioma Okafor", got.get(0).roster.name);
+    AlumniMatch.rememberRoster(new ArrayList<>());
+  }
+
+  @Test
   public void suggestRanksRosterCardsAndIgnoresMembers() {
     List<Member> roster = new ArrayList<>();
     roster.add(alumni("Chioma Okafor", 3, 4));

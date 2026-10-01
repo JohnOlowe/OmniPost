@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniPending;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import damjay.publicity.omnipost.scheduler.DateUtils;
@@ -67,7 +68,12 @@ public class AlumniMatchActivity extends AppCompatActivity {
     }
     adapter.submit(rows);
     empty.setVisibility(rows.isEmpty() ? View.VISIBLE : View.GONE);
-    subtitle.setText(getString(R.string.alumni_pair_count, rows.size()));
+    subtitle.setText(
+      rows.isEmpty()
+        ? getString(R.string.alumni_pair_hint)
+        : getString(R.string.alumni_pair_count, rows.size()));
+    final List<AlumniSheet.Row> waiting = new ArrayList<>(rows);
+    AppExecutors.query().execute(() -> AlumniMatch.prepare(waiting));
   }
 
   static class Adapter extends RecyclerView.Adapter<Adapter.Holder> {

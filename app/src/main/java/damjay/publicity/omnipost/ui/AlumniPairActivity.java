@@ -105,8 +105,7 @@ public class AlumniPairActivity extends AppCompatActivity {
       : getString(R.string.alumni_no_number_short);
     subtitle.setText(getString(R.string.alumni_pair_sheet, sheetDay, phone));
     adapter.setSheetDay(sheetDay);
-    empty.setVisibility(View.VISIBLE);
-    empty.setText(R.string.alumni_pair_wait);
+    empty.setVisibility(View.GONE);
     findViewById(R.id.pair_actions).setVisibility(View.VISIBLE);
     if (actionsBound) {
       return;
@@ -141,11 +140,20 @@ public class AlumniPairActivity extends AppCompatActivity {
       showSuggestions(AlumniMatch.suggest(sheet, 8), sheetDay);
       return;
     }
+    empty.setVisibility(View.VISIBLE);
+    empty.setText(R.string.alumni_pair_wait);
     AppExecutors.query().execute(() -> {
-      List<Member> roster = AppDatabase.get(this).memberDao().getAllSync();
-      AlumniMatch.rememberRoster(roster);
+      if (!AlumniMatch.hasRoster()) {
+        AlumniMatch.rememberRoster(
+          AppDatabase.get(this).memberDao().getByKindSync(Member.KIND_ALUMNI));
+      }
       List<AlumniMatch.Suggestion> suggestions = AlumniMatch.suggest(sheet, 8);
-      AppExecutors.main(() -> showSuggestions(suggestions, sheetDay));
+      AppExecutors.main(() -> {
+        if (isFinishing() || isDestroyed()) {
+          return;
+        }
+        showSuggestions(suggestions, sheetDay);
+      });
     });
   }
 

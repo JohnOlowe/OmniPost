@@ -15,6 +15,7 @@
   <string name="alumni_captions_tab">Captions</string>
   <string name="alumni_people_left">%1$d people left this month</string>
   <string name="alumni_people_done">Everyone for this month is marked sent</string>
+  <string name="alumni_sent_empty">Nobody is fully marked sent yet. I’ve sent is per message — they move here when every DM they owe this month is done.</string>
   <string name="alumni_month_hint">Open WhatsApp does not mean sent. Mark I’ve sent on each message. Birthday people are first — Happy New Month and the picture/details ask. Pastors skip HNM. Wave is half the rest.</string>
   <string name="alumni_wave_to_send">To send</string>
   <string name="alumni_wave_sent">Sent</string>
@@ -221,10 +222,12 @@
   <string name="alumni_gender">Gender (Mr / Ma)</string>
   <string name="alumni_previous_pastor">Previous pastor — skip monthly / wave HNM</string>
   <string name="alumni_pair">Pair names</string>
+  <string name="alumni_pair_tab_count">Pair · %1$d</string>
+  <string name="alumni_pair_left">%1$d still to pair</string>
   <string name="alumni_pair_title">Pair sheet names</string>
   <string name="alumni_pair_one">Attach to roster</string>
   <string name="alumni_pair_hint">Names will not match exactly. Compare birthdays, then attach. Roster date stays.</string>
-  <string name="alumni_pair_count">%1$d names waiting. Tap one, compare birthdays, attach.</string>
+  <string name="alumni_pair_count">%1$d still to pair. Tap one, compare birthdays, attach.</string>
   <string name="alumni_pair_empty">Nothing waiting. Import the sheet first.</string>
   <string name="alumni_pair_tap">Tap to compare with the birthday roster</string>
   <string name="alumni_sheet_line">Sheet %1$s · %2$s</string>

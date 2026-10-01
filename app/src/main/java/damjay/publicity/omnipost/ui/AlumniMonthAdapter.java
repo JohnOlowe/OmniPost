@@ -89,8 +89,8 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         rows.add(new Row(member, true));
       }
     }
-    rows.add(new Row(waveTitle, waveSub));
-    if (wave != null) {
+    if (wave != null && !wave.isEmpty()) {
+      rows.add(new Row(waveTitle, waveSub));
       for (Member member : wave) {
         rows.add(new Row(member, false));
       }
