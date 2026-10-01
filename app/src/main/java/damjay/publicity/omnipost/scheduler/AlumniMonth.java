@@ -34,7 +34,9 @@ public final class AlumniMonth {
       return out;
     }
     for (Member member : all) {
-      if (Member.isAlumni(member) && member.birthMonth == month1to12) {
+      if (Member.isAlumni(member)
+          && AlumniDesk.hasPhone(member)
+          && member.birthMonth == month1to12) {
         out.add(member);
       }
     }
@@ -47,7 +49,9 @@ public final class AlumniMonth {
       return out;
     }
     for (Member member : all) {
-      if (AlumniDesk.inWave(member, month1to12) && member.birthMonth != month1to12) {
+      if (AlumniDesk.hasPhone(member)
+          && AlumniDesk.inWave(member, month1to12)
+          && member.birthMonth != month1to12) {
         out.add(member);
       }
     }

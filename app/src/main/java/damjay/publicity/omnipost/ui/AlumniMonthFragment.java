@@ -20,6 +20,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentAlumniMonthBinding;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniMonth;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
@@ -243,7 +244,10 @@ public class AlumniMonthFragment extends Fragment {
     }
     List<Member> out = new ArrayList<>();
     for (Member member : roster) {
-      if (member == null || seen.contains(member.id) || !Member.isAlumni(member)) {
+      if (member == null
+          || seen.contains(member.id)
+          || !Member.isAlumni(member)
+          || !AlumniDesk.hasPhone(member)) {
         continue;
       }
       if (BirthdayHorizon.nameMatches(member, query)) {

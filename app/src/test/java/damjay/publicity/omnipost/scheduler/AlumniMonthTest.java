@@ -143,12 +143,38 @@ public class AlumniMonthTest {
     return send;
   }
 
+  @Test
+  public void thisMonthSkipsPeopleWithoutANumber() {
+    Member numbered = alumni("Ada Okafor", 10);
+    numbered.id = 31;
+    Member none = alumni("No Number Ada", 10);
+    none.id = 32;
+    none.phone = "";
+    Member waveNone = alumni("Wave None", 3);
+    waveNone.id = 33;
+    waveNone.phone = "";
+    List<Member> all = new ArrayList<>();
+    all.add(numbered);
+    all.add(none);
+    all.add(waveNone);
+    List<Member> birthday = AlumniMonth.birthdayPeople(all, 10);
+    assertEquals(1, birthday.size());
+    assertEquals(numbered.name, birthday.get(0).name);
+    List<Member> wave = AlumniMonth.wavePeople(all, 10);
+    for (Member member : wave) {
+      assertTrue(AlumniDesk.hasPhone(member));
+    }
+    assertFalse(contains(wave, none.id));
+    assertFalse(AlumniDesk.inWave(waveNone, 10));
+  }
+
   private static Member alumni(String name, int month) {
     Member member = new Member();
     member.name = name;
     member.kind = Member.KIND_ALUMNI;
     member.birthMonth = month;
     member.birthDay = 2;
+    member.phone = "2348031234567";
     return member;
   }
 

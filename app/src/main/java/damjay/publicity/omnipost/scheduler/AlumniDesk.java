@@ -146,6 +146,7 @@ public final class AlumniDesk {
   public static boolean inWave(Member member, int month1to12) {
     return Member.isAlumni(member)
         && !Member.isPastor(member)
+        && hasPhone(member)
         && personWave(member) == monthWave(month1to12);
   }
 
