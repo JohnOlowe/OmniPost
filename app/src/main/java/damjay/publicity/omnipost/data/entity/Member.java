@@ -10,6 +10,7 @@ public class Member {
   public static final String KIND_ALUMNI = "alumni";
   public static final String GENDER_MALE = "male";
   public static final String GENDER_FEMALE = "female";
+  public static final String DESK_PASTOR = "pastor";
 
   @PrimaryKey(autoGenerate = true)
   public long id;
@@ -54,11 +55,19 @@ public class Member {
   @NonNull
   public String kind = KIND_MEMBER;
 
+  /** {@link #DESK_PASTOR} = previous pastors. They keep birthdays, not the monthly DM wave. */
+  @NonNull
+  public String desk = "";
+
   /** Alumni greetings are forwarded in WhatsApp; no caption to write. */
   public boolean skipCaption;
 
   public static boolean isAlumni(Member member) {
     return member != null && KIND_ALUMNI.equals(member.kind);
+  }
+
+  public static boolean isPastor(Member member) {
+    return isAlumni(member) && DESK_PASTOR.equals(member.desk);
   }
 
   public static String kindOf(Member member) {

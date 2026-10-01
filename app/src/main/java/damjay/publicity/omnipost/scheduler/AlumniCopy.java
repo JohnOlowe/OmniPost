@@ -74,6 +74,9 @@ public final class AlumniCopy {
     if (member.birthMonth == month1to12) {
       return KIND_BIRTHDAY;
     }
+    if (Member.isPastor(member)) {
+      return KIND_PHOTO;
+    }
     return KIND_WAVE;
   }
 

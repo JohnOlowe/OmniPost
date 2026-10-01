@@ -16,7 +16,8 @@
       android:layout_height="wrap_content"
       android:background="@color/navy_950"
       app:tabIndicatorColor="@color/gold"
-      app:tabMode="fixed"
+      app:tabMode="scrollable"
+      app:tabGravity="fill"
       app:tabSelectedTextColor="@color/gold"
       app:tabTextColor="@color/text_muted"/>
 
@@ -78,6 +79,18 @@
       </com.google.android.material.button.MaterialButtonToggleGroup>
     </HorizontalScrollView>
 
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_copy_birthdays"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="4dp"
+      android:layout_marginEnd="16dp"
+      android:text="@string/copy_birthday_list"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/navy_700"/>
+
     <include
       android:id="@+id/row_alumni_captions"
       layout="@layout/item_switch_row"
@@ -88,18 +101,51 @@
       android:layout_marginEnd="16dp"
       android:visibility="gone"/>
 
-    <com.google.android.material.button.MaterialButton
-      android:id="@+id/btn_import_alumni"
-      style="@style/Widget.Material3.Button.OutlinedButton"
+    <HorizontalScrollView
+      android:id="@+id/alumni_actions"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginStart="16dp"
-      android:layout_marginTop="4dp"
-      android:layout_marginEnd="16dp"
-      android:text="@string/alumni_import"
-      android:textColor="@color/gold"
-      android:visibility="gone"
-      app:strokeColor="@color/navy_700"/>
+      android:paddingStart="12dp"
+      android:paddingEnd="12dp"
+      android:scrollbars="none"
+      android:visibility="gone">
+
+      <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_import_alumni"
+          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin="4dp"
+          android:text="@string/alumni_import"
+          android:textColor="@color/gold"
+          app:strokeColor="@color/navy_700"/>
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_pair_alumni"
+          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin="4dp"
+          android:text="@string/alumni_pair"
+          android:textColor="@color/gold"
+          app:strokeColor="@color/navy_700"/>
+
+        <com.google.android.material.button.MaterialButton
+          android:id="@+id/btn_save_alumni"
+          style="@style/Widget.Material3.Button.OutlinedButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_margin="4dp"
+          android:text="@string/alumni_save_all"
+          android:textColor="@color/gold"
+          app:strokeColor="@color/navy_700"/>
+      </LinearLayout>
+    </HorizontalScrollView>
 
     <FrameLayout
       android:layout_width="match_parent"

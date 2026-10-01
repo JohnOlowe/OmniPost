@@ -8,6 +8,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 import org.junit.Test;
@@ -97,5 +98,23 @@ public class BirthdayHorizonTest {
     assertEquals(250, allPeople);
     assertTrue(weekPeople <= 250);
     assertTrue(weekPeople < allPeople);
+  }
+
+  @Test
+  public void copyListFollowsTheHorizonAndKeepsDates() {
+    Calendar now = utc(2026, Calendar.AUGUST, 26);
+    Member today = person("Bob", 8, 26);
+    Member week = person("Ada", 8, 31);
+    Member later = person("Cara", 9, 8);
+    List<Member> all = Arrays.asList(today, week, later);
+    List<BirthdayHorizon.Section> month =
+      BirthdayHorizon.group(all, now, BirthdayHorizon.MONTH);
+    String text = BirthdayHorizon.copyList("Alumni · This month", month);
+    assertTrue(text.startsWith("Alumni · This month"));
+    assertTrue(text.contains("Bob"));
+    assertTrue(text.contains("Ada"));
+    assertFalse(text.contains("Cara"));
+    assertEquals(2, BirthdayHorizon.copyCount(month));
+    assertEquals("", BirthdayHorizon.copyList("x", Collections.emptyList()));
   }
 }

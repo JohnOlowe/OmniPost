@@ -44,6 +44,21 @@ public class AlumniSheetTest {
     assertBirth("09/06", 6, 9);
     assertBirth("06/06/72", 6, 6);
     assertBirth("8/15/2002", 8, 15);
+    assertBirth("Sept. 4", 9, 4);
+    assertBirth("4th of Sept", 9, 4);
+    assertBirth("31st of May", 5, 31);
+    assertBirth("born 12 May", 5, 12);
+    assertBirth("09.06", 6, 9);
+    assertBirth("12-08", 8, 12);
+    assertBirth("10th September", 9, 10);
+    assertBirth("21st of June", 6, 21);
+    assertBirth("February 13", 2, 13);
+    assertBirth("Aug 26", 8, 26);
+    assertBirth("13th February", 2, 13);
+    assertBirth("26 Aug", 8, 26);
+    assertBirth("the 21st of June", 6, 21);
+    assertBirth("September 10th, 1990", 9, 10);
+    assertBirth("10 September", 9, 10);
   }
 
   @Test

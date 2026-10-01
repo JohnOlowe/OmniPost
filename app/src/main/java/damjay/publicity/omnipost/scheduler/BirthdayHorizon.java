@@ -153,6 +153,57 @@ public final class BirthdayHorizon {
     return out;
   }
 
+  /** Names and dates from the current Today / week / month / all view. */
+  public static String copyList(String heading, List<Section> sections) {
+    StringBuilder out = new StringBuilder();
+    if (heading != null && !heading.trim().isEmpty()) {
+      out.append(heading.trim()).append('\n');
+    }
+    int n = 0;
+    if (sections != null) {
+      for (Section section : sections) {
+        if (section == null || section.members == null) {
+          continue;
+        }
+        for (Member member : section.members) {
+          if (member == null) {
+            continue;
+          }
+          String name = member.name == null ? "" : member.name.trim();
+          if (name.isEmpty()) {
+            continue;
+          }
+          n++;
+          out.append(name);
+          String when = DateUtils.monthDayLabel(member.birthMonth, member.birthDay);
+          if (when != null && !when.isEmpty()) {
+            out.append(" — ").append(when);
+          }
+          out.append('\n');
+        }
+      }
+    }
+    return n == 0 ? "" : out.toString().trim();
+  }
+
+  public static int copyCount(List<Section> sections) {
+    int n = 0;
+    if (sections == null) {
+      return 0;
+    }
+    for (Section section : sections) {
+      if (section == null || section.members == null) {
+        continue;
+      }
+      for (Member member : section.members) {
+        if (member != null && member.name != null && !member.name.trim().isEmpty()) {
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
   static boolean accepts(int horizon, int[] next, int todayY, int todayM, int todayD) {
     if (horizon == ALL) {
       return true;

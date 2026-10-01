@@ -11,6 +11,7 @@ import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 import java.util.TimeZone;
 
 public final class ScheduleCoordinator {
@@ -681,6 +682,7 @@ public final class ScheduleCoordinator {
     public int added;
     public int filled;
     public int skipped;
+    public int pending;
   }
 
   public static AlumniImport importAlumniSheet(Context context, String csv) {
@@ -692,7 +694,7 @@ public final class ScheduleCoordinator {
     stats.skipped = parsed.skipped;
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
-    boolean skip = Prefs.alumniSkipCaption(app);
+    List<AlumniSheet.Row> leftover = AlumniPending.load(app);
     for (AlumniSheet.Row row : parsed.rows) {
       if (row == null) {
         continue;
@@ -702,27 +704,127 @@ public final class ScheduleCoordinator {
         stats.skipped++;
         continue;
       }
-      Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, name);
-      if (prior == null && !row.firstName.isEmpty() && !row.lastName.isEmpty()) {
-        prior = db.memberDao().findByKindAndNameIgnoreCase(
-          Member.KIND_ALUMNI, row.lastName + " " + row.firstName);
-      }
+      Member prior = findAlumni(db, row);
       if (prior != null) {
         fillAlumni(prior, row);
         db.memberDao().update(prior);
         stats.filled++;
         continue;
       }
-      Member member = new Member();
-      member.kind = Member.KIND_ALUMNI;
-      member.skipCaption = skip;
-      member.name = name;
-      fillAlumni(member, row);
-      db.memberDao().insert(member);
-      stats.added++;
+      if (pendingHas(leftover, row)) {
+        continue;
+      }
+      leftover.add(row);
+      stats.pending++;
     }
+    AlumniPending.save(app, leftover);
     bootstrap(app);
     return stats;
+  }
+
+  public static void pairAlumni(Context context, AlumniSheet.Row row, long rosterId) {
+    if (context == null || row == null || rosterId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Member prior = db.memberDao().getById(rosterId);
+    if (prior == null || !Member.isAlumni(prior)) {
+      return;
+    }
+    fillAlumni(prior, row);
+    db.memberDao().update(prior);
+    dropPending(app, row);
+    bootstrap(app);
+  }
+
+  public static void addAlumniFromSheet(Context context, AlumniSheet.Row row) {
+    if (context == null || row == null || row.displayName().isEmpty()) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Member member = new Member();
+    member.kind = Member.KIND_ALUMNI;
+    member.skipCaption = Prefs.alumniSkipCaption(app);
+    member.name = row.displayName();
+    fillAlumni(member, row);
+    if (row.birthMonth > 0 && member.birthMonth <= 0) {
+      member.birthMonth = row.birthMonth;
+      member.birthDay = row.birthDay;
+    }
+    db.memberDao().insert(member);
+    dropPending(app, row);
+    bootstrap(app);
+  }
+
+  public static void dropPendingRow(Context context, AlumniSheet.Row row) {
+    if (context == null) {
+      return;
+    }
+    dropPending(context.getApplicationContext(), row);
+  }
+
+  public static void setAlumniPastor(Context context, long memberId, boolean pastor) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Member member = db.memberDao().getById(memberId);
+    if (member == null) {
+      return;
+    }
+    member.desk = pastor ? Member.DESK_PASTOR : "";
+    db.memberDao().update(member);
+    bootstrap(app);
+  }
+
+  private static Member findAlumni(AppDatabase db, AlumniSheet.Row row) {
+    String name = row.displayName();
+    Member prior = db.memberDao().findByKindAndNameIgnoreCase(Member.KIND_ALUMNI, name);
+    if (prior == null && !row.firstName.isEmpty() && !row.lastName.isEmpty()) {
+      prior = db.memberDao().findByKindAndNameIgnoreCase(
+        Member.KIND_ALUMNI, row.lastName + " " + row.firstName);
+    }
+    return prior;
+  }
+
+  private static void dropPending(Context app, AlumniSheet.Row row) {
+    List<AlumniSheet.Row> leftover = AlumniPending.load(app);
+    List<AlumniSheet.Row> keep = new java.util.ArrayList<>();
+    for (AlumniSheet.Row item : leftover) {
+      if (item == null || pendingSame(row, item)) {
+        continue;
+      }
+      keep.add(item);
+    }
+    AlumniPending.save(app, keep);
+  }
+
+  private static boolean pendingHas(List<AlumniSheet.Row> leftover, AlumniSheet.Row row) {
+    if (leftover == null) {
+      return false;
+    }
+    for (AlumniSheet.Row item : leftover) {
+      if (pendingSame(row, item)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static boolean pendingSame(AlumniSheet.Row a, AlumniSheet.Row b) {
+    if (a == null || b == null) {
+      return false;
+    }
+    String name = a.displayName().toLowerCase(Locale.US);
+    if (name.isEmpty() || !name.equals(b.displayName().toLowerCase(Locale.US))) {
+      return false;
+    }
+    String phone = AlumniDesk.nigeriaDigits(a.phone);
+    String other = AlumniDesk.nigeriaDigits(b.phone);
+    return phone.isEmpty() || other.isEmpty() || phone.equals(other);
   }
 
   private static void fillAlumni(Member member, AlumniSheet.Row row) {

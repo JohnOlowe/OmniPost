@@ -121,17 +121,25 @@ public final class AlumniSheet {
     if (t.isEmpty() || t.equals("-") || t.equalsIgnoreCase("nil") || t.equalsIgnoreCase("n/a")) {
       return null;
     }
-    t = t.replace(".", "/").replace("-", "/").replace(",", " ");
+    t = t.toLowerCase(Locale.US);
     t = t.replaceAll("(?i)(\\d+)(st|nd|rd|th)", "$1");
+    t = t.replace(',', ' ');
+    t = t.replaceAll("\\b(of|the|born|birthday|bday|on|day)\\b", " ");
+    t = t.replace('.', ' ');
+    t = t.replace('-', ' ');
+    t = t.replace('/', ' ');
     t = t.replaceAll("\\s+", " ").trim();
     int named = namedMonth(t);
     if (named > 0) {
       int day = firstDayNumber(t);
+      if (day == 0) {
+        day = firstDayNumber(t.replaceAll("[a-z]+", " "));
+      }
       if (day >= 1 && day <= 31) {
         return new int[] {named, day};
       }
     }
-    String[] parts = t.split("[/ ]");
+    String[] parts = t.split(" ");
     List<Integer> nums = new ArrayList<>();
     for (String part : parts) {
       if (part == null || part.isEmpty()) {
@@ -320,6 +328,9 @@ public final class AlumniSheet {
       if (containsWord(n, names[i]) || containsWord(n, shortNames[i])) {
         return i + 1;
       }
+    }
+    if (containsWord(n, "sept")) {
+      return 9;
     }
     return 0;
   }

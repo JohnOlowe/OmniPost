@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@color/navy_950"
+  android:orientation="vertical">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="8dp">
+
+    <ImageButton
+      android:id="@+id/btn_back"
+      android:layout_width="44dp"
+      android:layout_height="44dp"
+      android:background="?attr/selectableItemBackgroundBorderless"
+      android:contentDescription="@string/back"
+      android:src="@drawable/ic_back"
+      android:tint="@color/cream"/>
+
+    <LinearLayout
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical">
+
+      <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/alumni_pair_title"
+        android:textColor="@color/cream"
+        android:textSize="20sp"
+        android:textStyle="bold"/>
+
+      <TextView
+        android:id="@+id/subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/alumni_pair_hint"
+        android:textColor="@color/text_muted"
+        android:textSize="13sp"/>
+    </LinearLayout>
+  </LinearLayout>
+
+  <androidx.recyclerview.widget.RecyclerView
+    android:id="@+id/list"
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="1"
+    android:clipToPadding="false"
+    android:padding="16dp"/>
+
+  <TextView
+    android:id="@+id/empty"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="32dp"
+    android:gravity="center"
+    android:text="@string/alumni_pair_empty"
+    android:textColor="@color/text_muted"
+    android:visibility="gone"/>
+
+  <LinearLayout
+    android:id="@+id/pair_actions"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:visibility="gone">
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_new_card"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="@string/alumni_pair_new"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/navy_700"/>
+
+    <com.google.android.material.button.MaterialButton
+      android:id="@+id/btn_drop"
+      style="@style/Widget.Material3.Button.OutlinedButton"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:text="@string/alumni_pair_drop"
+      android:textColor="@color/gold"
+      app:strokeColor="@color/navy_700"/>
+  </LinearLayout>
+</LinearLayout>

@@ -86,7 +86,9 @@ public final class AlumniDesk {
   }
 
   public static boolean inWave(Member member, int month1to12) {
-    return Member.isAlumni(member) && personWave(member) == monthWave(month1to12);
+    return Member.isAlumni(member)
+        && !Member.isPastor(member)
+        && personWave(member) == monthWave(month1to12);
   }
 
   public static int photoSpinnerIndex(Member member) {
@@ -189,7 +191,9 @@ public final class AlumniDesk {
     if (Member.isAlumni(member) && member.birthMonth == month1to12) {
       appendDot(out, "birthday month");
     }
-    if (inWave(member, month1to12)) {
+    if (Member.isPastor(member)) {
+      appendDot(out, "pastor");
+    } else if (inWave(member, month1to12)) {
       appendDot(out, "wave");
     }
     return out.toString();

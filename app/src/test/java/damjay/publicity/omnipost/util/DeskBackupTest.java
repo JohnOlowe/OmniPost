@@ -69,6 +69,15 @@ public class DeskBackupTest {
     member.notes = "Peeps group";
     snap.members.add(member);
 
+    Member pastor = new Member();
+    pastor.name = "Pastor Ada";
+    pastor.kind = Member.KIND_ALUMNI;
+    pastor.desk = Member.DESK_PASTOR;
+    pastor.birthMonth = 10;
+    pastor.birthDay = 1;
+    pastor.phone = "2348031234567";
+    snap.members.add(pastor);
+
     Draft draft = new Draft();
     draft.title = "Sunday";
     draft.variantA = "*Come and worship*";
@@ -123,7 +132,11 @@ public class DeskBackupTest {
     assertEquals(Member.KIND_MEMBER, got.members.get(0).kind);
     assertEquals("", got.members.get(0).phone);
     assertEquals("", got.members.get(0).photoStatus);
+    assertEquals("", got.members.get(0).desk);
     assertFalse(got.members.get(0).skipCaption);
+    assertEquals(Member.KIND_ALUMNI, got.members.get(1).kind);
+    assertEquals(Member.DESK_PASTOR, got.members.get(1).desk);
+    assertEquals("2348031234567", got.members.get(1).phone);
     assertFalse(got.customTasks.get(0).skipCaption);
     assertFalse(got.customTasks.get(0).titleLocked);
     assertFalse(got.series.get(0).skipCaption);

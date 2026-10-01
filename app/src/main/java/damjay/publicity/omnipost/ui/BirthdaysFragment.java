@@ -1,6 +1,9 @@
 package damjay.publicity.omnipost.ui;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -15,6 +18,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -24,6 +28,7 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
+import damjay.publicity.omnipost.scheduler.AlumniContacts;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
@@ -45,13 +50,19 @@ public class BirthdaysFragment extends Fragment {
   private FragmentBirthdaysBinding binding;
   private MemberAdapter adapter;
   private final List<Member> all = new ArrayList<>();
+  private static final int TAB_MEMBERS = 0;
+  private static final int TAB_ALUMNI = 1;
+  private static final int TAB_PASTORS = 2;
+
   private final Map<Integer, List<BirthdayHorizon.Section>> memberByHorizon = new HashMap<>();
   private final Map<Integer, List<BirthdayHorizon.Section>> alumniByHorizon = new HashMap<>();
-  private String kind = Member.KIND_MEMBER;
+  private final Map<Integer, List<BirthdayHorizon.Section>> pastorByHorizon = new HashMap<>();
+  private int tab = TAB_MEMBERS;
   private int memberHorizon = BirthdayHorizon.ALL;
   private int alumniHorizon = BirthdayHorizon.WEEK;
   private int memberCount;
   private int alumniCount;
+  private int pastorCount;
   private boolean ignoreChip;
   private final ActivityResultLauncher<String[]> sheetLauncher =
     registerForActivityResult(new ActivityResultContracts.OpenDocument(), this::onSheetPicked);
@@ -99,10 +110,11 @@ public class BirthdaysFragment extends Fragment {
     binding.list.setItemAnimator(null);
     binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_members));
     binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_alumni));
+    binding.tabs.addTab(binding.tabs.newTab().setText(R.string.tab_pastors));
     binding.tabs.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
       @Override
-      public void onTabSelected(TabLayout.Tab tab) {
-        kind = tab.getPosition() == 1 ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
+      public void onTabSelected(TabLayout.Tab selected) {
+        tab = selected.getPosition();
         syncHorizonChip();
         paint();
       }
@@ -118,10 +130,10 @@ public class BirthdaysFragment extends Fragment {
         return;
       }
       int horizon = horizonOf(checkedId);
-      if (Member.KIND_ALUMNI.equals(kind)) {
-        alumniHorizon = horizon;
-      } else {
+      if (tab == TAB_MEMBERS) {
         memberHorizon = horizon;
+      } else {
+        alumniHorizon = horizon;
       }
       paint();
     });
@@ -135,6 +147,10 @@ public class BirthdaysFragment extends Fragment {
         }))
         .setNegativeButton(android.R.string.cancel, null)
         .show());
+    binding.btnPairAlumni.setOnClickListener(v ->
+      startActivity(new Intent(requireContext(), AlumniMatchActivity.class)));
+    binding.btnSaveAlumni.setOnClickListener(v -> saveAlumniContacts());
+    binding.btnCopyBirthdays.setOnClickListener(v -> copyBirthdayList());
     AppDatabase.get(requireContext())
       .memberDao()
       .observeAll()
@@ -184,7 +200,7 @@ public class BirthdaysFragment extends Fragment {
     if (binding == null) {
       return;
     }
-    int horizon = Member.KIND_ALUMNI.equals(kind) ? alumniHorizon : memberHorizon;
+    int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
     int id = R.id.chip_all;
     if (horizon == BirthdayHorizon.TODAY) {
       id = R.id.chip_today;
@@ -222,8 +238,11 @@ public class BirthdaysFragment extends Fragment {
   private void rebuildCaches() {
     List<Member> members = new ArrayList<>();
     List<Member> alumni = new ArrayList<>();
+    List<Member> pastors = new ArrayList<>();
     for (Member member : all) {
-      if (Member.KIND_ALUMNI.equals(Member.kindOf(member))) {
+      if (Member.isPastor(member)) {
+        pastors.add(member);
+      } else if (Member.isAlumni(member)) {
         alumni.add(member);
       } else {
         members.add(member);
@@ -231,37 +250,93 @@ public class BirthdaysFragment extends Fragment {
     }
     memberCount = members.size();
     alumniCount = alumni.size();
+    pastorCount = pastors.size();
     Calendar now = Calendar.getInstance();
     memberByHorizon.clear();
     alumniByHorizon.clear();
+    pastorByHorizon.clear();
     for (int horizon : BirthdayHorizon.HORIZONS) {
       memberByHorizon.put(horizon, BirthdayHorizon.group(members, now, horizon));
       alumniByHorizon.put(horizon, BirthdayHorizon.group(alumni, now, horizon));
+      pastorByHorizon.put(horizon, BirthdayHorizon.group(pastors, now, horizon));
     }
+  }
+
+  private List<BirthdayHorizon.Section> currentSections() {
+    Map<Integer, List<BirthdayHorizon.Section>> byHorizon = memberByHorizon;
+    if (tab == TAB_ALUMNI) {
+      byHorizon = alumniByHorizon;
+    } else if (tab == TAB_PASTORS) {
+      byHorizon = pastorByHorizon;
+    }
+    int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
+    List<BirthdayHorizon.Section> sections = byHorizon.get(horizon);
+    return sections == null ? Collections.emptyList() : sections;
+  }
+
+  private String horizonLabel(int horizon) {
+    if (horizon == BirthdayHorizon.TODAY) {
+      return getString(R.string.horizon_today);
+    }
+    if (horizon == BirthdayHorizon.WEEK) {
+      return getString(R.string.horizon_week);
+    }
+    if (horizon == BirthdayHorizon.TWO_WEEKS) {
+      return getString(R.string.horizon_fortnight);
+    }
+    if (horizon == BirthdayHorizon.MONTH) {
+      return getString(R.string.horizon_month);
+    }
+    return getString(R.string.horizon_all);
+  }
+
+  private void copyBirthdayList() {
+    List<BirthdayHorizon.Section> sections = currentSections();
+    String who = tab == TAB_PASTORS
+      ? getString(R.string.tab_pastors)
+      : tab == TAB_ALUMNI ? getString(R.string.tab_alumni) : getString(R.string.tab_members);
+    int horizon = tab == TAB_MEMBERS ? memberHorizon : alumniHorizon;
+    String heading = getString(R.string.copy_birthday_heading, who, horizonLabel(horizon));
+    String text = BirthdayHorizon.copyList(heading, sections);
+    int n = BirthdayHorizon.copyCount(sections);
+    if (text.isEmpty() || n == 0) {
+      Toast.makeText(requireContext(), R.string.copy_birthday_empty, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    ClipboardManager clipboard =
+      (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+    if (clipboard == null) {
+      Toast.makeText(requireContext(), R.string.copy_birthday_empty, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    clipboard.setPrimaryClip(ClipData.newPlainText("birthdays", text));
+    Toast.makeText(requireContext(), getString(R.string.copy_birthday_copied, n), Toast.LENGTH_SHORT)
+      .show();
   }
 
   private void paint() {
     if (binding == null) {
       return;
     }
-    boolean alumni = Member.KIND_ALUMNI.equals(kind);
-    int horizon = alumni ? alumniHorizon : memberHorizon;
-    List<BirthdayHorizon.Section> sections =
-      (alumni ? alumniByHorizon : memberByHorizon).get(horizon);
-    if (sections == null) {
-      sections = Collections.emptyList();
-    }
+    boolean alumniDesk = tab != TAB_MEMBERS;
+    List<BirthdayHorizon.Section> sections = currentSections();
     adapter.submit(sections);
-    int roster = alumni ? alumniCount : memberCount;
+    int roster = tab == TAB_PASTORS ? pastorCount : tab == TAB_ALUMNI ? alumniCount : memberCount;
     boolean empty = sections.isEmpty();
-    binding.empty.setText(
-      empty && roster == 0
-        ? (alumni ? R.string.empty_alumni : R.string.empty_birthdays)
-        : R.string.empty_horizon);
+    int emptyText = R.string.empty_birthdays;
+    if (tab == TAB_ALUMNI) {
+      emptyText = R.string.empty_alumni;
+    } else if (tab == TAB_PASTORS) {
+      emptyText = R.string.empty_pastors;
+    }
+    binding.empty.setText(empty && roster == 0 ? emptyText : R.string.empty_horizon);
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
-    binding.rowAlumniCaptions.getRoot().setVisibility(alumni ? View.VISIBLE : View.GONE);
-    binding.btnImportAlumni.setVisibility(alumni ? View.VISIBLE : View.GONE);
-    binding.fab.setContentDescription(getString(alumni ? R.string.add_alumni : R.string.add_member));
+    binding.rowAlumniCaptions.getRoot().setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.alumniActions.setVisibility(alumniDesk ? View.VISIBLE : View.GONE);
+    binding.fab.setContentDescription(getString(
+      tab == TAB_PASTORS
+        ? R.string.add_pastor
+        : tab == TAB_ALUMNI ? R.string.add_alumni : R.string.add_member));
   }
 
   private void showEditor(@Nullable Member existing) {
@@ -276,6 +351,7 @@ public class BirthdaysFragment extends Fragment {
     View photoLabel = view.findViewById(R.id.label_photo);
     View genderLabel = view.findViewById(R.id.label_gender);
     CheckBox skipCaption = view.findViewById(R.id.skip_caption);
+    CheckBox previousPastor = view.findViewById(R.id.previous_pastor);
     ArrayAdapter<CharSequence> months = ArrayAdapter.createFromResource(
       requireContext(), R.array.months, R.layout.spinner_item);
     months.setDropDownViewResource(R.layout.spinner_item);
@@ -296,12 +372,13 @@ public class BirthdaysFragment extends Fragment {
       requireContext(), R.array.alumni_gender, R.layout.spinner_item);
     genders.setDropDownViewResource(R.layout.spinner_item);
     gender.setAdapter(genders);
-    boolean alumniTab = Member.KIND_ALUMNI.equals(kind);
+    boolean alumniTab = tab != TAB_MEMBERS;
     if (existing != null) {
       name.setText(existing.name);
       month.setSelection(Math.max(0, existing.birthMonth - 1));
       day.setSelection(Math.max(0, existing.birthDay - 1));
       skipCaption.setChecked(existing.skipCaption);
+      previousPastor.setChecked(Member.isPastor(existing));
       if (existing.phone != null) {
         phone.setText(existing.phone);
       }
@@ -315,6 +392,7 @@ public class BirthdaysFragment extends Fragment {
       }
     } else {
       skipCaption.setChecked(alumniTab && Prefs.alumniSkipCaption(requireContext()));
+      previousPastor.setChecked(tab == TAB_PASTORS);
     }
     boolean alumni = existing != null ? Member.isAlumni(existing) : alumniTab;
     int alumniVis = alumni ? View.VISIBLE : View.GONE;
@@ -323,6 +401,7 @@ public class BirthdaysFragment extends Fragment {
     photo.setVisibility(alumniVis);
     genderLabel.setVisibility(alumniVis);
     gender.setVisibility(alumniVis);
+    previousPastor.setVisibility(alumniVis);
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(
         existing == null
@@ -347,6 +426,7 @@ public class BirthdaysFragment extends Fragment {
         member.kind = alumni ? Member.KIND_ALUMNI : Member.KIND_MEMBER;
         member.skipCaption = skipCaption.isChecked();
         if (alumni) {
+          member.desk = previousPastor.isChecked() ? Member.DESK_PASTOR : "";
           member.phone = phone.getText() == null ? "" : phone.getText().toString().trim();
           if (AlumniDesk.nigeriaDigits(member.phone).length() == 13) {
             member.phone = AlumniDesk.nigeriaDigits(member.phone);
@@ -354,6 +434,8 @@ public class BirthdaysFragment extends Fragment {
           member.photoStatus = AlumniDesk.photoStatusFromIndex(photo.getSelectedItemPosition());
           int g = gender.getSelectedItemPosition();
           member.gender = g == 1 ? Member.GENDER_MALE : g == 2 ? Member.GENDER_FEMALE : "";
+        } else {
+          member.desk = "";
         }
         AppExecutors.disk().execute(() -> {
           AppDatabase db = AppDatabase.get(requireContext());
@@ -371,6 +453,7 @@ public class BirthdaysFragment extends Fragment {
                 prior.photoStatus = member.photoStatus;
               }
               prior.skipCaption = member.skipCaption;
+              prior.desk = member.desk;
               db.memberDao().update(prior);
               merged = true;
               ScheduleCoordinator.cancelMemberTasks(requireContext(), prior.id);
@@ -436,14 +519,56 @@ public class BirthdaysFragment extends Fragment {
           }
           Toast.makeText(
             requireContext(),
-            getString(R.string.alumni_import_ok, stats.filled, stats.added, stats.skipped),
+            getString(R.string.alumni_import_ok, stats.filled, stats.pending, stats.skipped),
             Toast.LENGTH_LONG)
             .show();
+          if (stats.pending > 0) {
+            startActivity(new Intent(requireContext(), AlumniMatchActivity.class));
+          }
         });
       } catch (Exception e) {
         AppExecutors.main(() -> {
           if (isAdded()) {
             Toast.makeText(requireContext(), R.string.alumni_import_failed, Toast.LENGTH_LONG).show();
+          }
+        });
+      }
+    });
+  }
+
+  private void saveAlumniContacts() {
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      List<Member> members = AppDatabase.get(app).memberDao().getAllSync();
+      int n = AlumniContacts.withPhone(members);
+      if (n == 0) {
+        AppExecutors.main(() -> {
+          if (isAdded()) {
+            Toast.makeText(requireContext(), R.string.alumni_save_none, Toast.LENGTH_LONG).show();
+          }
+        });
+        return;
+      }
+      try {
+        java.io.File file = AlumniContacts.writeCache(app, AlumniContacts.csv(members));
+        Uri uri = FileProvider.getUriForFile(app, "damjay.publicity.omnipost.files", file);
+        AppExecutors.main(() -> {
+          if (!isAdded()) {
+            return;
+          }
+          Intent send = new Intent(Intent.ACTION_SEND);
+          send.setType("text/csv");
+          send.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.alumni_save_subject));
+          send.putExtra(Intent.EXTRA_TEXT, getString(R.string.alumni_save_body));
+          send.putExtra(Intent.EXTRA_STREAM, uri);
+          send.setClipData(android.content.ClipData.newRawUri("contacts", uri));
+          send.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+          startActivity(Intent.createChooser(send, getString(R.string.alumni_save_all)));
+        });
+      } catch (Exception e) {
+        AppExecutors.main(() -> {
+          if (isAdded()) {
+            Toast.makeText(requireContext(), R.string.alumni_save_failed, Toast.LENGTH_LONG).show();
           }
         });
       }

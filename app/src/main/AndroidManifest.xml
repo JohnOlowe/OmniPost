@@ -30,6 +30,16 @@
     android:supportsRtl="true"
     android:theme="@style/AppTheme">
 
+    <provider
+      android:name="androidx.core.content.FileProvider"
+      android:authorities="damjay.publicity.omnipost.files"
+      android:exported="false"
+      android:grantUriPermissions="true">
+      <meta-data
+        android:name="android.support.FILE_PROVIDER_PATHS"
+        android:resource="@xml/file_paths"/>
+    </provider>
+
     <activity
       android:name=".MainActivity"
       android:exported="true"
@@ -74,6 +84,18 @@
       android:exported="false"
       android:label="@string/alumni_desk_title"
       android:parentActivityName=".MainActivity"/>
+
+    <activity
+      android:name=".ui.AlumniMatchActivity"
+      android:exported="false"
+      android:label="@string/alumni_pair_title"
+      android:parentActivityName=".MainActivity"/>
+
+    <activity
+      android:name=".ui.AlumniPairActivity"
+      android:exported="false"
+      android:label="@string/alumni_pair_one"
+      android:parentActivityName=".ui.AlumniMatchActivity"/>
 
     <activity
       android:name=".ui.InstagramConvertActivity"

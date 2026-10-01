@@ -76,6 +76,21 @@ public class AlumniDeskTest {
   }
 
   @Test
+  public void previousPastorsSkipTheWaveKeepBirthdayLine() {
+    Member pastor = alumni("Pastor Ada", 10, 2);
+    pastor.desk = Member.DESK_PASTOR;
+    pastor.phone = "08031234567";
+    assertTrue(Member.isPastor(pastor));
+    assertFalse(AlumniDesk.inWave(pastor, 10));
+    assertFalse(AlumniDesk.inWave(pastor, 11));
+    String line = AlumniDesk.rosterLine(pastor, 10);
+    assertTrue(line.contains("pastor"));
+    assertFalse(line.contains("wave"));
+    assertEquals(AlumniCopy.KIND_BIRTHDAY, AlumniCopy.kindFor(pastor, 10));
+    assertEquals(AlumniCopy.KIND_PHOTO, AlumniCopy.kindFor(pastor, 3));
+  }
+
+  @Test
   public void monthBriefListsEveryoneBornThatMonth() {
     Member ada = alumni("Ada", 10, 2);
     Member bob = alumni("Bob", 10, 9);

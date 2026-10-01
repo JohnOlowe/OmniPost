@@ -10,6 +10,7 @@ public final class ExtraKeys {
   public static final String POST_AT = "extra_post_at";
   public static final String ALUMNI_MODE = "extra_alumni_mode";
   public static final String MEMBER_ID = "extra_member_id";
+  public static final String PENDING_INDEX = "extra_pending_index";
 
   private ExtraKeys() {}
 }

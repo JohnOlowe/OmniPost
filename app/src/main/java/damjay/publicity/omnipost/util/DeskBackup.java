@@ -363,6 +363,7 @@ public final class DeskBackup {
       o.put("gradSet", nz(member.gradSet));
       o.put("photoStatus", nz(member.photoStatus));
       o.put("introduced", member.introduced);
+      o.put("desk", nz(member.desk));
       o.put("skipCaption", member.skipCaption);
       out.put(o);
     }
@@ -484,6 +485,7 @@ public final class DeskBackup {
       member.gradSet = str(o, "gradSet");
       member.photoStatus = str(o, "photoStatus");
       member.introduced = o.optBoolean("introduced", false);
+      member.desk = str(o, "desk");
       member.skipCaption = o.optBoolean("skipCaption", false);
       out.add(member);
     }
