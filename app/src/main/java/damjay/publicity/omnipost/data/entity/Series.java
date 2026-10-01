@@ -48,6 +48,20 @@ public class Series {
   public boolean lastOfPrevMonth = true;
   public boolean tenth = true;
   public boolean twentieth = true;
+
+  /**
+   * Bitmask of days in the month for {@link #KIND_MONTHLY}. Bit 0 = last day of
+   * this month; bits 1–31 = that date. Empty with empty {@link #monthOrdinals}
+   * falls back to {@link #tenth} / {@link #twentieth}.
+   */
+  public int monthDays;
+
+  /**
+   * Bitmask of ordinal weekdays for {@link #KIND_MONTHLY}: (ordinal 1–5) ×
+   * Sunday–Saturday. 5 = last that weekday in the month.
+   */
+  public long monthOrdinals;
+
   public boolean enabled = true;
 
   @NonNull

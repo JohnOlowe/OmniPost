@@ -331,6 +331,41 @@ public class RoutineGeneratorTest {
   }
 
   @Test
+  public void monthlyCanRingOnTheFirstAndOnTheSecondWednesday() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.SEPTEMBER, 1, 8, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Series series = new Series();
+    series.id = 21L;
+    series.title = "Workers";
+    series.kind = Series.KIND_MONTHLY;
+    series.enabled = true;
+    series.postHour = 7;
+    series.lastOfPrevMonth = false;
+    series.tenth = false;
+    series.twentieth = false;
+    series.monthDays = MonthSlots.withDay(0, 1, true);
+    series.monthOrdinals = MonthSlots.withOrdinal(0L, 2, Calendar.WEDNESDAY, true);
+    List<Task> tasks = RoutineGenerator.generate(
+      now.getTimeInMillis(), utc, Collections.<Member>emptyList(), Collections.singletonList(series));
+    boolean first = false;
+    boolean secondWed = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|21|2026-09|D1|2026-09-01").equals(task.occurrenceKey)) {
+        first = true;
+      }
+      if ((TaskTypes.BIRTHDAY_NOTICE + "|21|2026-09|W2WED|2026-09-09").equals(task.occurrenceKey)) {
+        secondWed = true;
+      }
+    }
+    assertTrue(first);
+    assertTrue(secondWed);
+  }
+
+  @Test
   public void customWeeklyUsesChosenDayAndHour() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);

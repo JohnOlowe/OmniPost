@@ -120,6 +120,13 @@
       android:windowSoftInputMode="adjustResize"/>
 
     <activity
+      android:name=".ui.FellowshipCaptionEditActivity"
+      android:exported="false"
+      android:label="@string/nav_captions"
+      android:parentActivityName=".MainActivity"
+      android:windowSoftInputMode="adjustResize"/>
+
+    <activity
       android:name=".ui.AlumniAddressEditActivity"
       android:exported="false"
       android:label="@string/alumni_address_new"

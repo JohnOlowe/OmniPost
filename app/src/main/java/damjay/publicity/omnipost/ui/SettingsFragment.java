@@ -160,7 +160,11 @@ public class SettingsFragment extends Fragment {
 
   private String seriesSummary(Series series) {
     if (Series.KIND_MONTHLY.equals(series.kind)) {
-      return getString(R.string.kind_monthly)
+      String when = damjay.publicity.omnipost.scheduler.MonthSlots.sentence(series);
+      if (when.endsWith(". {month} fills itself.")) {
+        when = when.substring(0, when.length() - ". {month} fills itself.".length());
+      }
+      return when
         + " · "
         + damjay.publicity.omnipost.scheduler.Weekdays.clock(series.postHour, series.postMinute);
     }

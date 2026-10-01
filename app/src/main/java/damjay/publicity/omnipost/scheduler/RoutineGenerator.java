@@ -307,51 +307,15 @@ public final class RoutineGenerator {
       target.add(Calendar.MONTH, m);
       String monthKey = DateUtils.monthKey(target);
       String monthName = DateUtils.monthName(target);
-      int max = target.getActualMaximum(Calendar.DAY_OF_MONTH);
-
-      if (series.lastOfPrevMonth) {
-        Calendar eve = (Calendar) target.clone();
-        eve.set(Calendar.DAY_OF_MONTH, 1);
-        eve.add(Calendar.MONTH, -1);
-        eve.set(Calendar.DAY_OF_MONTH, eve.getActualMaximum(Calendar.DAY_OF_MONTH));
-        eve.set(Calendar.HOUR_OF_DAY, hour);
-        eve.set(Calendar.MINUTE, series.postMinute);
-        eve.set(Calendar.SECOND, 0);
-        eve.set(Calendar.MILLISECOND, 0);
-        addNoticeIfDue(out, series, todayKey, monthKey, monthName, "EVE", eve, draftHour, leadDays);
-      }
-      if (series.tenth) {
-        addFixedDay(
-          out, series, todayKey, target, monthKey, monthName, "D10", 10, max, hour, draftHour, leadDays);
-      }
-      if (series.twentieth) {
-        addFixedDay(
-          out, series, todayKey, target, monthKey, monthName, "D20", 20, max, hour, draftHour, leadDays);
+      List<MonthSlots.Hit> hits = MonthSlots.hits(series, target, hour, series.postMinute);
+      for (MonthSlots.Hit hit : hits) {
+        if (hit == null || hit.post == null) {
+          continue;
+        }
+        addNoticeIfDue(
+          out, series, todayKey, monthKey, monthName, hit.slot, hit.post, draftHour, leadDays);
       }
     }
-  }
-
-  private static void addFixedDay(
-    List<Task> out,
-    Series series,
-    String todayKey,
-    Calendar target,
-    String monthKey,
-    String monthName,
-    String slot,
-    int day,
-    int max,
-    int hour,
-    int draftHour,
-    int leadDays) {
-    if (day > max) {
-      return;
-    }
-    Calendar post = DateUtils.sameDayAt(target, hour, series.postMinute);
-    post.set(Calendar.DAY_OF_MONTH, day);
-    post.set(Calendar.HOUR_OF_DAY, hour);
-    post.set(Calendar.MINUTE, series.postMinute);
-    addNoticeIfDue(out, series, todayKey, monthKey, monthName, slot, post, draftHour, leadDays);
   }
 
   private static void addNoticeIfDue(
@@ -380,27 +344,7 @@ public final class RoutineGenerator {
   }
 
   private static String monthlyDescription(Series series) {
-    StringBuilder out = new StringBuilder();
-    if (series.lastOfPrevMonth) {
-      out.append("Last day of the previous month");
-    }
-    if (series.tenth) {
-      if (out.length() > 0) {
-        out.append(", ");
-      }
-      out.append("the 10th");
-    }
-    if (series.twentieth) {
-      if (out.length() > 0) {
-        out.append(", ");
-      }
-      out.append("the 20th");
-    }
-    if (out.length() == 0) {
-      return "{month} fills itself.";
-    }
-    out.append(". {month} fills itself.");
-    return out.toString();
+    return MonthSlots.sentence(series);
   }
 
   private static String countdownKey(Series series, String eventKey, String postKey) {

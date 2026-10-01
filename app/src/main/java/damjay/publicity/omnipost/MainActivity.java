@@ -12,6 +12,7 @@ import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.ui.BirthdaysFragment;
 import damjay.publicity.omnipost.ui.DraftActivity;
+import damjay.publicity.omnipost.ui.FellowshipCaptionsFragment;
 import damjay.publicity.omnipost.ui.Homes;
 import damjay.publicity.omnipost.ui.SettingsFragment;
 import damjay.publicity.omnipost.ui.TasksFragment;
@@ -48,6 +49,10 @@ public class MainActivity extends AppCompatActivity {
       }
       if (id == R.id.nav_birthdays) {
         show(new BirthdaysFragment());
+        return true;
+      }
+      if (id == R.id.nav_captions) {
+        show(new FellowshipCaptionsFragment());
         return true;
       }
       if (id == R.id.nav_settings) {

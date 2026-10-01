@@ -209,25 +209,89 @@
         android:id="@+id/opt_eve"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:checked="true"
         android:text="@string/opt_last_prev"
         android:textColor="@color/cream"/>
 
-      <CheckBox
-        android:id="@+id/opt_tenth"
+      <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/opt_day_10"
-        android:textColor="@color/cream"/>
+        android:layout_marginTop="10dp"
+        android:text="@string/month_days_label"
+        android:textColor="@color/gold"
+        android:textStyle="bold"/>
+
+      <GridLayout
+        android:id="@+id/month_days"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:alignmentMode="alignMargins"
+        android:columnCount="7"
+        android:useDefaultMargins="false"/>
 
       <CheckBox
-        android:id="@+id/opt_twentieth"
+        android:id="@+id/opt_last_of_month"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:checked="true"
-        android:text="@string/opt_day_20"
+        android:text="@string/opt_last_of_month"
         android:textColor="@color/cream"/>
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/month_nth_label"
+        android:textColor="@color/gold"
+        android:textStyle="bold"/>
+
+      <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="@string/month_nth_hint"
+        android:textColor="@color/text_muted"
+        android:textSize="12sp"/>
+
+      <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+          android:id="@+id/nth_ordinals"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal"/>
+      </HorizontalScrollView>
+
+      <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+          android:id="@+id/nth_weekdays"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="horizontal"/>
+      </HorizontalScrollView>
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_add_nth"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/month_nth_add"
+        android:textColor="@color/gold"/>
+
+      <LinearLayout
+        android:id="@+id/nth_list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"/>
     </LinearLayout>
 
     <com.google.android.material.button.MaterialButton

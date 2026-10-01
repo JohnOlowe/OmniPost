@@ -48,6 +48,7 @@ public final class DeskBackup {
     public int ringMinutes = 5;
     public boolean alumniSkipCaption = true;
     public String alumniCaptions = "";
+    public String fellowshipCaptions = "";
     public boolean seedCaptions;
     public boolean deskOngoing = true;
     public boolean fullScreen = true;
@@ -83,6 +84,7 @@ public final class DeskBackup {
     snap.ringMinutes = Prefs.ringMinutes(app);
     snap.alumniSkipCaption = Prefs.alumniSkipCaption(app);
     snap.alumniCaptions = Prefs.alumniCaptionsJson(app);
+    snap.fellowshipCaptions = Prefs.fellowshipCaptionsJson(app);
     snap.seedCaptions = Prefs.seedCaptions(app);
     snap.deskOngoing = Prefs.deskOngoing(app);
     snap.fullScreen = Prefs.fullScreen(app);
@@ -133,6 +135,7 @@ public final class DeskBackup {
     Prefs.setRingMinutes(app, clamp(snap.ringMinutes, 1, 15, 5));
     Prefs.setAlumniSkipCaption(app, snap.alumniSkipCaption);
     Prefs.setAlumniCaptionsJson(app, snap.alumniCaptions);
+    Prefs.setFellowshipCaptionsJson(app, snap.fellowshipCaptions);
     Prefs.setSeedCaptions(app, snap.seedCaptions);
     Prefs.setDeskOngoing(app, snap.deskOngoing);
     Prefs.setFullScreen(app, snap.fullScreen);
@@ -199,6 +202,7 @@ public final class DeskBackup {
       prefs.put("ringMinutes", src.ringMinutes);
       prefs.put("alumniSkipCaption", src.alumniSkipCaption);
       prefs.put("alumniCaptions", src.alumniCaptions == null ? "" : src.alumniCaptions);
+      prefs.put("fellowshipCaptions", src.fellowshipCaptions == null ? "" : src.fellowshipCaptions);
       prefs.put("seedCaptions", src.seedCaptions);
       prefs.put("deskOngoing", src.deskOngoing);
       prefs.put("fullScreen", src.fullScreen);
@@ -246,6 +250,7 @@ public final class DeskBackup {
         snap.ringMinutes = prefs.optInt("ringMinutes", 5);
         snap.alumniSkipCaption = prefs.optBoolean("alumniSkipCaption", true);
         snap.alumniCaptions = prefs.optString("alumniCaptions", "");
+        snap.fellowshipCaptions = prefs.optString("fellowshipCaptions", "");
         snap.seedCaptions = prefs.optBoolean("seedCaptions", false);
         snap.deskOngoing = prefs.optBoolean("deskOngoing", true);
         snap.fullScreen = prefs.optBoolean("fullScreen", true);
@@ -341,6 +346,8 @@ public final class DeskBackup {
       o.put("lastOfPrevMonth", series.lastOfPrevMonth);
       o.put("tenth", series.tenth);
       o.put("twentieth", series.twentieth);
+      o.put("monthDays", series.monthDays);
+      o.put("monthOrdinals", series.monthOrdinals);
       o.put("enabled", series.enabled);
       o.put("seedKey", nz(series.seedKey));
       o.put("skipCaption", series.skipCaption);
@@ -472,6 +479,8 @@ public final class DeskBackup {
       series.lastOfPrevMonth = o.optBoolean("lastOfPrevMonth", true);
       series.tenth = o.optBoolean("tenth", true);
       series.twentieth = o.optBoolean("twentieth", true);
+      series.monthDays = o.optInt("monthDays", 0);
+      series.monthOrdinals = o.optLong("monthOrdinals", 0L);
       series.enabled = o.optBoolean("enabled", true);
       series.seedKey = str(o, "seedKey");
       series.skipCaption = o.optBoolean("skipCaption", false);

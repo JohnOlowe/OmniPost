@@ -9,6 +9,10 @@
     android:icon="@drawable/ic_nav_birthdays"
     android:title="@string/nav_birthdays"/>
   <item
+    android:id="@+id/nav_captions"
+    android:icon="@drawable/ic_nav_drafts"
+    android:title="@string/nav_captions"/>
+  <item
     android:id="@+id/nav_settings"
     android:icon="@drawable/ic_nav_settings"
     android:title="@string/nav_settings"/>

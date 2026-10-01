@@ -29,6 +29,7 @@ public final class Prefs {
   private static final String RING_MIN = "ring_minutes";
   private static final String ALUMNI_SKIP = "alumni_skip_caption";
   private static final String ALUMNI_CAPS = "alumni_captions";
+  private static final String FELLOW_CAPS = "fellowship_captions";
   private static final String LAST_HOME = "last_home";
   public static final String HOME_FELLOWSHIP = "fellowship";
   public static final String HOME_ALUMNI = "alumni";
@@ -314,6 +315,63 @@ public final class Prefs {
     } catch (Exception e) {
       return new JSONObject();
     }
+  }
+
+  public static String fellowshipCaptionsJson(Context ctx) {
+    return sp(ctx).getString(FELLOW_CAPS, "");
+  }
+
+  public static void setFellowshipCaptionsJson(Context ctx, String json) {
+    String value = json == null ? "" : json.trim();
+    if (value.isEmpty() || "{}".equals(value)) {
+      sp(ctx).edit().remove(FELLOW_CAPS).apply();
+      return;
+    }
+    sp(ctx).edit().putString(FELLOW_CAPS, value).apply();
+  }
+
+  public static String fellowshipCaptionRaw(Context ctx, String key) {
+    if (key == null || key.isEmpty()) {
+      return null;
+    }
+    String raw = fellowshipCaptionsJson(ctx);
+    if (raw == null || raw.isEmpty()) {
+      return null;
+    }
+    try {
+      JSONObject o = new JSONObject(raw);
+      if (!o.has(key)) {
+        return null;
+      }
+      String value = o.optString(key, "");
+      return value.trim().isEmpty() ? null : value;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  public static void setFellowshipCaption(Context ctx, String key, String value) {
+    if (key == null || key.isEmpty()) {
+      return;
+    }
+    JSONObject o;
+    try {
+      String raw = fellowshipCaptionsJson(ctx);
+      o = raw == null || raw.isEmpty() ? new JSONObject() : new JSONObject(raw);
+    } catch (Exception e) {
+      o = new JSONObject();
+    }
+    String text = value == null ? "" : value;
+    if (text.trim().isEmpty()) {
+      o.remove(key);
+    } else {
+      try {
+        o.put(key, text);
+      } catch (Exception ignored) {
+        return;
+      }
+    }
+    setFellowshipCaptionsJson(ctx, o.length() == 0 ? "" : o.toString());
   }
 
   public static boolean seedCaptions(Context ctx) {
