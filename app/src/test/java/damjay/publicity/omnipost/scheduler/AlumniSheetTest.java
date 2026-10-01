@@ -1,6 +1,7 @@
 package damjay.publicity.omnipost.scheduler;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -70,6 +71,21 @@ public class AlumniSheetTest {
     assertEquals(Member.GENDER_MALE, AlumniSheet.genderOf("m"));
     assertEquals(Member.GENDER_MALE, AlumniSheet.genderOf("Sir"));
     assertEquals("", AlumniSheet.genderOf(""));
+  }
+
+  @Test
+  public void rosterAndSheetNamesStayDistinctAfterPair() {
+    Member member = new Member();
+    member.name = "Adeola Olowe";
+    member.firstName = "Ada";
+    member.lastName = "Okafor";
+    assertEquals("Ada Okafor", AlumniSheet.sheetName(member));
+    assertTrue(AlumniSheet.namesDiffer(member));
+    member.name = "Ada Okafor";
+    assertFalse(AlumniSheet.namesDiffer(member));
+    member.lastName = "";
+    member.firstName = "";
+    assertFalse(AlumniSheet.namesDiffer(member));
   }
 
   @Test

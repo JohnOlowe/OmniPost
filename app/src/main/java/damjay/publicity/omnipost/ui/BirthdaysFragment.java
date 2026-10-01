@@ -377,20 +377,7 @@ public class BirthdaysFragment extends Fragment {
 
   private List<BirthdayHorizon.Section> currentSections() {
     if (searching()) {
-      List<Member> hits = new ArrayList<>();
-      for (Member member : all) {
-        if (member == null || !BirthdayHorizon.nameMatches(member, query)) {
-          continue;
-        }
-        if (alumniHome) {
-          if (!Member.isAlumni(member)) {
-            continue;
-          }
-        } else if (Member.isAlumni(member)) {
-          continue;
-        }
-        hits.add(member);
-      }
+      List<Member> hits = BirthdayHorizon.searchHits(all, query, alumniHome, tab == TAB_PASTORS);
       return BirthdayHorizon.group(hits, Calendar.getInstance(), BirthdayHorizon.ALL);
     }
     Map<Integer, List<BirthdayHorizon.Section>> byHorizon = memberByHorizon;
@@ -514,10 +501,7 @@ public class BirthdaysFragment extends Fragment {
   private void showEditor(@Nullable Member existing) {
     boolean alumni = existing != null ? Member.isAlumni(existing) : alumniHome;
     if (alumni) {
-      Intent intent = new Intent(requireContext(), MemberEditActivity.class);
-      intent.putExtra(ExtraKeys.MEMBER_ID, existing == null ? 0L : existing.id);
-      intent.putExtra(ExtraKeys.PASTOR_DEFAULT, tab == TAB_PASTORS);
-      startActivity(intent);
+      MemberEditActivity.open(requireContext(), existing, tab == TAB_PASTORS);
       return;
     }
     View view = getLayoutInflater().inflate(R.layout.dialog_member, null, false);

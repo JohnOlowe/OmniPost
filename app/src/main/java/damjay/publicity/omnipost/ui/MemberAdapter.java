@@ -10,6 +10,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemMemberBinding;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import java.util.ArrayList;
@@ -148,6 +149,11 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
     void bind(Member member, Listener listener, boolean savedChip) {
       binding.name.setText(member.name);
       String when = DateUtils.monthDayLabel(member.birthMonth, member.birthDay);
+      if (AlumniSheet.namesDiffer(member)) {
+        String also = binding.getRoot().getContext()
+          .getString(R.string.alumni_also_known, AlumniSheet.sheetName(member));
+        when = also + " · " + when;
+      }
       if (Member.isAlumni(member)) {
         int month = Calendar.getInstance().get(Calendar.MONTH) + 1;
         String extra = AlumniDesk.rosterLine(member, month);

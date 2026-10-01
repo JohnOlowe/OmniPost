@@ -11,6 +11,7 @@ import damjay.publicity.omnipost.databinding.ItemAlumniDmBinding;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
@@ -89,10 +90,14 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
       String who = AlumniCopy.greetingName(member, bag);
       String phone = AlumniDesk.hasPhone(member) ? AlumniDesk.displayPhone(member.phone) : "no number";
       String tag = AlumniDesk.hasPhone(member) ? "tag" : "do not tag";
+      String also = AlumniSheet.namesDiffer(member)
+        ? " · " + AlumniSheet.sheetName(member)
+        : "";
       binding.meta.setText(
         (who.isEmpty() ? tag : who + " · " + tag)
           + " · "
           + phone
+          + also
           + (member.introduced ? " · intro sent" : " · first DM"));
       hideSentButtons();
       if (photo) {

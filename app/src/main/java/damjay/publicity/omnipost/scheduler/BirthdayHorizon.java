@@ -68,6 +68,39 @@ public final class BirthdayHorizon {
       || contains(member.email, q);
   }
 
+  /**
+   * People-tab search stays on the current roster: alumni hits never leak onto
+   * Previous pastors, and pastors never leak onto Alumni.
+   */
+  public static List<Member> searchHits(
+      List<Member> all, String query, boolean alumniHome, boolean pastorsTab) {
+    List<Member> hits = new ArrayList<>();
+    if (all == null) {
+      return hits;
+    }
+    for (Member member : all) {
+      if (member == null || !nameMatches(member, query)) {
+        continue;
+      }
+      if (alumniHome) {
+        if (!Member.isAlumni(member)) {
+          continue;
+        }
+        if (pastorsTab) {
+          if (!Member.isPastor(member)) {
+            continue;
+          }
+        } else if (Member.isPastor(member)) {
+          continue;
+        }
+      } else if (Member.isAlumni(member)) {
+        continue;
+      }
+      hits.add(member);
+    }
+    return hits;
+  }
+
   public static boolean sheetMatches(AlumniSheet.Row row, String query) {
     if (row == null) {
       return false;

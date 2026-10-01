@@ -76,6 +76,20 @@ public class AlumniCopyTest {
   }
 
   @Test
+  public void captionTokensFollowTheChosenRosterName() {
+    Member member = person("Adeola Olowe", Member.GENDER_FEMALE, 10, 2);
+    member.firstName = "Ada";
+    member.lastName = "Okafor";
+    assertEquals("Adeola", AlumniCopy.firstName(member));
+    assertEquals("Olowe", AlumniCopy.lastName(member));
+    assertEquals("Adeola Olowe", AlumniCopy.fullName(member));
+    assertTrue(AlumniCopy.greetingName(member).contains("Adeola Olowe"));
+    member.name = "Ada Okafor";
+    assertEquals("Ada", AlumniCopy.firstName(member));
+    assertEquals("Okafor", AlumniCopy.lastName(member));
+  }
+
+  @Test
   public void honorificOverrideUsesFullName() {
     Member ada = person("Adeola Olowe", Member.GENDER_FEMALE, 10, 2);
     ada.honorific = "Dr";

@@ -119,6 +119,26 @@ public class BirthdayHorizonTest {
   }
 
   @Test
+  public void searchStaysOnTheCurrentPeopleTab() {
+    Member alum = person("Ada Okafor", 5, 31);
+    alum.kind = Member.KIND_ALUMNI;
+    Member pastor = person("Pastor Ada", 6, 1);
+    pastor.kind = Member.KIND_ALUMNI;
+    pastor.desk = Member.DESK_PASTOR;
+    Member fellow = person("Ada Fellow", 7, 2);
+    List<Member> all = Arrays.asList(alum, pastor, fellow);
+    List<Member> alumniHits = BirthdayHorizon.searchHits(all, "Ada", true, false);
+    assertEquals(1, alumniHits.size());
+    assertEquals("Ada Okafor", alumniHits.get(0).name);
+    List<Member> pastorHits = BirthdayHorizon.searchHits(all, "Ada", true, true);
+    assertEquals(1, pastorHits.size());
+    assertEquals("Pastor Ada", pastorHits.get(0).name);
+    List<Member> memberHits = BirthdayHorizon.searchHits(all, "Ada", false, false);
+    assertEquals(1, memberHits.size());
+    assertEquals("Ada Fellow", memberHits.get(0).name);
+  }
+
+  @Test
   public void nameMatchesFirstLastPhoneAndHonorific() {
     Member member = person("Adeola Olowe", 10, 1);
     member.firstName = "Adeola";

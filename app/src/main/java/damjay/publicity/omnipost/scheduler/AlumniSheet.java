@@ -48,6 +48,28 @@ public final class AlumniSheet {
     return a + " " + b;
   }
 
+  /** Sheet first + last after pairing. Empty if the sheet never filled those fields. */
+  public static String sheetName(Member member) {
+    if (member == null) {
+      return "";
+    }
+    return displayName(member.firstName, member.lastName);
+  }
+
+  /** Roster card name and sheet name are both present and not the same. */
+  public static boolean namesDiffer(Member member) {
+    if (member == null) {
+      return false;
+    }
+    return namesDiffer(member.name, sheetName(member));
+  }
+
+  public static boolean namesDiffer(String roster, String sheet) {
+    String a = roster == null ? "" : roster.trim();
+    String b = sheet == null ? "" : sheet.trim();
+    return !a.isEmpty() && !b.isEmpty() && !a.equalsIgnoreCase(b);
+  }
+
   public static Result parse(String raw) {
     Result out = new Result();
     if (raw == null || raw.isEmpty()) {

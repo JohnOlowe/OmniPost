@@ -13,6 +13,7 @@ import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
+import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -171,10 +172,14 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         : itemView.getContext().getString(R.string.alumni_no_number_short);
       String tag = AlumniDesk.hasPhone(member) ? "tag" : "do not tag";
       binding.name.setText(member.name);
+      String also = AlumniSheet.namesDiffer(member)
+        ? " · " + itemView.getContext().getString(R.string.alumni_also_known, AlumniSheet.sheetName(member))
+        : "";
       binding.meta.setText(
         (who.isEmpty() ? tag : who + " · " + tag)
           + " · "
           + phone
+          + also
           + (row.birthday ? " · birthday" : " · wave"));
       boolean showHnm = AlumniCopy.wantsHnm(
         member,

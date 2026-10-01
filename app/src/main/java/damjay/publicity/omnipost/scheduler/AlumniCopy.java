@@ -44,33 +44,33 @@ public final class AlumniCopy {
     if (member == null) {
       return "";
     }
+    String name = member.name == null ? "" : member.name.trim();
+    if (!name.isEmpty()) {
+      int space = name.indexOf(' ');
+      if (space <= 0) {
+        return name;
+      }
+      return name.substring(0, space).trim();
+    }
     if (member.firstName != null && !member.firstName.trim().isEmpty()) {
       return member.firstName.trim();
     }
-    String name = member.name == null ? "" : member.name.trim();
-    if (name.isEmpty()) {
-      return "";
-    }
-    int space = name.indexOf(' ');
-    if (space <= 0) {
-      return name;
-    }
-    return name.substring(0, space).trim();
+    return "";
   }
 
   public static String lastName(Member member) {
     if (member == null) {
       return "";
     }
+    String name = member.name == null ? "" : member.name.trim();
+    int space = name.lastIndexOf(' ');
+    if (space > 0) {
+      return name.substring(space + 1).trim();
+    }
     if (member.lastName != null && !member.lastName.trim().isEmpty()) {
       return member.lastName.trim();
     }
-    String name = member.name == null ? "" : member.name.trim();
-    int space = name.lastIndexOf(' ');
-    if (space <= 0) {
-      return "";
-    }
-    return name.substring(space + 1).trim();
+    return "";
   }
 
   public static String fullName(Member member) {
