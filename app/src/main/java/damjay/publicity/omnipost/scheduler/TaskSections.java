@@ -85,7 +85,9 @@ public final class TaskSections {
     if (task == null || TaskStatus.POSTED.equals(task.status) || TaskStatus.needsYou(task, now)) {
       return false;
     }
-    if (TaskStatus.READY.equals(task.status) && task.postAtMillis > now) {
+    if (TaskStatus.READY.equals(task.status)
+        && task.postAtMillis > now
+        && !TaskTypes.isAlumniDesk(task.type)) {
       return true;
     }
     if (!TaskStatus.SCHEDULED.equals(task.status)) {
