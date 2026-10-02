@@ -40,37 +40,32 @@ public final class AlumniCopy {
     return "";
   }
 
+  /**
+   * Given name from the sheet First Name column. The birthday roster does not
+   * respect order, so {@link Member#name} is not split unless the sheet is empty.
+   */
   public static String firstName(Member member) {
     if (member == null) {
       return "";
     }
-    String name = member.name == null ? "" : member.name.trim();
-    if (!name.isEmpty()) {
-      int space = name.indexOf(' ');
-      if (space <= 0) {
-        return name;
-      }
-      return name.substring(0, space).trim();
-    }
-    if (member.firstName != null && !member.firstName.trim().isEmpty()) {
+    if (filled(member.firstName)) {
       return member.firstName.trim();
     }
-    return "";
+    return firstWord(member.name);
   }
 
+  /**
+   * Family name from the sheet Last Name column. People honour those two
+   * columns; they do not honour order in a single name box.
+   */
   public static String lastName(Member member) {
     if (member == null) {
       return "";
     }
-    String name = member.name == null ? "" : member.name.trim();
-    int space = name.lastIndexOf(' ');
-    if (space > 0) {
-      return name.substring(space + 1).trim();
-    }
-    if (member.lastName != null && !member.lastName.trim().isEmpty()) {
+    if (filled(member.lastName)) {
       return member.lastName.trim();
     }
-    return "";
+    return lastWord(member.name);
   }
 
   public static String fullName(Member member) {
@@ -275,6 +270,31 @@ public final class AlumniCopy {
       now,
       bag,
       addresses);
+  }
+
+  private static boolean filled(String value) {
+    return value != null && !value.trim().isEmpty();
+  }
+
+  private static String firstWord(String name) {
+    String value = name == null ? "" : name.trim();
+    if (value.isEmpty()) {
+      return "";
+    }
+    int space = value.indexOf(' ');
+    if (space <= 0) {
+      return value;
+    }
+    return value.substring(0, space).trim();
+  }
+
+  private static String lastWord(String name) {
+    String value = name == null ? "" : name.trim();
+    int space = value.lastIndexOf(' ');
+    if (space <= 0) {
+      return "";
+    }
+    return value.substring(space + 1).trim();
   }
 
   static String monthName(int month1to12, Calendar now) {

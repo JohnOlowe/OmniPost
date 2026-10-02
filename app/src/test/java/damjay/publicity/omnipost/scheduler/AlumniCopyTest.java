@@ -76,17 +76,28 @@ public class AlumniCopyTest {
   }
 
   @Test
-  public void captionTokensFollowTheChosenRosterName() {
-    Member member = person("Adeola Olowe", Member.GENDER_FEMALE, 10, 2);
-    member.firstName = "Ada";
-    member.lastName = "Okafor";
-    assertEquals("Adeola", AlumniCopy.firstName(member));
-    assertEquals("Olowe", AlumniCopy.lastName(member));
-    assertEquals("Adeola Olowe", AlumniCopy.fullName(member));
-    assertTrue(AlumniCopy.greetingName(member).contains("Adeola Olowe"));
-    member.name = "Ada Okafor";
-    assertEquals("Ada", AlumniCopy.firstName(member));
-    assertEquals("Okafor", AlumniCopy.lastName(member));
+  public void firstAndLastComeFromTheSheetColumnsNotTheRosterOrder() {
+    Member member = person("Famutimi Victor", Member.GENDER_MALE, 10, 29);
+    member.firstName = "Victor";
+    member.lastName = "Famutimi";
+    assertEquals("Victor", AlumniCopy.firstName(member));
+    assertEquals("Famutimi", AlumniCopy.lastName(member));
+    assertEquals("Famutimi Victor", AlumniCopy.fullName(member));
+    assertTrue(AlumniCopy.greetingName(member).contains("Famutimi Victor"));
+    assertEquals("Mr Victor", AlumniTemplates.fill("{dear}", member, 10, cal(2026, Calendar.OCTOBER, 1), null));
+    member.name = "Victor Famutimi";
+    assertEquals("Victor", AlumniCopy.firstName(member));
+    assertEquals("Famutimi", AlumniCopy.lastName(member));
+    assertEquals("Victor Famutimi", AlumniCopy.fullName(member));
+  }
+
+  @Test
+  public void unpairedRosterStillSplitsTheCardName() {
+    Member member = new Member();
+    member.name = "Samuel Aduroja";
+    member.kind = Member.KIND_ALUMNI;
+    assertEquals("Samuel", AlumniCopy.firstName(member));
+    assertEquals("Aduroja", AlumniCopy.lastName(member));
   }
 
   @Test
