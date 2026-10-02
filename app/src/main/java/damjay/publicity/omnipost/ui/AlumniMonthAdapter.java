@@ -14,6 +14,7 @@ import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -191,7 +192,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         boolean done = sent.contains(key(member.id, AlumniSend.HNM));
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_hnm_label);
-        binding.preview.setText(hnm);
+        WhatsAppPreview.show(binding.preview, hnm);
         binding.btnCopy.setOnClickListener(v -> listener.onCopy(member, hnm));
         binding.btnWhatsapp.setOnClickListener(v -> listener.onWhatsApp(member, hnm));
         if (binding.btnEditHnm != null) {
@@ -205,7 +206,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         String details = AlumniCopy.details(member, month, now, bag, addresses);
         boolean done = sent.contains(key(member.id, AlumniSend.DETAILS));
         binding.blockDetails.setVisibility(View.VISIBLE);
-        binding.previewDetails.setText(details);
+        WhatsAppPreview.show(binding.previewDetails, details);
         binding.btnCopyDetails.setOnClickListener(v -> listener.onCopy(member, details));
         binding.btnWhatsappDetails.setOnClickListener(v -> listener.onWhatsApp(member, details));
         if (binding.btnEditDetails != null) {

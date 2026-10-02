@@ -9,6 +9,7 @@ import damjay.publicity.omnipost.data.entity.CaptionVar;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemVariableBinding;
 import damjay.publicity.omnipost.scheduler.CaptionVars;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,7 +163,7 @@ public class VarAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         binding.preview.setVisibility(View.GONE);
       } else {
         binding.preview.setVisibility(View.VISIBLE);
-        binding.preview.setText(value);
+        WhatsAppPreview.show(binding.preview, value);
       }
       binding.getRoot().setOnClickListener(v -> listener.onOpen(var));
     }

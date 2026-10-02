@@ -65,6 +65,25 @@
       android:visibility="gone"
       app:strokeColor="@color/navy_700"/>
 
+    <EditText
+      android:id="@+id/search"
+      android:layout_width="match_parent"
+      android:layout_height="40dp"
+      android:layout_marginStart="16dp"
+      android:layout_marginTop="8dp"
+      android:layout_marginEnd="16dp"
+      android:background="@drawable/bg_search"
+      android:hint="@string/search_tasks"
+      android:imeOptions="actionDone"
+      android:importantForAutofill="no"
+      android:inputType="text|textCapSentences"
+      android:maxLines="1"
+      android:paddingStart="12dp"
+      android:paddingEnd="12dp"
+      android:textColor="@color/cream"
+      android:textColorHint="@color/text_muted"
+      android:textSize="14sp"/>
+
     <TextView
       android:id="@+id/how_it_works"
       android:layout_width="match_parent"

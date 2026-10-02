@@ -17,6 +17,7 @@ import damjay.publicity.omnipost.databinding.ActivityVariableEditBinding;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.CaptionVars;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class VariableEditActivity extends AppCompatActivity {
     binding.btnSave.setOnClickListener(v -> persist());
     binding.btnDelete.setOnClickListener(v -> confirmDelete());
     binding.btnRange.setOnClickListener(v -> insert("{range:today:date}"));
+    WhatsAppPreview.attach(binding.inputValue);
     watch(binding.inputName);
     watch(binding.inputValue);
     AppExecutors.disk().execute(() -> {
@@ -162,7 +164,7 @@ public class VariableEditActivity extends AppCompatActivity {
     String source = value.trim().isEmpty() ? CaptionVars.token(name) : value;
     String filled = CaptionTemplates.apply(source, dummy, null, extras);
     String heading = name.isEmpty() ? "" : CaptionVars.token(name) + "\n\n";
-    binding.preview.setText(heading + (filled.isEmpty() ? "—" : filled));
+    WhatsAppPreview.show(binding.preview, heading + (filled.isEmpty() ? "—" : filled));
   }
 
   private void persist() {

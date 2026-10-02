@@ -496,7 +496,7 @@ public class SettingsFragment extends Fragment {
       task.id = AppDatabase.get(app).taskDao().insert(task);
       AlarmScheduler.scheduleTask(app, task);
       AlarmScheduler.scheduleHeartbeat(app);
-      NagForegroundService.refresh(app);
+      NagForegroundService.paint(app);
       AppExecutors.main(() -> {
         if (!isAdded()) {
           return;

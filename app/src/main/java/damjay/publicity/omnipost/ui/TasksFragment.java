@@ -3,6 +3,8 @@ package damjay.publicity.omnipost.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,6 +27,7 @@ import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.TaskSearch;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
@@ -43,6 +46,7 @@ public class TasksFragment extends Fragment {
   private static final int DESK_POST = 0;
   private static final int DESK_POSTED = 1;
   private int desk = DESK_POST;
+  private String query = "";
 
   @Nullable
   @Override
@@ -61,16 +65,9 @@ public class TasksFragment extends Fragment {
 
       @Override
       public void onMarkPosted(Task task) {
+        Toast.makeText(requireContext(), R.string.posted_toast, Toast.LENGTH_SHORT).show();
         Context app = requireContext().getApplicationContext();
-        AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.markPosted(app, task.id);
-          AppExecutors.main(() -> {
-            if (!isAdded()) {
-              return;
-            }
-            Toast.makeText(requireContext(), R.string.posted_toast, Toast.LENGTH_SHORT).show();
-          });
-        });
+        AppExecutors.disk().execute(() -> ScheduleCoordinator.markPosted(app, task.id));
       }
 
       @Override
@@ -100,16 +97,9 @@ public class TasksFragment extends Fragment {
 
       @Override
       public void onReopen(Task task) {
+        Toast.makeText(requireContext(), R.string.brought_back, Toast.LENGTH_SHORT).show();
         Context app = requireContext().getApplicationContext();
-        AppExecutors.disk().execute(() -> {
-          ScheduleCoordinator.reopen(app, task.id);
-          AppExecutors.main(() -> {
-            if (!isAdded()) {
-              return;
-            }
-            Toast.makeText(requireContext(), R.string.brought_back, Toast.LENGTH_LONG).show();
-          });
-        });
+        AppExecutors.disk().execute(() -> ScheduleCoordinator.reopen(app, task.id));
       }
 
       @Override
@@ -153,6 +143,19 @@ public class TasksFragment extends Fragment {
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
+    binding.search.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        query = s == null ? "" : s.toString();
+        render();
+      }
+    });
     binding.filter.check(R.id.chip_pending);
     binding.filter.addOnButtonCheckedListener((group, checkedId, isChecked) -> {
       if (!isChecked) {
@@ -183,20 +186,13 @@ public class TasksFragment extends Fragment {
   }
 
   private void applySnooze(long taskId, long until) {
+    Toast.makeText(
+      requireContext(),
+      getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+      Toast.LENGTH_SHORT)
+      .show();
     Context app = requireContext().getApplicationContext();
-    AppExecutors.disk().execute(() -> {
-      ScheduleCoordinator.snooze(app, taskId, until);
-      AppExecutors.main(() -> {
-        if (!isAdded()) {
-          return;
-        }
-        Toast.makeText(
-          requireContext(),
-          getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
-          Toast.LENGTH_LONG)
-          .show();
-      });
-    });
+    AppExecutors.disk().execute(() -> ScheduleCoordinator.snooze(app, taskId, until));
   }
 
   private void showAddChooser() {
@@ -466,13 +462,17 @@ public class TasksFragment extends Fragment {
       return;
     }
     boolean postedMode = desk == DESK_POSTED;
-    List<Task> source = onlyAlumni(postedMode ? posted : active, false);
+    List<Task> source = TaskSearch.matches(onlyAlumni(postedMode ? posted : active, false), query);
     adapter.submit(
       source,
       postedMode,
       System.currentTimeMillis(),
       Prefs.warningLeadMs(requireContext()));
-    binding.empty.setText(postedMode ? R.string.empty_posted : R.string.empty_tasks);
+    boolean searching = query != null && !query.trim().isEmpty();
+    binding.empty.setText(
+      searching
+        ? R.string.search_tasks_empty
+        : (postedMode ? R.string.empty_posted : R.string.empty_tasks));
     binding.empty.setVisibility(source.isEmpty() ? View.VISIBLE : View.GONE);
     binding.howItWorks.setText(R.string.how_it_works);
     binding.btnAlumniCaptions.setVisibility(View.GONE);
@@ -491,6 +491,8 @@ public class TasksFragment extends Fragment {
     }
     return out;
   }
+
+
 
   @Override
   public void onDestroyView() {

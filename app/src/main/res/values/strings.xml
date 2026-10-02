@@ -43,7 +43,7 @@
   <string name="empty_tasks">Nothing pending. Add a weekly or daily alarm, a countdown, a monthly notice, or a flexible / one-off with +.</string>
   <string name="empty_alumni_tasks">No alumni DMs waiting. Birthday month, the new-month wave, and picture nags land here.</string>
   <string name="how_alumni_desk">Happy New Month is one message. Asking for a picture, birth date, and how to write their name is a second message. Edit the captions, then open a card to copy and send in batches of 10–15.</string>
-  <string name="how_it_works">Needs you first, then the next 48 hours, then weekly / monthly. Add your own weekly or daily post with + and pick the days and time. Countdowns and daily posts are one card each. Tokens like {theme} come from Caption variables and fill in every caption.</string>
+  <string name="how_it_works">Needs you first, then the next 48 hours, then weekly / monthly. Add your own weekly or daily post with + and pick the days and time. Countdowns and daily posts are one card each. Tokens like {theme} live on the Tokens tab and fill in every caption.</string>
   <string name="empty_posted">No completed posts yet.</string>
   <string name="empty_drafts">No drafts yet. Open a task or start a blank caption.</string>
   <string name="empty_birthdays">Add fellowship members and OmniPost will nag you at 7:00 AM on the day.</string>
@@ -179,6 +179,8 @@
   <string name="setting_late">After this hour, far snoozes wait until morning</string>
   <string name="search_people">Search names</string>
   <string name="search_empty">No names match.</string>
+  <string name="search_tasks">Search posts</string>
+  <string name="search_tasks_empty">No posts match.</string>
   <string name="contact_saved">Saved</string>
   <string name="contact_not_saved">Not saved</string>
   <string name="contact_saved_hint">Already in the President\'s contacts — skip Save All</string>
@@ -392,8 +394,13 @@
   <string name="month_nth_add_one">Add %1$s</string>
   <string name="need_month_slot">Pick at least one date in the month.</string>
   <string name="remove">Remove</string>
-  <string name="nav_captions">Captions</string>
-  <string name="fellowship_captions_hint">Write the caption once, the way Alumni does. Open a task and it is waiting. Tokens fill themselves. Leave one blank if you still want to write it on the day.</string>
+  <string name="nav_captions">Tokens</string>
+  <string name="fellowship_captions_hint">Tokens fill themselves in every caption. Tap one to see what it does. Add your own with +. Weekly templates sit underneath if you want them written once.</string>
+  <string name="tokens_inbuilt">Inbuilt</string>
+  <string name="tokens_inbuilt_sub">Always there. Tap one to see what it fills.</string>
+  <string name="tokens_yours">Yours</string>
+  <string name="tokens_yours_sub">These fill in every caption. Values may use other tokens.</string>
+  <string name="tokens_yours_empty">Tap + to add {theme}, {venue}, or a range that uses {today} and {date}.</string>
   <string name="fellowship_caption_saved">Caption saved.</string>
   <string name="fellowship_caption_clear">Clear</string>
   <string name="fellowship_caption_reset">Back to empty. The task will wait for you to write it.</string>

@@ -12,6 +12,7 @@ import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.LinkedHashMap;
@@ -107,7 +108,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
         String caption = AlumniCopy.photo(member, now, bag, addresses);
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_desk_photo);
-        binding.preview.setText(caption);
+        WhatsAppPreview.show(binding.preview, caption);
         binding.btnCopy.setOnClickListener(v -> listener.onSend(member, caption, false));
         binding.btnWhatsapp.setOnClickListener(v -> listener.onSend(member, caption, true));
         binding.blockDetails.setVisibility(View.GONE);
@@ -117,7 +118,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
         String hnm = AlumniCopy.hnm(member, month, now, bag, addresses);
         binding.blockHnm.setVisibility(View.VISIBLE);
         binding.labelHnm.setText(R.string.alumni_hnm_label);
-        binding.preview.setText(hnm);
+        WhatsAppPreview.show(binding.preview, hnm);
         binding.btnCopy.setOnClickListener(v -> listener.onSend(member, hnm, false));
         binding.btnWhatsapp.setOnClickListener(v -> listener.onSend(member, hnm, true));
       } else {
@@ -126,7 +127,7 @@ public class AlumniDmAdapter extends RecyclerView.Adapter<AlumniDmAdapter.Holder
       if (showDetails) {
         String details = AlumniCopy.details(member, month, now, bag, addresses);
         binding.blockDetails.setVisibility(View.VISIBLE);
-        binding.previewDetails.setText(details);
+        WhatsAppPreview.show(binding.previewDetails, details);
         binding.btnCopyDetails.setOnClickListener(v -> listener.onSend(member, details, false));
         binding.btnWhatsappDetails.setOnClickListener(v -> listener.onSend(member, details, true));
       } else {

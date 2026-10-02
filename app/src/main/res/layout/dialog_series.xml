@@ -328,6 +328,19 @@
         android:textColor="@color/cream"/>
     </com.google.android.material.textfield.TextInputLayout>
 
+    <HorizontalScrollView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:scrollbars="none">
+
+      <LinearLayout
+        android:id="@+id/token_row"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"/>
+    </HorizontalScrollView>
+
     <com.google.android.material.textfield.TextInputLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
@@ -343,6 +356,17 @@
         android:minLines="6"
         android:textColor="@color/cream"/>
     </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+      android:id="@+id/series_preview"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="8dp"
+      android:background="@color/navy_800"
+      android:minLines="2"
+      android:padding="12dp"
+      android:textColor="@color/cream"
+      android:textSize="14sp"/>
 
     <TextView
       android:layout_width="match_parent"

@@ -14,6 +14,7 @@ import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.CaptionVars;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
@@ -46,6 +47,7 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
     hint.setText(getString(R.string.alumni_caption_tokens));
     input = findViewById(R.id.input);
     preview = findViewById(R.id.preview);
+    WhatsAppPreview.attach(input);
     addresses = Prefs.alumniAddresses(this);
     input.addTextChangedListener(new TextWatcher() {
       @Override
@@ -245,6 +247,6 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
     } else {
       filled = AlumniTemplates.fill(template, sample, 10, oct, bag, addresses);
     }
-    preview.setText(filled);
+    WhatsAppPreview.show(preview, filled);
   }
 }

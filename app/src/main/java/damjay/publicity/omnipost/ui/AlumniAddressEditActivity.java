@@ -16,6 +16,7 @@ import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.CaptionVars;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
@@ -48,6 +49,8 @@ public class AlumniAddressEditActivity extends AppCompatActivity {
     tokenRow = findViewById(R.id.token_row);
     preview = findViewById(R.id.preview);
     focused = inputMale;
+    WhatsAppPreview.attach(inputMale);
+    WhatsAppPreview.attach(inputFemale);
     watch(inputName);
     watch(inputMale);
     watch(inputFemale);
@@ -190,7 +193,7 @@ public class AlumniAddressEditActivity extends AppCompatActivity {
     String token = name.isEmpty() ? "{dear}" : CaptionVars.token(name);
     String maleGot = AlumniTemplates.fill(token, man, 10, oct, Prefs.alumniCaptionBag(this), previewList);
     String femaleGot = AlumniTemplates.fill(token, woman, 10, oct, Prefs.alumniCaptionBag(this), previewList);
-    preview.setText("Male\n" + maleGot + "\n\nFemale\n" + femaleGot);
+    WhatsAppPreview.show(preview, "Male\n" + maleGot + "\n\nFemale\n" + femaleGot);
   }
 
   private void persist() {

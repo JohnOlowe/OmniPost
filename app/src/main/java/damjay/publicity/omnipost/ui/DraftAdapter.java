@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import damjay.publicity.omnipost.data.entity.Draft;
 import damjay.publicity.omnipost.databinding.ItemDraftBinding;
 import damjay.publicity.omnipost.scheduler.DateUtils;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +60,7 @@ public class DraftAdapter extends RecyclerView.Adapter<DraftAdapter.Holder> {
     void bind(Draft draft, Listener listener) {
       binding.title.setText(draft.title == null || draft.title.isEmpty() ? "Untitled caption" : draft.title);
       String preview = firstNonEmpty(draft.finalizedText, draft.variantA, draft.variantB);
-      binding.preview.setText(preview);
+      WhatsAppPreview.show(binding.preview, preview);
       binding.updated.setText(DateUtils.formatStamp(draft.updatedAt));
       binding.getRoot().setOnClickListener(v -> listener.onOpen(draft));
       binding.btnDelete.setOnClickListener(v -> listener.onDelete(draft));

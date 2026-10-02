@@ -11,14 +11,36 @@ import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class ScheduleCoordinator {
+  private static final AtomicBoolean BOOTSTRAP_BUSY = new AtomicBoolean();
+  private static volatile long lastBootstrapAt;
+
   private ScheduleCoordinator() {}
 
   public static void bootstrap(Context context) {
+    long started = System.currentTimeMillis();
+    if (started - lastBootstrapAt < 2_000L && lastBootstrapAt > 0L) {
+      return;
+    }
+    if (!BOOTSTRAP_BUSY.compareAndSet(false, true)) {
+      return;
+    }
+    try {
+      bootstrapNow(context);
+      lastBootstrapAt = System.currentTimeMillis();
+    } finally {
+      BOOTSTRAP_BUSY.set(false);
+    }
+  }
+
+  private static void bootstrapNow(Context context) {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
     long now = System.currentTimeMillis();
@@ -41,33 +63,54 @@ public final class ScheduleCoordinator {
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app), Prefs.draftLeadDays(app));
-    for (Task candidate : generated) {
-      Task existing = db.taskDao().findByKey(candidate.occurrenceKey);
-      if (existing == null) {
-        db.taskDao().insert(candidate);
-        continue;
+    Map<String, Task> byKey = indexByKey(db.taskDao().getAllSync());
+    db.runInTransaction(() -> {
+      for (Task candidate : generated) {
+        if (candidate == null || candidate.occurrenceKey == null) {
+          continue;
+        }
+        Task existing = byKey.get(candidate.occurrenceKey);
+        if (existing == null) {
+          long id = db.taskDao().insert(candidate);
+          candidate.id = id;
+          byKey.put(candidate.occurrenceKey, candidate);
+          continue;
+        }
+        if (TaskStatus.POSTED.equals(existing.status)) {
+          continue;
+        }
+        if (!existing.titleLocked) {
+          existing.title = candidate.title;
+        }
+        existing.skipCaption = candidate.skipCaption;
+        existing.description = candidate.description;
+        existing.type = candidate.type;
+        existing.seriesId = candidate.seriesId;
+        if (!existing.timesLocked) {
+          existing.draftAtMillis = candidate.draftAtMillis;
+          existing.postAtMillis = candidate.postAtMillis;
+        }
+        db.taskDao().update(existing);
       }
-      if (TaskStatus.POSTED.equals(existing.status)) {
-        continue;
-      }
-      if (!existing.titleLocked) {
-        existing.title = candidate.title;
-      }
-      existing.skipCaption = candidate.skipCaption;
-      existing.description = candidate.description;
-      existing.type = candidate.type;
-      existing.seriesId = candidate.seriesId;
-      if (!existing.timesLocked) {
-        existing.draftAtMillis = candidate.draftAtMillis;
-        existing.postAtMillis = candidate.postAtMillis;
-      }
-      db.taskDao().update(existing);
-    }
+    });
 
     applyDueAndSchedule(app);
     AlarmScheduler.scheduleWatchdog(app);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
+  }
+
+  private static Map<String, Task> indexByKey(List<Task> tasks) {
+    Map<String, Task> out = new HashMap<>();
+    if (tasks == null) {
+      return out;
+    }
+    for (Task task : tasks) {
+      if (task != null && task.occurrenceKey != null && !task.occurrenceKey.isEmpty()) {
+        out.put(task.occurrenceKey, task);
+      }
+    }
+    return out;
   }
 
   private static List<Series> enabledSeries(List<Series> all) {
@@ -389,7 +432,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void markPosted(Context context, long taskId) {
@@ -399,7 +442,7 @@ public final class ScheduleCoordinator {
     db.taskDao().markPosted(taskId, System.currentTimeMillis());
     AlarmScheduler.cancelTask(app, taskId);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void reopen(Context context, long taskId) {
@@ -418,7 +461,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.scheduleTask(app, task);
     fireTransition(app, task, due);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void shift(Context context, long taskId, long newPostAt) {
@@ -446,7 +489,7 @@ public final class ScheduleCoordinator {
     NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void snooze(Context context, long taskId, long untilMillis) {
@@ -464,7 +507,7 @@ public final class ScheduleCoordinator {
     NotificationHelper.cancelForTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void onSnoozeWake(Context context, long taskId) {
@@ -518,7 +561,7 @@ public final class ScheduleCoordinator {
       AlarmScheduler.scheduleTask(app, task);
       fireTransition(app, task, task.status);
       AlarmScheduler.scheduleHeartbeat(app);
-      NagForegroundService.refresh(app);
+      NagForegroundService.paint(app);
     }
   }
 
@@ -540,7 +583,7 @@ public final class ScheduleCoordinator {
     task.titleLocked = true;
     db.taskDao().update(task);
     AlarmScheduler.rememberCue(task.id, task.title, task.postAtMillis);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void setSkipCaption(Context context, long taskId, boolean skip) {
@@ -571,7 +614,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     AlarmScheduler.scheduleTask(app, task);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void setAlumniSkipCaption(Context context, boolean skip) {
@@ -615,7 +658,7 @@ public final class ScheduleCoordinator {
       }
     }
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void deleteCustom(Context context, long taskId) {
@@ -624,7 +667,7 @@ public final class ScheduleCoordinator {
     AlarmScheduler.cancelTask(app, taskId);
     AppDatabase.get(app).taskDao().deleteById(taskId);
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 
   public static void deleteDraft(Context context, long draftId) {
@@ -1021,6 +1064,6 @@ public final class ScheduleCoordinator {
       db.taskDao().deleteById(task.id);
     }
     AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.refresh(app);
+    NagForegroundService.paint(app);
   }
 }

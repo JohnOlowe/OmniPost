@@ -179,17 +179,13 @@ public class AlarmActivity extends AppCompatActivity {
   private void snoozeTo(long until) {
     acknowledge();
     final long when = until;
-    AppExecutors.disk().execute(() -> {
-      ScheduleCoordinator.snooze(this, taskId, when);
-      AppExecutors.main(() -> {
-        Toast.makeText(
-          this,
-          getString(R.string.snoozed_until, DateUtils.formatStamp(when)),
-          Toast.LENGTH_LONG)
-          .show();
-        finish();
-      });
-    });
+    Toast.makeText(
+      this,
+      getString(R.string.snoozed_until, DateUtils.formatStamp(when)),
+      Toast.LENGTH_SHORT)
+      .show();
+    AppExecutors.disk().execute(() -> ScheduleCoordinator.snooze(this, taskId, when));
+    finish();
   }
 
   private void load() {

@@ -16,6 +16,20 @@ public class WhatsAppPreviewTest {
   }
 
   @Test
+  public void marksKeepInnerRangesSoBoxesCanStayRaw() {
+    int[][] bold = WhatsAppPreview.marks("*NOTICE!*");
+    assertEquals(1, bold.length);
+    assertEquals(1, bold[0][0]);
+    assertEquals(8, bold[0][1]);
+    assertEquals(1, bold[0][2]);
+    int[][] both = WhatsAppPreview.marks("*_Hi_*");
+    assertEquals(1, both.length);
+    assertEquals(2, both[0][0]);
+    assertEquals(4, both[0][1]);
+    assertEquals(3, both[0][2]);
+  }
+
+  @Test
   public void monthPlaceholderFillsBeforePreview() {
     Task notice = new Task();
     notice.type = TaskTypes.BIRTHDAY_NOTICE;

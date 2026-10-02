@@ -48,6 +48,13 @@ public class NagForegroundService extends Service {
     start(context, 0L);
   }
 
+  /** Update the ongoing desk card. Do not re-tick every task. */
+  public static void paint(Context context) {
+    Intent intent = new Intent(context, NagForegroundService.class);
+    intent.putExtra(ExtraKeys.PAINT_ONLY, true);
+    launch(context, intent);
+  }
+
   public static void startPulse(Context context) {
     if (AlarmPulse.isQuiet()) {
       return;
@@ -92,6 +99,7 @@ public class NagForegroundService extends Service {
     NotificationHelper.ensureChannels(this);
     promoteForeground(0, null);
     final boolean pulseOnly = intent != null && intent.getBooleanExtra(ExtraKeys.PULSE, false);
+    final boolean paintOnly = intent != null && intent.getBooleanExtra(ExtraKeys.PAINT_ONLY, false);
     final int phase = intent == null ? 0 : intent.getIntExtra(ExtraKeys.PHASE, 0);
     final long focusedId = intent == null ? 0L : intent.getLongExtra(ExtraKeys.TASK_ID, 0L);
     if (!pulseOnly && intent != null) {
@@ -106,8 +114,8 @@ public class NagForegroundService extends Service {
     }
     AppExecutors.disk().execute(() -> {
       try {
-        if (pulseOnly) {
-          /* AlarmPulse already running. Do not tick or the delayed ring restarts. */
+        if (pulseOnly || paintOnly) {
+          /* AlarmPulse already running. Paint-only skips a full desk tick. */
         } else if (phase != 0) {
           ScheduleCoordinator.onAlarm(this, phase, focusedId);
         } else {
@@ -140,6 +148,7 @@ public class NagForegroundService extends Service {
             || phase == AlarmScheduler.PHASE_MINUTE
             || phase == AlarmScheduler.PHASE_PULSE);
         if (!pulseOnly
+            && !paintOnly
             && hasNagging
             && shouldBurst(explicitNag || phase == AlarmScheduler.PHASE_NAG)) {
           fireBurst(nagging, focusedId);

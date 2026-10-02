@@ -66,6 +66,8 @@ public class DraftActivity extends AppCompatActivity {
       usingB = true;
       paintPreview();
     });
+    WhatsAppPreview.attach(binding.inputA);
+    WhatsAppPreview.attach(binding.inputB);
     binding.btnPeeps.setOnClickListener(v -> sendToPeeps());
     binding.btnInstagram.setOnClickListener(v -> copyInstagram());
     binding.btnFinal.setOnClickListener(v -> finalPost());
@@ -314,25 +316,32 @@ public class DraftActivity extends AppCompatActivity {
       return;
     }
     binding.tokenRow.removeAllViews();
-    if (varList.isEmpty()) {
-      binding.tokenScroll.setVisibility(View.GONE);
-      return;
-    }
     binding.tokenScroll.setVisibility(View.VISIBLE);
+    addDraftChip("month");
+    addDraftChip("date");
+    addDraftChip("today");
+    addDraftChip("Days");
+    addDraftChip("name");
     for (CaptionVar var : varList) {
-      android.widget.TextView chip = new android.widget.TextView(this);
-      chip.setText(CaptionVars.token(var.name));
-      chip.setTextColor(getColor(R.color.gold));
-      chip.setTextSize(13f);
-      chip.setPadding(20, 12, 20, 12);
-      chip.setBackgroundResource(R.drawable.bg_chip_gold);
-      LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-        LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-      params.setMarginEnd(8);
-      chip.setLayoutParams(params);
-      chip.setOnClickListener(v -> insertToken(var.name));
-      binding.tokenRow.addView(chip);
+      if (var != null && var.name != null && !var.name.trim().isEmpty()) {
+        addDraftChip(var.name);
+      }
     }
+  }
+
+  private void addDraftChip(String name) {
+    android.widget.TextView chip = new android.widget.TextView(this);
+    chip.setText(CaptionVars.token(name));
+    chip.setTextColor(getColor(R.color.gold));
+    chip.setTextSize(13f);
+    chip.setPadding(20, 12, 20, 12);
+    chip.setBackgroundResource(R.drawable.bg_chip_gold);
+    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    params.setMarginEnd(8);
+    chip.setLayoutParams(params);
+    chip.setOnClickListener(v -> insertToken(name));
+    binding.tokenRow.addView(chip);
   }
 
   private void insertToken(String name) {

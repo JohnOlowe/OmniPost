@@ -16,6 +16,7 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.CaptionVars;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
@@ -192,7 +193,7 @@ public class AlumniCaptionsActivity extends AppCompatActivity {
       void bind(Row row, Listener listener) {
         token.setText(row.title);
         label.setText(row.address ? CaptionVars.token(row.key) : AlumniTemplates.hint(row.key));
-        preview.setText(row.preview);
+        WhatsAppPreview.show(preview, row.preview);
         itemView.setOnClickListener(v -> listener.onOpen(row));
       }
     }

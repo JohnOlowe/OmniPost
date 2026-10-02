@@ -11,6 +11,7 @@ import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.databinding.ActivityInstagramBinding;
 import damjay.publicity.omnipost.databinding.ItemSettingRowBinding;
 import damjay.publicity.omnipost.share.InstagramStyle;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.Prefs;
 
@@ -37,6 +38,7 @@ public class InstagramConvertActivity extends AppCompatActivity {
       pickFace(R.string.instagram_opt_italic, Prefs.instagramItalicFace(this), Prefs::setInstagramItalicFace));
     binding.rowBoth.getRoot().setOnClickListener(v ->
       pickFace(R.string.instagram_opt_both, Prefs.instagramBothFace(this), Prefs::setInstagramBothFace));
+    WhatsAppPreview.attach(binding.input);
     binding.input.addTextChangedListener(new TextWatcher() {
       @Override
       public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -126,7 +128,12 @@ public class InstagramConvertActivity extends AppCompatActivity {
     boolean ig = toInstagram();
     binding.previewLabel.setText(ig ? R.string.instagram_preview : R.string.instagram_preview_markup);
     binding.btnCopy.setText(ig ? R.string.copy_instagram : R.string.instagram_copy_markup);
-    binding.preview.setText(converted());
+    String out = converted();
+    if (ig) {
+      binding.preview.setText(out);
+    } else {
+      WhatsAppPreview.show(binding.preview, out);
+    }
   }
 
   private void copy() {

@@ -23,7 +23,7 @@ public class MarkPostedReceiver extends BroadcastReceiver {
     }
     final Context app = context.getApplicationContext();
     try {
-      NagForegroundService.refresh(app);
+      NagForegroundService.paint(app);
     } catch (Exception ignored) {
     }
     final PendingResult pending = goAsync();

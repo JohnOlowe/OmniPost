@@ -6,8 +6,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import damjay.publicity.omnipost.databinding.ActivityGateBinding;
 import damjay.publicity.omnipost.notify.NotificationHelper;
-import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
-import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 import damjay.publicity.omnipost.util.SurvivalHelper;
@@ -18,7 +16,6 @@ public class GateActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     NotificationHelper.ensureChannels(this);
     SurvivalHelper.requestPostNotifications(this);
-    AppExecutors.disk().execute(() -> ScheduleCoordinator.bootstrap(this));
 
     boolean force = getIntent() != null && getIntent().getBooleanExtra(ExtraKeys.SHOW_GATE, false);
     if (!force) {

@@ -3,6 +3,8 @@ package damjay.publicity.omnipost.ui;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
@@ -17,13 +19,17 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.textfield.TextInputEditText;
 import damjay.publicity.omnipost.R;
+import damjay.publicity.omnipost.data.AppDatabase;
+import damjay.publicity.omnipost.data.entity.CaptionVar;
 import damjay.publicity.omnipost.data.entity.Series;
+import damjay.publicity.omnipost.scheduler.CaptionVars;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.MonthSlots;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.SeriesDefaults;
 import damjay.publicity.omnipost.scheduler.Weekdays;
+import damjay.publicity.omnipost.share.WhatsAppPreview;
 import damjay.publicity.omnipost.util.AppExecutors;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -127,7 +133,31 @@ public final class SeriesEditor {
     }
     title.setText(source.title);
     caption.setText(source.caption);
+    WhatsAppPreview.attach(caption);
     vars.setText(source.vars);
+    TextView captionPreview = view.findViewById(R.id.series_preview);
+    LinearLayout tokenRow = view.findViewById(R.id.token_row);
+    fillTokenRow(context, tokenRow, caption);
+    Runnable paintCaption = () -> {
+      if (captionPreview == null) {
+        return;
+      }
+      String raw = caption.getText() == null ? "" : caption.getText().toString();
+      WhatsAppPreview.show(captionPreview, raw);
+    };
+    paintCaption.run();
+    caption.addTextChangedListener(new TextWatcher() {
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        paintCaption.run();
+      }
+    });
     checkKind(source.kind, kindWeekly, kindDaily, kindCountdown, kindMonthly);
     skipCaption.setChecked(source.skipCaption);
     optEve.setChecked(source.lastOfPrevMonth);
@@ -531,6 +561,57 @@ public final class SeriesEditor {
       AppExecutors.main(() ->
         Toast.makeText(context, R.string.series_saved, Toast.LENGTH_SHORT).show());
     });
+  }
+
+  private static void fillTokenRow(Context context, LinearLayout row, TextInputEditText caption) {
+    if (row == null) {
+      return;
+    }
+    row.removeAllViews();
+    addTokenChip(context, row, caption, "month");
+    addTokenChip(context, row, caption, "date");
+    addTokenChip(context, row, caption, "today");
+    addTokenChip(context, row, caption, "Days");
+    addTokenChip(context, row, caption, "name");
+    AppExecutors.query().execute(() -> {
+      List<CaptionVar> vars = AppDatabase.get(context).captionVarDao().getAllSync();
+      AppExecutors.main(() -> {
+        if (vars == null) {
+          return;
+        }
+        for (CaptionVar item : vars) {
+          if (item != null && item.name != null && !item.name.trim().isEmpty()) {
+            addTokenChip(context, row, caption, item.name);
+          }
+        }
+      });
+    });
+  }
+
+  private static void addTokenChip(
+    Context context, LinearLayout row, TextInputEditText caption, String name) {
+    TextView chip = new TextView(context);
+    chip.setText(CaptionVars.token(name));
+    chip.setTextColor(context.getColor(R.color.gold));
+    chip.setTextSize(13f);
+    chip.setPadding(20, 12, 20, 12);
+    chip.setBackgroundResource(R.drawable.bg_chip_gold);
+    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    params.setMarginEnd(8);
+    chip.setLayoutParams(params);
+    chip.setOnClickListener(v -> {
+      String token = CaptionVars.token(name);
+      Editable editable = caption.getText();
+      if (editable == null) {
+        caption.setText(token);
+        return;
+      }
+      int start = Math.max(caption.getSelectionStart(), 0);
+      int end = Math.max(caption.getSelectionEnd(), start);
+      editable.replace(start, end, token);
+    });
+    row.addView(chip);
   }
 
   private static void confirmDelete(Context context, Series series) {

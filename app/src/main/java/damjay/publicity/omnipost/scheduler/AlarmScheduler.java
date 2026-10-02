@@ -56,10 +56,11 @@ public final class AlarmScheduler {
     synchronized (LOCK) {
       same = stamp.equals(ARMED.get(task.id));
     }
-    if (!same) {
-      cancelTask(ctx, task.id);
-      remember(task.id, task.title, task.postAtMillis);
+    if (same) {
+      return;
     }
+    cancelTask(ctx, task.id);
+    remember(task.id, task.title, task.postAtMillis);
     if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
       long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
       if (minuteAt > now) {
@@ -116,27 +117,20 @@ public final class AlarmScheduler {
     setAlarmClock(ctx, 0L, PHASE_WATCHDOG, c.getTimeInMillis());
   }
 
-  /**
-   * Drop leftover tokens from older builds (FLAG_NO_CREATE only — never mint).
-   * Tecno PIRProtect kills the process once ~10,000 records exist for this UID.
-   */
+  /** Once per process: drop leftover tokens from older builds. Never mint. */
+  private static boolean recycled;
+
   public static void recycleStale(Context ctx, List<Task> tasks, long maxId) {
-    if (ctx == null) {
+    if (ctx == null || recycled) {
       return;
     }
+    recycled = true;
     if (tasks != null) {
       for (Task task : tasks) {
         if (task == null) {
           continue;
         }
         dropLegacy(ctx, task.id, task.title, task.postAtMillis);
-      }
-    }
-    long until = Math.min(Math.max(maxId + 80L, 80L), 2_000L);
-    for (long id = 0L; id <= until; id++) {
-      dropLegacy(ctx, id, "", 0L);
-      for (int phase : TASK_PHASES) {
-        dropBroadcast(ctx, requestCode(id, phase), alarmIntent(ctx, id, phase));
       }
     }
     dropBroadcast(ctx, GLOBAL_PULSE_CODE, alarmIntent(ctx, 0L, PHASE_PULSE));
