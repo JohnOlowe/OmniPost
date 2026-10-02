@@ -51,7 +51,7 @@ public final class AlumniCopy {
     if (filled(member.firstName)) {
       return member.firstName.trim();
     }
-    return firstWord(member.name);
+    return rosterGiven(member.name);
   }
 
   /**
@@ -65,7 +65,7 @@ public final class AlumniCopy {
     if (filled(member.lastName)) {
       return member.lastName.trim();
     }
-    return lastWord(member.name);
+    return rosterFamily(member.name);
   }
 
   public static String fullName(Member member) {
@@ -276,7 +276,8 @@ public final class AlumniCopy {
     return value != null && !value.trim().isEmpty();
   }
 
-  private static String firstWord(String name) {
+  /** Sheet-style fallback: "Omotosho Peter" → given Peter. */
+  private static String rosterGiven(String name) {
     String value = name == null ? "" : name.trim();
     if (value.isEmpty()) {
       return "";
@@ -285,16 +286,17 @@ public final class AlumniCopy {
     if (space <= 0) {
       return value;
     }
-    return value.substring(0, space).trim();
+    return value.substring(space + 1).trim();
   }
 
-  private static String lastWord(String name) {
+  /** Sheet-style fallback: "Omotosho Peter" → family Omotosho. */
+  private static String rosterFamily(String name) {
     String value = name == null ? "" : name.trim();
-    int space = value.lastIndexOf(' ');
+    int space = value.indexOf(' ');
     if (space <= 0) {
       return "";
     }
-    return value.substring(space + 1).trim();
+    return value.substring(0, space).trim();
   }
 
   static String monthName(int month1to12, Calendar now) {

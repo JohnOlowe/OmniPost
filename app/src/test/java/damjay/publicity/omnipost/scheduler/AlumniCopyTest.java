@@ -92,12 +92,16 @@ public class AlumniCopyTest {
   }
 
   @Test
-  public void unpairedRosterStillSplitsTheCardName() {
+  public void unpairedRosterAssumesSurnameThenGivenName() {
     Member member = new Member();
-    member.name = "Samuel Aduroja";
+    member.name = "Omotosho Peter";
     member.kind = Member.KIND_ALUMNI;
-    assertEquals("Samuel", AlumniCopy.firstName(member));
-    assertEquals("Aduroja", AlumniCopy.lastName(member));
+    assertEquals("Peter", AlumniCopy.firstName(member));
+    assertEquals("Omotosho", AlumniCopy.lastName(member));
+    Member three = new Member();
+    three.name = "Olanrewaju Isaac Oludare";
+    assertEquals("Isaac Oludare", AlumniCopy.firstName(three));
+    assertEquals("Olanrewaju", AlumniCopy.lastName(three));
   }
 
   @Test
