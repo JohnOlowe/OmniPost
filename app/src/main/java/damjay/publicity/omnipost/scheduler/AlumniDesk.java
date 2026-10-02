@@ -201,6 +201,11 @@ public final class AlumniDesk {
     return photo + " " + tag + " ARO reaches out. President saves the contact.";
   }
 
+  public static String birthdayFlyerBrief(Member member) {
+    return birthdayBrief(member)
+      + " Write the flyer caption the evening before, same as Fellowship. Caption ready by 6:30 AM. Post at 7:00 AM.";
+  }
+
   public static String photoBrief(Member member) {
     if (member == null) {
       return "";

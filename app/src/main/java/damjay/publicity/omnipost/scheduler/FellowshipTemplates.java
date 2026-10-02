@@ -95,7 +95,7 @@ public final class FellowshipTemplates {
     if (TaskTypes.HAPPY_NEW_MONTH.equals(key)) {
       return "Happy New Month!\nMay this month overflow with grace, favour, and testimonies.";
     }
-    if (TaskTypes.BIRTHDAY.equals(key)) {
+    if (TaskTypes.BIRTHDAY.equals(key) || TaskTypes.ALUMNI_BIRTHDAY.equals(key)) {
       return "Happy Birthday, {name}!\nWe celebrate you and pray God's blessings over your new year.";
     }
     return "";
@@ -105,7 +105,8 @@ public final class FellowshipTemplates {
     if (task == null || task.type == null) {
       return "";
     }
-    if (TaskTypes.BIRTHDAY.equals(task.type) && task.title != null) {
+    if ((TaskTypes.BIRTHDAY.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type))
+        && task.title != null) {
       String name = task.title.replace("'s Birthday", "").trim();
       return "Happy Birthday, "
         + name

@@ -38,6 +38,17 @@ public final class Homes {
     return task != null && TaskTypes.isAlumniDesk(task.type);
   }
 
+  /** Birthday flyer caption — Write caption, like Fellowship. DMs stay copy-ready. */
+  public static boolean writesAlumniCaption(Task task) {
+    return task != null
+        && TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)
+        && !task.skipCaption;
+  }
+
+  public static boolean isAlumniDmDesk(Task task) {
+    return isAlumniTask(task) && !writesAlumniCaption(task);
+  }
+
   public static void rememberFellowship(Context ctx) {
     Prefs.setLastHome(ctx, Prefs.HOME_FELLOWSHIP);
   }

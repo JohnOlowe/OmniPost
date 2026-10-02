@@ -25,6 +25,8 @@
   <string name="alumni_message_undone">Send undone</string>
   <string name="alumni_section_birthday">Birthday this month</string>
   <string name="alumni_section_birthday_sub">Always two DMs: HNM (not pastors) and pictures/details</string>
+  <string name="alumni_section_nags">Needs you</string>
+  <string name="alumni_section_nags_sub">Ask for a birthday picture. Write the flyer caption the way you do in Fellowship. DMs below stay copy-ready.</string>
   <string name="alumni_section_wave">New month wave</string>
   <string name="alumni_section_wave_sub">Half of alumni, not previous pastors, not this month’s birthday people</string>
   <string name="alumni_honorific">Title (blank = Mr / Ma)</string>
@@ -226,6 +228,7 @@
   <string name="alumni_desk_wave">New month wave</string>
   <string name="alumni_desk_photo">Picture reminder</string>
   <string name="alumni_open_desk">Open desk</string>
+  <string name="alumni_ask_picture">Ask for picture</string>
   <string name="alumni_group_title">Group greeting</string>
   <string name="alumni_copy_group">Copy group greeting</string>
   <string name="alumni_copy_dm">Copy HNM</string>

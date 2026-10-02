@@ -388,8 +388,9 @@ public final class RoutineGenerator {
     String type = alumni ? TaskTypes.ALUMNI_BIRTHDAY : TaskTypes.BIRTHDAY;
     String title = member.name + "'s Birthday";
     String description = alumni
-      ? AlumniDesk.birthdayBrief(member)
+      ? AlumniDesk.birthdayFlyerBrief(member)
       : "Write the greeting the evening before. Caption ready by 6:30 AM. Post at 7:00 AM.";
+    boolean skipCaption = alumni ? false : member.skipCaption;
     out.add(withSkip(build(
       type,
       title,
@@ -398,7 +399,7 @@ public final class RoutineGenerator {
       post.getTimeInMillis(),
       type + "|" + member.id + "|" + DateUtils.dayKey(post),
       member.id,
-      0L), member.skipCaption));
+      0L), skipCaption));
     if (alumni) {
       addAlumniPhoto(out, now, member, post, draftHour, leadDays);
     }
@@ -506,7 +507,7 @@ public final class RoutineGenerator {
     Calendar draft = DateUtils.draftAt(photo, leadDays, draftHour, 0);
     out.add(withSkip(build(
       TaskTypes.ALUMNI_PHOTO,
-      "Picture from " + member.name,
+      "Ask " + member.name + " for a picture",
       AlumniDesk.photoBrief(member),
       draft.getTimeInMillis(),
       photo.getTimeInMillis(),

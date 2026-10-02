@@ -13,10 +13,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.FragmentAlumniMonthBinding;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
@@ -25,13 +27,18 @@ import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniMonth;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
+import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.scheduler.TaskSearch;
+import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +51,8 @@ public class AlumniMonthFragment extends Fragment {
   private final List<Member> birthday = new ArrayList<>();
   private final List<Member> wave = new ArrayList<>();
   private final List<AlumniSend> sends = new ArrayList<>();
+  private final List<Task> nags = new ArrayList<>();
+  private TaskAdapter.Listener deskListener;
   private boolean waveSent;
   private int month;
   private int yearMonth;
@@ -95,6 +104,104 @@ public class AlumniMonthFragment extends Fragment {
         parkNotOnWhatsApp(member);
       }
     });
+    deskListener = new TaskAdapter.Listener() {
+      @Override
+      public void onOpen(Task task) {
+        Intent intent = new Intent(requireContext(), DraftActivity.class);
+        intent.putExtra(ExtraKeys.TASK_ID, task.id);
+        startActivity(intent);
+      }
+
+      @Override
+      public void onMarkPosted(Task task) {
+        Toast.makeText(requireContext(), R.string.posted_toast, Toast.LENGTH_SHORT).show();
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> ScheduleCoordinator.markPosted(app, task.id));
+      }
+
+      @Override
+      public void onSnooze(Task task) {
+        SnoozeChooser.show(requireContext(), task.postAtMillis, until -> {
+          Toast.makeText(
+            requireContext(),
+            getString(R.string.snoozed_until, DateUtils.formatStamp(until)),
+            Toast.LENGTH_SHORT)
+            .show();
+          Context app = requireContext().getApplicationContext();
+          AppExecutors.disk().execute(() -> ScheduleCoordinator.snooze(app, task.id, until));
+        });
+      }
+
+      @Override
+      public void onShift(Task task) {
+        SnoozeChooser.pickDateTime(requireContext(), when -> {
+          Context app = requireContext().getApplicationContext();
+          AppExecutors.disk().execute(() -> {
+            ScheduleCoordinator.shift(app, task.id, when);
+            AppExecutors.main(() -> {
+              if (!isAdded()) {
+                return;
+              }
+              Toast.makeText(
+                requireContext(),
+                getString(R.string.shifted_to, DateUtils.formatStamp(when)),
+                Toast.LENGTH_LONG)
+                .show();
+            });
+          });
+        });
+      }
+
+      @Override
+      public void onReopen(Task task) {
+        Toast.makeText(requireContext(), R.string.brought_back, Toast.LENGTH_SHORT).show();
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> ScheduleCoordinator.reopen(app, task.id));
+      }
+
+      @Override
+      public void onDelete(Task task) {
+        new MaterialAlertDialogBuilder(requireContext())
+          .setTitle(R.string.delete_task_title)
+          .setMessage(getString(R.string.delete_task_body, task.title))
+          .setPositiveButton(R.string.delete, (d, w) -> {
+            Context app = requireContext().getApplicationContext();
+            AppExecutors.disk().execute(() -> ScheduleCoordinator.deleteCustom(app, task.id));
+          })
+          .setNegativeButton(android.R.string.cancel, null)
+          .show();
+      }
+
+      @Override
+      public void onEditSeries(Task task) {}
+
+      @Override
+      public void onForward(Task task) {
+        Intent intent = new Intent(requireContext(), AlumniDmActivity.class);
+        intent.putExtra(ExtraKeys.TASK_ID, task.id);
+        startActivity(intent);
+      }
+
+      @Override
+      public void onOptions(Task task) {
+        showDeskOptions(task);
+      }
+
+      @Override
+      public void onCaptionReady(Task task) {
+        Context app = requireContext().getApplicationContext();
+        AppExecutors.disk().execute(() -> {
+          ScheduleCoordinator.markCaptionSaved(app, task.id);
+          AppExecutors.main(() -> {
+            if (!isAdded()) {
+              return;
+            }
+            Toast.makeText(requireContext(), R.string.caption_ready_toast, Toast.LENGTH_SHORT)
+              .show();
+          });
+        });
+      }
+    };
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);
     binding.waveFilter.check(R.id.chip_to_send);
@@ -144,6 +251,17 @@ public class AlumniMonthFragment extends Fragment {
       sends.clear();
       if (list != null) {
         sends.addAll(list);
+      }
+      paint();
+    });
+    db.taskDao().observeActive().observe(getViewLifecycleOwner(), list -> {
+      nags.clear();
+      if (list != null) {
+        for (Task task : list) {
+          if (isMonthNag(task)) {
+            nags.add(task);
+          }
+        }
       }
       paint();
     });
@@ -233,6 +351,7 @@ public class AlumniMonthFragment extends Fragment {
         sentKeys.add(AlumniMonthAdapter.key(send.memberId, send.kind));
       }
     }
+    List<Task> desk = deskCards();
     adapter.submit(
       birthdayView,
       waveView,
@@ -243,8 +362,12 @@ public class AlumniMonthFragment extends Fragment {
       getString(R.string.alumni_section_birthday),
       getString(R.string.alumni_section_birthday_sub),
       getString(R.string.alumni_section_wave),
-      getString(R.string.alumni_section_wave_sub));
-    boolean empty = birthdayView.isEmpty() && waveView.isEmpty();
+      getString(R.string.alumni_section_wave_sub),
+      desk,
+      getString(R.string.alumni_section_nags),
+      getString(R.string.alumni_section_nags_sub),
+      deskListener);
+    boolean empty = birthdayView.isEmpty() && waveView.isEmpty() && desk.isEmpty();
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
     if (empty) {
       if (!query.trim().isEmpty()) {
@@ -286,6 +409,111 @@ public class AlumniMonthFragment extends Fragment {
         list.remove(i);
       }
     }
+  }
+
+  private static boolean isMonthNag(Task task) {
+    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+      return false;
+    }
+    return TaskTypes.ALUMNI_PHOTO.equals(task.type)
+        || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type);
+  }
+
+  private List<Task> deskCards() {
+    long now = System.currentTimeMillis();
+    long lead = Prefs.warningLeadMs(requireContext());
+    List<Task> out = TaskSearch.matches(nags, query);
+    Collections.sort(
+      out,
+      (a, b) -> Long.compare(
+        TaskStatus.nextRingMillis(a, now, lead),
+        TaskStatus.nextRingMillis(b, now, lead)));
+    return out;
+  }
+
+  private void showDeskOptions(Task task) {
+    if (task == null) {
+      return;
+    }
+    ArrayList<String> labels = new ArrayList<>();
+    boolean posted = TaskStatus.POSTED.equals(task.status);
+    boolean pending = !posted && TaskStatus.captionWorkPending(task);
+    if (pending) {
+      labels.add(getString(R.string.caption_ready_action));
+    }
+    if (!posted) {
+      labels.add(getString(task.skipCaption ? R.string.turn_captions_on : R.string.turn_captions_off));
+    }
+    boolean photo = !posted
+      && task.memberId > 0L
+      && (TaskTypes.ALUMNI_PHOTO.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type));
+    if (photo) {
+      labels.add(getString(R.string.alumni_got_picture));
+      labels.add(getString(R.string.alumni_no_picture));
+    }
+    if (labels.isEmpty()) {
+      return;
+    }
+    CharSequence[] items = labels.toArray(new CharSequence[0]);
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(task.title)
+      .setItems(items, (d, which) -> {
+        int index = 0;
+        if (pending) {
+          if (which == index) {
+            deskListener.onCaptionReady(task);
+            return;
+          }
+          index++;
+        }
+        if (!posted) {
+          if (which == index) {
+            boolean skip = !task.skipCaption;
+            Context app = requireContext().getApplicationContext();
+            AppExecutors.disk().execute(() -> ScheduleCoordinator.setSkipCaption(app, task.id, skip));
+            Toast.makeText(
+              requireContext(),
+              skip ? R.string.captions_off_toast : R.string.captions_on_toast,
+              Toast.LENGTH_SHORT)
+              .show();
+            return;
+          }
+          index++;
+        }
+        if (photo) {
+          if (which == index) {
+            setAlumniPhoto(task, AlumniDesk.PHOTO_GOT);
+            return;
+          }
+          index++;
+          if (which == index) {
+            setAlumniPhoto(task, AlumniDesk.PHOTO_NONE);
+          }
+        }
+      })
+      .show();
+  }
+
+  private void setAlumniPhoto(Task task, String status) {
+    if (task == null || task.memberId <= 0L) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.setAlumniPhoto(app, task.memberId, status);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        Toast.makeText(
+          requireContext(),
+          AlumniDesk.PHOTO_NONE.equals(status)
+            ? R.string.alumni_photo_none_saved
+            : R.string.alumni_photo_saved,
+          Toast.LENGTH_LONG)
+          .show();
+      });
+    });
   }
 
   private List<Member> filterNames(List<Member> source) {

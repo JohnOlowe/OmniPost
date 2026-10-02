@@ -148,6 +148,7 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void bind(Task task, Listener listener) {
       binding.title.setText(task.title);
       if (TaskTypes.isAlumniDesk(task.type)
+          && task.skipCaption
           && task.description != null
           && !task.description.isEmpty()) {
         binding.description.setText(task.description);
@@ -164,7 +165,9 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.description.setText(task.description);
       }
-      if (TaskTypes.isAlumniDesk(task.type)) {
+      if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+        binding.btnDraft.setText(R.string.alumni_ask_picture);
+      } else if (TaskTypes.isAlumniDesk(task.type) && task.skipCaption) {
         binding.btnDraft.setText(R.string.alumni_open_desk);
       } else if (task.skipCaption) {
         binding.btnDraft.setText(R.string.open_whatsapp);

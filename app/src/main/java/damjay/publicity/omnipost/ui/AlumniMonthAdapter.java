@@ -8,8 +8,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import damjay.publicity.omnipost.R;
 import damjay.publicity.omnipost.data.entity.AlumniSend;
 import damjay.publicity.omnipost.data.entity.Member;
+import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ItemAlumniDmBinding;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
+import damjay.publicity.omnipost.databinding.ItemTaskBinding;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
@@ -25,6 +27,7 @@ import java.util.Set;
 public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
   private static final int TYPE_HEADER = 0;
   private static final int TYPE_PERSON = 1;
+  private static final int TYPE_TASK = 2;
 
   interface Listener {
     void onCopy(Member member, String caption);
@@ -44,6 +47,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     final String subtitle;
     final Member member;
     final boolean birthday;
+    final Task task;
 
     Row(String title, String subtitle) {
       this.type = TYPE_HEADER;
@@ -51,6 +55,7 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
       this.subtitle = subtitle;
       this.member = null;
       this.birthday = false;
+      this.task = null;
     }
 
     Row(Member member, boolean birthday) {
@@ -59,10 +64,21 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
       this.subtitle = null;
       this.member = member;
       this.birthday = birthday;
+      this.task = null;
+    }
+
+    Row(Task task) {
+      this.type = TYPE_TASK;
+      this.title = null;
+      this.subtitle = null;
+      this.member = null;
+      this.birthday = false;
+      this.task = task;
     }
   }
 
   private final Listener listener;
+  private TaskAdapter.Listener taskListener;
   private final List<Row> rows = new ArrayList<>();
   private Set<String> sent = new HashSet<>();
   private Map<String, String> bag;
@@ -87,12 +103,23 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     String birthdayTitle,
     String birthdaySub,
     String waveTitle,
-    String waveSub) {
+    String waveSub,
+    List<Task> desk,
+    String deskTitle,
+    String deskSub,
+    TaskAdapter.Listener taskListener) {
     this.bag = bag;
     this.addresses = addresses == null ? new ArrayList<>() : addresses;
     this.month = month;
     this.sent = sentKeys == null ? new HashSet<>() : sentKeys;
+    this.taskListener = taskListener;
     rows.clear();
+    if (desk != null && !desk.isEmpty()) {
+      rows.add(new Row(deskTitle, deskSub));
+      for (Task task : desk) {
+        rows.add(new Row(task));
+      }
+    }
     if (birthday != null && !birthday.isEmpty()) {
       rows.add(new Row(birthdayTitle, birthdaySub));
       for (Member member : birthday) {
@@ -120,6 +147,9 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     if (viewType == TYPE_HEADER) {
       return new Header(ItemDayHeaderBinding.inflate(inflater, parent, false));
     }
+    if (viewType == TYPE_TASK) {
+      return new TaskAdapter.TaskHolder(ItemTaskBinding.inflate(inflater, parent, false));
+    }
     return new Person(ItemAlumniDmBinding.inflate(inflater, parent, false));
   }
 
@@ -130,7 +160,13 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
       ((Header) holder).bind(row);
       return;
     }
+    if (holder instanceof TaskAdapter.TaskHolder && row.task != null && taskListener != null) {
+      ((TaskAdapter.TaskHolder) holder).bind(row.task, taskListener);
+      return;
+    }
+    if (holder instanceof Person) {
       ((Person) holder).bind(row, month, bag, addresses, sent, listener);
+    }
   }
 
   @Override

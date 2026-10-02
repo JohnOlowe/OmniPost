@@ -442,7 +442,7 @@ public class RoutineGeneratorTest {
   }
 
   @Test
-  public void alumniBirthdaySkipsCaptionAndStaysOffTheMemberList() {
+  public void alumniBirthdayWritesCaptionLikeFellowship() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);
     now.clear();
@@ -459,20 +459,34 @@ public class RoutineGeneratorTest {
     List<Task> tasks =
       RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(member));
     boolean found = false;
+    boolean photo = false;
     for (Task task : tasks) {
       if ((TaskTypes.ALUMNI_BIRTHDAY + "|9|2026-08-31").equals(task.occurrenceKey)) {
         found = true;
         assertEquals(TaskTypes.ALUMNI_BIRTHDAY, task.type);
-        assertTrue(task.skipCaption);
+        assertFalse(task.skipCaption);
         assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(task.type));
+        task.status = TaskStatus.dueStatus(task, now.getTimeInMillis(), ScheduleTimes.WARNING_LEAD_MS);
+        assertEquals(TaskStatus.SCHEDULED, task.status);
+        assertEquals("Upcoming", TaskStatus.label(task));
+        String caption = CaptionTemplates.forTask(null, task);
+        assertTrue(caption.contains("Happy Birthday"));
+        assertTrue(caption.contains("Ada"));
+        assertTrue(task.description.contains("Write the flyer caption"));
+        assertTrue(task.description.contains("do not tag") || task.description.contains("NO PICTURE"));
+      }
+      if ((TaskTypes.ALUMNI_PHOTO + "|9|2026-08-31").equals(task.occurrenceKey)) {
+        photo = true;
+        assertTrue(task.skipCaption);
+        assertTrue(task.title.contains("picture"));
+        assertTrue(task.description.contains("Ask for a picture") || task.description.contains("picture"));
         task.status = TaskStatus.dueStatus(task, now.getTimeInMillis(), ScheduleTimes.WARNING_LEAD_MS);
         assertEquals(TaskStatus.READY, task.status);
         assertEquals("Forward", TaskStatus.label(task));
-        assertEquals("", CaptionTemplates.forTask(null, task));
-        assertTrue(task.description.contains("do not tag") || task.description.contains("NO PICTURE"));
       }
     }
     assertTrue(found);
+    assertTrue(photo);
   }
 
   @Test
@@ -509,16 +523,19 @@ public class RoutineGeneratorTest {
       }
       if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
         photos++;
+        assertTrue(task.skipCaption);
         if ((TaskTypes.ALUMNI_PHOTO + "|9|2026-08-31").equals(task.occurrenceKey)) {
           adaPhoto = true;
           Calendar post = Calendar.getInstance(utc);
           post.setTimeInMillis(task.postAtMillis);
           assertEquals(29, post.get(Calendar.DAY_OF_MONTH));
           assertEquals(10, post.get(Calendar.HOUR_OF_DAY));
+          assertTrue(task.title.contains("picture"));
         }
       }
       if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
         birthdays++;
+        assertFalse(task.skipCaption);
       }
     }
     assertTrue(monthCards >= 1 && monthCards <= 2);

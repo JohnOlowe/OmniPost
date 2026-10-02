@@ -968,7 +968,9 @@ public final class ScheduleCoordinator {
           continue;
         }
         if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
-          task.description = AlumniDesk.birthdayBrief(member);
+          task.description = task.skipCaption
+            ? AlumniDesk.birthdayBrief(member)
+            : AlumniDesk.birthdayFlyerBrief(member);
           db.taskDao().update(task);
         }
       }
@@ -982,6 +984,10 @@ public final class ScheduleCoordinator {
     }
     task.skipCaption = skip;
     if (!skip) {
+      if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type) && task.memberId > 0L && db != null) {
+        task.description = AlumniDesk.birthdayFlyerBrief(db.memberDao().getById(task.memberId));
+        return;
+      }
       if (task.description != null && task.description.startsWith("No caption")) {
         task.description = "Write the caption. OmniPost will nag you when it is time.";
       }
@@ -1016,7 +1022,7 @@ public final class ScheduleCoordinator {
       return;
     }
     String birthday = member.name + "'s Birthday";
-    String photo = "Picture from " + member.name;
+    String photo = "Ask " + member.name + " for a picture";
     for (Task task : tasks) {
       if (task == null || task.titleLocked) {
         continue;
@@ -1028,7 +1034,9 @@ public final class ScheduleCoordinator {
           dirty = true;
         }
         String brief = Member.isAlumni(member)
-          ? AlumniDesk.birthdayBrief(member)
+          ? (task.skipCaption
+            ? AlumniDesk.birthdayBrief(member)
+            : AlumniDesk.birthdayFlyerBrief(member))
           : task.description;
         if (Member.isAlumni(member) && brief != null && !brief.equals(task.description)) {
           task.description = brief;

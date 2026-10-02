@@ -22,6 +22,13 @@ public final class CaptionTemplates {
         || TaskTypes.DAILY.equals(type);
   }
 
+  static String captionKey(String type) {
+    if (TaskTypes.ALUMNI_BIRTHDAY.equals(type)) {
+      return TaskTypes.BIRTHDAY;
+    }
+    return type;
+  }
+
   public static String forTask(Context context, Task task) {
     return forTask(context, task, null);
   }
@@ -37,7 +44,7 @@ public final class CaptionTemplates {
       return live(task, series, extrasFrom(context));
     }
     if (context != null) {
-      String custom = Prefs.fellowshipCaptionRaw(context, task.type);
+      String custom = Prefs.fellowshipCaptionRaw(context, captionKey(task.type));
       if (custom != null && !custom.trim().isEmpty()) {
         return apply(custom, task, series, extrasFrom(context));
       }

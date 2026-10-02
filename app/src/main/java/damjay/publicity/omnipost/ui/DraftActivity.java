@@ -95,7 +95,7 @@ public class DraftActivity extends AppCompatActivity {
         if (found != null && found.taskId > 0L) {
           linked = db.taskDao().getById(found.taskId);
         }
-        if (Homes.isAlumniTask(linked)) {
+        if (Homes.isAlumniDmDesk(linked)) {
           Task alumniTask = linked;
           AppExecutors.main(() -> {
             startActivity(Homes.alumniForTask(this, alumniTask));
@@ -106,7 +106,7 @@ public class DraftActivity extends AppCompatActivity {
         applyLingeredTemplate(db, found, linked);
       } else if (taskId > 0L) {
         linked = db.taskDao().getById(taskId);
-        if (Homes.isAlumniTask(linked)) {
+        if (Homes.isAlumniDmDesk(linked)) {
           Task alumniTask = linked;
           AppExecutors.main(() -> {
             startActivity(Homes.alumniForTask(this, alumniTask));

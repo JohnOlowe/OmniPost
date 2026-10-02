@@ -9,6 +9,18 @@ import org.junit.Test;
 
 public class CaptionTemplatesTest {
   @Test
+  public void alumniBirthdayUsesFellowshipGreeting() {
+    Task task = new Task();
+    task.type = TaskTypes.ALUMNI_BIRTHDAY;
+    task.title = "Ada's Birthday";
+    task.skipCaption = false;
+    String caption = CaptionTemplates.forTask(null, task);
+    assertTrue(caption.contains("Happy Birthday"));
+    assertTrue(caption.contains("Ada"));
+    assertEquals(TaskTypes.BIRTHDAY, CaptionTemplates.captionKey(task.type));
+  }
+
+  @Test
   public void liveCaptionsFillEvenWhenSeedIsOff() {
     Task countdown = new Task();
     countdown.type = TaskTypes.COUNTDOWN;

@@ -38,6 +38,7 @@ public class AlarmActivity extends AppCompatActivity {
   private boolean selected;
   private boolean skipCaption;
   private boolean alumniDesk;
+  private String taskType = "";
 
   @Override
   protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -49,9 +50,15 @@ public class AlarmActivity extends AppCompatActivity {
     binding.btnDraft.setOnClickListener(v -> {
       acknowledge();
       if (alumniDesk) {
-        Intent desk = Homes.alumni(this);
-        desk.putExtra(ExtraKeys.TASK_ID, taskId);
-        startActivity(desk);
+        if (TaskTypes.ALUMNI_PHOTO.equals(taskType)) {
+          Intent photo = new Intent(this, AlumniDmActivity.class);
+          photo.putExtra(ExtraKeys.TASK_ID, taskId);
+          startActivity(photo);
+        } else {
+          Intent desk = Homes.alumni(this);
+          desk.putExtra(ExtraKeys.TASK_ID, taskId);
+          startActivity(desk);
+        }
         finish();
         return;
       }
@@ -199,10 +206,17 @@ public class AlarmActivity extends AppCompatActivity {
         binding.title.setText(task.title);
         postAt = task.postAtMillis;
         skipCaption = task.skipCaption;
-        alumniDesk = TaskTypes.isAlumniDesk(task.type);
+        taskType = task.type == null ? "" : task.type;
+        alumniDesk = Homes.isAlumniDmDesk(task);
         boolean pending = TaskStatus.captionWorkPending(task);
         binding.btnReady.setVisibility(pending && !alumniDesk ? View.VISIBLE : View.GONE);
-        if (alumniDesk) {
+        if (TaskTypes.ALUMNI_PHOTO.equals(taskType)) {
+          binding.btnDraft.setText(R.string.alumni_ask_picture);
+          binding.subtitle.setText(
+            task.description == null || task.description.isEmpty()
+              ? getString(R.string.alumni_desk_photo)
+              : task.description);
+        } else if (alumniDesk) {
           binding.btnDraft.setText(R.string.alumni_open_desk);
           binding.subtitle.setText(R.string.alumni_month_hint);
         } else if (skipCaption) {
