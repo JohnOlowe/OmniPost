@@ -31,13 +31,13 @@ import damjay.publicity.omnipost.data.AppDatabase;
 import damjay.publicity.omnipost.data.entity.Member;
 import damjay.publicity.omnipost.databinding.FragmentBirthdaysBinding;
 import damjay.publicity.omnipost.scheduler.AlumniContacts;
-import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.AlumniMatch;
 import damjay.publicity.omnipost.scheduler.AlumniPending;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
 import damjay.publicity.omnipost.scheduler.BirthdayHorizon;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
+import damjay.publicity.omnipost.share.WhatsAppRouter;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
@@ -108,11 +108,8 @@ public class BirthdaysFragment extends Fragment {
       }
 
       @Override
-      public void onDm(Member member) {
-        Intent desk = Homes.alumni(requireContext());
-        desk.putExtra(ExtraKeys.MEMBER_ID, member.id);
-        desk.putExtra(ExtraKeys.ALUMNI_MODE, AlumniCopy.kindFor(member, Calendar.getInstance().get(Calendar.MONTH) + 1));
-        startActivity(desk);
+      public void onOptions(Member member) {
+        showPersonOptions(member);
       }
 
       @Override
@@ -554,6 +551,29 @@ public class BirthdaysFragment extends Fragment {
         ? R.string.add_pastor
         : tab == TAB_NO_NUMBER || tab == TAB_NO_WHATSAPP || tab == TAB_ALUMNI
           ? R.string.add_alumni : R.string.add_member));
+  }
+
+  private void showPersonOptions(Member member) {
+    if (member == null) {
+      return;
+    }
+    new MaterialAlertDialogBuilder(requireContext())
+      .setTitle(member.name)
+      .setItems(
+        new CharSequence[] { getString(R.string.open_whatsapp) },
+        (d, which) -> openWhatsApp(member))
+      .show();
+  }
+
+  private void openWhatsApp(Member member) {
+    if (!AlumniDesk.hasPhone(member)) {
+      Toast.makeText(requireContext(), R.string.people_open_whatsapp_no_number, Toast.LENGTH_LONG)
+        .show();
+      return;
+    }
+    if (!WhatsAppRouter.openNumber(requireContext(), member.phone)) {
+      Toast.makeText(requireContext(), R.string.whatsapp_not_installed, Toast.LENGTH_LONG).show();
+    }
   }
 
   private void showEditor(@Nullable Member existing) {

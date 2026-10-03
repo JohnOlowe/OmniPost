@@ -21,22 +21,25 @@ public final class WhatsAppRouter {
     }
   }
 
+  /** Opens that number's chat. Does not touch the clipboard. */
+  public static boolean openNumber(Context context, String phone) {
+    String digits = AlumniDesk.whatsAppDigits(phone);
+    if (!AlumniDesk.hasPhone(digits)) {
+      return false;
+    }
+    Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + digits));
+    view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    return launch(context, view, PACKAGE_WHATSAPP);
+  }
+
   /**
    * Copies the caption, then opens that number's chat in WhatsApp (never the
    * share sheet). Long captions stay on the clipboard so the URL does not explode.
    */
   public static boolean openChat(Context context, String phone, String text) {
     copyToClipboard(context, text);
-    String digits = AlumniDesk.whatsAppDigits(phone);
-    if (AlumniDesk.hasPhone(digits)) {
-      Intent view = new Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/" + digits));
-      view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      if (launch(context, view, PACKAGE_WHATSAPP)) {
-        return true;
-      }
-      if (launch(context, view, PACKAGE_WHATSAPP_BUSINESS)) {
-        return true;
-      }
+    if (openNumber(context, phone)) {
+      return true;
     }
     return openApp(context);
   }

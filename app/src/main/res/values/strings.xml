@@ -77,6 +77,8 @@
   <string name="turn_captions_off">Turn captions off</string>
   <string name="turn_captions_on">Turn captions on</string>
   <string name="open_whatsapp">Open WhatsApp</string>
+  <string name="people_open_whatsapp_no_number">No WhatsApp number on this card. Fill it first.</string>
+  <string name="whatsapp_not_installed">WhatsApp is not installed.</string>
   <string name="no_caption_waiting">No caption. Open WhatsApp and forward when it is time.</string>
   <string name="no_caption_post">No caption. Open WhatsApp and forward now.</string>
   <string name="renamed">Post renamed.</string>

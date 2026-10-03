@@ -24,7 +24,7 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
   public interface Listener {
     void onEdit(Member member);
 
-    void onDm(Member member);
+    void onOptions(Member member);
 
     void onDelete(Member member);
 
@@ -173,11 +173,8 @@ public class MemberAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder>
       }
       binding.getRoot().setOnClickListener(v -> listener.onEdit(member));
       binding.getRoot().setOnLongClickListener(v -> {
-        if (Member.isAlumni(member)) {
-          listener.onDm(member);
-          return true;
-        }
-        return false;
+        listener.onOptions(member);
+        return true;
       });
       binding.btnDelete.setOnClickListener(v -> listener.onDelete(member));
     }
