@@ -114,13 +114,26 @@ public final class AlumniMonth {
     return !sent(sends, member.id, AlumniSend.DETAILS);
   }
 
+  public static boolean isBirthdayToday(Member member, Calendar now) {
+    if (member == null || now == null || member.birthMonth < 1 || member.birthDay < 1) {
+      return false;
+    }
+    return member.birthMonth == now.get(Calendar.MONTH) + 1
+      && member.birthDay == now.get(Calendar.DAY_OF_MONTH);
+  }
+
   public static List<Member> pendingBirthday(List<Member> birthday, List<AlumniSend> sends) {
+    return pendingBirthday(birthday, sends, Calendar.getInstance());
+  }
+
+  public static List<Member> pendingBirthday(
+    List<Member> birthday, List<AlumniSend> sends, Calendar now) {
     List<Member> out = new ArrayList<>();
     if (birthday == null) {
       return out;
     }
     for (Member member : birthday) {
-      if (owesBirthday(member, sends)) {
+      if (owesBirthday(member, sends) || isBirthdayToday(member, now)) {
         out.add(member);
       }
     }
@@ -128,12 +141,17 @@ public final class AlumniMonth {
   }
 
   public static List<Member> sentBirthday(List<Member> birthday, List<AlumniSend> sends) {
+    return sentBirthday(birthday, sends, Calendar.getInstance());
+  }
+
+  public static List<Member> sentBirthday(
+    List<Member> birthday, List<AlumniSend> sends, Calendar now) {
     List<Member> out = new ArrayList<>();
     if (birthday == null) {
       return out;
     }
     for (Member member : birthday) {
-      if (member != null && !owesBirthday(member, sends)) {
+      if (member != null && !owesBirthday(member, sends) && !isBirthdayToday(member, now)) {
         out.add(member);
       }
     }

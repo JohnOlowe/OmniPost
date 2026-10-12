@@ -112,8 +112,9 @@ public class AlumniMonthTest {
     sends.add(send(done.id, AlumniSend.HNM));
     sends.add(send(done.id, AlumniSend.DETAILS));
     sends.add(send(waveDone.id, AlumniSend.HNM));
-    List<Member> toSendBday = AlumniMonth.pendingBirthday(birthday, sends);
-    List<Member> sentBday = AlumniMonth.sentBirthday(birthday, sends);
+    Calendar now = cal(2026, Calendar.OCTOBER, 12);
+    List<Member> toSendBday = AlumniMonth.pendingBirthday(birthday, sends, now);
+    List<Member> sentBday = AlumniMonth.sentBirthday(birthday, sends, now);
     List<Member> toSendWave = AlumniMonth.pendingWave(wave, sends);
     List<Member> sentWave = AlumniMonth.sentWave(wave, sends);
     assertEquals(1, toSendBday.size());
@@ -141,6 +142,27 @@ public class AlumniMonthTest {
     send.kind = kind;
     send.yearMonth = 202610;
     return send;
+  }
+
+  @Test
+  public void birthdayTodayStaysOnToSendEvenAfterBothDms() {
+    Member ada = alumni("Ada Okafor", 10);
+    ada.id = 51;
+    ada.birthDay = 12;
+    List<Member> birthday = new ArrayList<>();
+    birthday.add(ada);
+    List<AlumniSend> sends = new ArrayList<>();
+    sends.add(send(ada.id, AlumniSend.HNM));
+    sends.add(send(ada.id, AlumniSend.DETAILS));
+    Calendar today = cal(2026, Calendar.OCTOBER, 12);
+    List<Member> toSend = AlumniMonth.pendingBirthday(birthday, sends, today);
+    List<Member> sent = AlumniMonth.sentBirthday(birthday, sends, today);
+    assertEquals(1, toSend.size());
+    assertEquals(ada.id, toSend.get(0).id);
+    assertTrue(sent.isEmpty());
+    Calendar tomorrow = cal(2026, Calendar.OCTOBER, 13);
+    assertTrue(AlumniMonth.pendingBirthday(birthday, sends, tomorrow).isEmpty());
+    assertEquals(1, AlumniMonth.sentBirthday(birthday, sends, tomorrow).size());
   }
 
   @Test

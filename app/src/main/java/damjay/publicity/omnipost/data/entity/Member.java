@@ -27,6 +27,13 @@ public class Member {
   @NonNull
   public String phone = "";
 
+  /**
+   * Number as first stored from the original roster/sheet. Never overwritten
+   * when the working {@link #phone} is edited.
+   */
+  @NonNull
+  public String originalPhone = "";
+
   @NonNull
   public String firstName = "";
 

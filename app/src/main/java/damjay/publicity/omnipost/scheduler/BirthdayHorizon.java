@@ -64,6 +64,7 @@ public final class BirthdayHorizon {
       || contains(member.firstName, q)
       || contains(member.lastName, q)
       || contains(member.phone, q)
+      || contains(member.originalPhone, q)
       || contains(member.honorific, q)
       || contains(member.email, q);
   }

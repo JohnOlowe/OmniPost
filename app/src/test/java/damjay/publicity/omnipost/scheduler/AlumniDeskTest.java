@@ -39,6 +39,17 @@ public class AlumniDeskTest {
   }
 
   @Test
+  public void originalPhoneStaysPutWhenTheWorkingNumberChanges() {
+    Member member = alumni("Ada", 8, 31);
+    member.phone = "08031234567";
+    assertTrue(AlumniDesk.rememberOriginalPhone(member));
+    assertEquals("2348031234567", member.originalPhone);
+    member.phone = "08039990000";
+    assertFalse(AlumniDesk.rememberOriginalPhone(member));
+    assertEquals("2348031234567", member.originalPhone);
+  }
+
+  @Test
   public void flyerInfoUsesTodayTomorrowOrTheDateAndPictureLine() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);

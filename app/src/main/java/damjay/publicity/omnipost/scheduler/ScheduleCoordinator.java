@@ -61,6 +61,7 @@ public final class ScheduleCoordinator {
     ensureAlumni(app, db);
 
     List<Member> members = db.memberDao().getAllSync();
+    backfillOriginalPhones(db, members);
     AlumniMatch.rememberRoster(members);
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(
@@ -181,6 +182,17 @@ public final class ScheduleCoordinator {
       backfillVars(db, notice, SeriesDefaults.noticeVars(), 0L);
     }
     Prefs.setSeriesDefaultsInstalled(app, true);
+  }
+
+  private static void backfillOriginalPhones(AppDatabase db, List<Member> members) {
+    if (db == null || members == null) {
+      return;
+    }
+    for (Member member : members) {
+      if (AlumniDesk.rememberOriginalPhone(member)) {
+        db.memberDao().update(member);
+      }
+    }
   }
 
   private static void ensureAlumni(Context app, AppDatabase db) {
@@ -1006,6 +1018,7 @@ public final class ScheduleCoordinator {
     }
     if (AlumniDesk.hasPhone(row.phone)) {
       member.phone = AlumniDesk.storePhone(row.phone);
+      AlumniDesk.rememberOriginalPhone(member);
     }
     if (!row.gender.isEmpty()) {
       member.gender = row.gender;

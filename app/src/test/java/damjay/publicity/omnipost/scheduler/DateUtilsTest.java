@@ -73,11 +73,21 @@ public class DateUtilsTest {
 
   @Test
   public void birthdayAlreadyPassedRollsToNextYear() {
-    Calendar now = utc(2026, Calendar.AUGUST, 31, 8, 0);
+    Calendar now = utc(2026, Calendar.SEPTEMBER, 1, 8, 0);
     Calendar got = DateUtils.nextBirthdayAt(now, 8, 31, 7, 0);
     assertEquals(2027, got.get(Calendar.YEAR));
     assertEquals(Calendar.AUGUST, got.get(Calendar.MONTH));
     assertEquals(31, got.get(Calendar.DAY_OF_MONTH));
+  }
+
+  @Test
+  public void birthdayTodayAfterThePostHourStaysToday() {
+    Calendar now = utc(2026, Calendar.AUGUST, 31, 15, 0);
+    Calendar got = DateUtils.nextBirthdayAt(now, 8, 31, 7, 0);
+    assertEquals(2026, got.get(Calendar.YEAR));
+    assertEquals(Calendar.AUGUST, got.get(Calendar.MONTH));
+    assertEquals(31, got.get(Calendar.DAY_OF_MONTH));
+    assertEquals(7, got.get(Calendar.HOUR_OF_DAY));
   }
 
   @Test

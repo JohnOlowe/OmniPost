@@ -83,6 +83,25 @@ public final class AlumniDesk {
     return d.length() >= 10 && d.length() <= 15 ? d : "";
   }
 
+  /**
+   * Keep the first number we ever stored. Later edits of {@link Member#phone}
+   * must not overwrite {@link Member#originalPhone}.
+   */
+  public static boolean rememberOriginalPhone(Member member) {
+    if (member == null) {
+      return false;
+    }
+    if (member.originalPhone != null && !member.originalPhone.trim().isEmpty()) {
+      return false;
+    }
+    String stored = storePhone(member.phone);
+    if (stored.isEmpty()) {
+      return false;
+    }
+    member.originalPhone = stored;
+    return true;
+  }
+
   private static boolean isNanp(String d) {
     return d != null
       && d.length() >= 11

@@ -33,6 +33,7 @@ import java.util.Calendar;
 public class MemberEditActivity extends AppCompatActivity {
   static final String EXTRA_NAME = "extra_member_name";
   static final String EXTRA_PHONE = "extra_member_phone";
+  static final String EXTRA_ORIGINAL_PHONE = "extra_member_original_phone";
   static final String EXTRA_GENDER = "extra_member_gender";
   static final String EXTRA_HONORIFIC = "extra_member_honorific";
   static final String EXTRA_EMAIL = "extra_member_email";
@@ -56,6 +57,7 @@ public class MemberEditActivity extends AppCompatActivity {
   private boolean pastorDefault;
   private TextInputEditText name;
   private TextInputEditText phone;
+  private android.widget.TextView originalPhone;
   private TextInputEditText honorific;
   private TextInputEditText email;
   private TextInputEditText position;
@@ -87,6 +89,7 @@ public class MemberEditActivity extends AppCompatActivity {
       intent.putExtra(ExtraKeys.MEMBER_ID, member.id);
       intent.putExtra(EXTRA_NAME, nz(member.name));
       intent.putExtra(EXTRA_PHONE, nz(member.phone));
+      intent.putExtra(EXTRA_ORIGINAL_PHONE, nz(member.originalPhone));
       intent.putExtra(EXTRA_GENDER, nz(member.gender));
       intent.putExtra(EXTRA_HONORIFIC, nz(member.honorific));
       intent.putExtra(EXTRA_EMAIL, nz(member.email));
@@ -131,6 +134,7 @@ public class MemberEditActivity extends AppCompatActivity {
   private void bindForm() {
     name = findViewById(R.id.input_name);
     phone = findViewById(R.id.input_phone);
+    originalPhone = findViewById(R.id.original_phone);
     honorific = findViewById(R.id.input_honorific);
     email = findViewById(R.id.input_email);
     position = findViewById(R.id.input_position);
@@ -211,6 +215,7 @@ public class MemberEditActivity extends AppCompatActivity {
       intent.getStringExtra(EXTRA_FIRST), intent.getStringExtra(EXTRA_LAST));
     name.setText(rosterName);
     phone.setText(AlumniDesk.displayPhone(nz(intent.getStringExtra(EXTRA_PHONE))));
+    paintOriginalPhone(intent.getStringExtra(EXTRA_ORIGINAL_PHONE));
     honorific.setText(nz(intent.getStringExtra(EXTRA_HONORIFIC)));
     setText(email, intent.getStringExtra(EXTRA_EMAIL));
     setText(position, intent.getStringExtra(EXTRA_POSITION));
@@ -283,6 +288,19 @@ public class MemberEditActivity extends AppCompatActivity {
     } else {
       gender.setSelection(0);
     }
+  }
+
+  private void paintOriginalPhone(String stored) {
+    if (originalPhone == null) {
+      return;
+    }
+    String value = stored == null ? "" : stored.trim();
+    if (value.isEmpty()) {
+      originalPhone.setVisibility(View.GONE);
+      return;
+    }
+    originalPhone.setVisibility(View.VISIBLE);
+    originalPhone.setText(getString(R.string.alumni_original_phone, AlumniDesk.displayPhone(value)));
   }
 
   private void setPhoto(String status) {
@@ -373,6 +391,7 @@ public class MemberEditActivity extends AppCompatActivity {
       member.notOnWhatsApp = noWa;
       member.desk = pastor ? Member.DESK_PASTOR : "";
       member.phone = phoneValue;
+      AlumniDesk.rememberOriginalPhone(member);
       member.honorific = honor;
       member.email = emailValue;
       member.positionHeld = positionValue;

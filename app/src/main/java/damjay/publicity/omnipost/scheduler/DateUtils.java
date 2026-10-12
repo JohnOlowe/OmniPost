@@ -58,7 +58,9 @@ public final class DateUtils {
     c.set(Calendar.DAY_OF_MONTH, Math.min(day, max));
     c.set(Calendar.HOUR_OF_DAY, hour);
     c.set(Calendar.MINUTE, minute);
-    if (!c.after(now)) {
+    // Stay on today's date even after the 7:00 AM post, so the flyer still
+    // nags until it is marked posted. Roll only once the calendar day has gone.
+    if (startOfDay(c).before(startOfDay(now))) {
       c.add(Calendar.YEAR, 1);
       c.set(Calendar.MONTH, month1to12 - 1);
       max = c.getActualMaximum(Calendar.DAY_OF_MONTH);

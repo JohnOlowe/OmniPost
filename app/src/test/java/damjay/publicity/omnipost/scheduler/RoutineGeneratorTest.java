@@ -685,6 +685,31 @@ public class RoutineGeneratorTest {
   }
 
   @Test
+  public void birthdayTodayAfterSevenStillMintsThePackAndCaption() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.OCTOBER, 12, 15, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    Member ada = alumni(9, "Ada", 10, 12);
+    List<Task> tasks =
+      RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(ada));
+    boolean pack = false;
+    boolean caption = false;
+    for (Task task : tasks) {
+      if ((TaskTypes.ALUMNI_BIRTHDAY_PACK + "|2026-10-12").equals(task.occurrenceKey)) {
+        pack = true;
+      }
+      if ((TaskTypes.ALUMNI_BIRTHDAY + "|9|2026-10-12").equals(task.occurrenceKey)) {
+        caption = true;
+      }
+    }
+    assertTrue(pack);
+    assertTrue(caption);
+  }
+
+  @Test
   public void twoAlumniOnTheSameDayShareOnePostNag() {
     TimeZone utc = TimeZone.getTimeZone("UTC");
     Calendar now = Calendar.getInstance(utc);

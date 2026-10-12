@@ -9,6 +9,7 @@ import damjay.publicity.omnipost.data.entity.Series;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
+import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
@@ -390,6 +391,7 @@ public final class DeskBackup {
       o.put("notes", nz(member.notes));
       o.put("kind", nz(member.kind));
       o.put("phone", nz(member.phone));
+      o.put("originalPhone", nz(member.originalPhone));
       o.put("firstName", nz(member.firstName));
       o.put("lastName", nz(member.lastName));
       o.put("gender", nz(member.gender));
@@ -520,6 +522,10 @@ public final class DeskBackup {
         member.kind = Member.KIND_MEMBER;
       }
       member.phone = str(o, "phone");
+      member.originalPhone = str(o, "originalPhone");
+      if (member.originalPhone.isEmpty()) {
+        AlumniDesk.rememberOriginalPhone(member);
+      }
       member.firstName = str(o, "firstName");
       member.lastName = str(o, "lastName");
       member.gender = str(o, "gender");

@@ -118,6 +118,15 @@
       android:textColor="@color/cream"/>
   </com.google.android.material.textfield.TextInputLayout>
 
+  <TextView
+    android:id="@+id/original_phone"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="4dp"
+    android:textColor="@color/text_muted"
+    android:textSize="12sp"
+    android:visibility="gone"/>
+
   <com.google.android.material.textfield.TextInputLayout
     android:id="@+id/layout_email"
     android:layout_width="match_parent"
