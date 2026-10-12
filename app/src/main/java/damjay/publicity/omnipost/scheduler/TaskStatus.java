@@ -143,16 +143,17 @@ public final class TaskStatus {
     if (!saved && lead > 0L && warningAt > now) {
       next = Math.min(next, warningAt);
     }
-    if (minuteAt > now && minuteAt < task.postAtMillis) {
+    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
+    if (postRing && minuteAt > now && minuteAt < task.postAtMillis) {
       next = Math.min(next, minuteAt);
     }
-    if (task.postAtMillis > now) {
+    if (postRing && task.postAtMillis > now) {
       next = Math.min(next, task.postAtMillis);
     }
     if (next != Long.MAX_VALUE) {
       return next;
     }
-    return task.postAtMillis;
+    return postRing ? task.postAtMillis : Long.MAX_VALUE;
   }
 
   public static Task nextToRing(List<Task> tasks, long now, long warningLeadMs) {

@@ -483,6 +483,45 @@ public final class DateUtils {
     return day + " " + MONTH_NAMES[month1to12 - 1];
   }
 
+  /** 12th of October */
+  public static String monthDaySpoken(int month1to12, int day) {
+    if (month1to12 < 1 || month1to12 > 12 || day < 1) {
+      return "";
+    }
+    Calendar c = Calendar.getInstance(Locale.US);
+    c.set(Calendar.MONTH, month1to12 - 1);
+    c.set(Calendar.DAY_OF_MONTH, 1);
+    return ordinal(day) + " of " + monthName(c);
+  }
+
+  /** Today, 12th of October / Tomorrow, 12th of October / 12th of October */
+  public static String flyerWhen(int month1to12, int day, Calendar now) {
+    String spoken = monthDaySpoken(month1to12, day);
+    if (spoken.isEmpty()) {
+      return "";
+    }
+    Calendar clock = now == null ? Calendar.getInstance() : now;
+    Calendar today = startOfDay(clock);
+    Calendar target = startOfDay(clock);
+    target.set(Calendar.MONTH, month1to12 - 1);
+    int max = target.getActualMaximum(Calendar.DAY_OF_MONTH);
+    target.set(Calendar.DAY_OF_MONTH, Math.min(day, max));
+    if (target.before(today)) {
+      target.add(Calendar.YEAR, 1);
+      target.set(Calendar.MONTH, month1to12 - 1);
+      max = target.getActualMaximum(Calendar.DAY_OF_MONTH);
+      target.set(Calendar.DAY_OF_MONTH, Math.min(day, max));
+    }
+    int days = calendarDaysBetween(today, target);
+    if (days == 0) {
+      return "Today, " + spoken;
+    }
+    if (days == 1) {
+      return "Tomorrow, " + spoken;
+    }
+    return spoken;
+  }
+
   private static final String[] MONTH_NAMES =
     new java.text.DateFormatSymbols(Locale.getDefault()).getMonths();
 

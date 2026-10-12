@@ -83,6 +83,7 @@ public final class RoutineGenerator {
         }
       }
     }
+    addAlumniBirthdayPacks(out, now, alumni, writeHour, lead);
     addAlumniDesk(out, now, alumni, writeHour, lead);
     return out;
   }
@@ -485,6 +486,60 @@ public final class RoutineGenerator {
       0L), true));
   }
 
+  private static void addAlumniBirthdayPacks(
+    List<Task> out, Calendar now, List<Member> alumni, int draftHour, int leadDays) {
+    if (alumni == null || alumni.isEmpty()) {
+      return;
+    }
+    long horizon = now.getTimeInMillis()
+      + ScheduleTimes.GENERATE_BIRTHDAY_DAYS * 24L * 60L * 60L * 1000L;
+    Map<String, List<Member>> byDay = new LinkedHashMap<>();
+    Map<String, Calendar> posts = new LinkedHashMap<>();
+    for (Member member : alumni) {
+      if (member == null || member.birthMonth < 1 || member.birthDay < 1) {
+        continue;
+      }
+      Calendar post = DateUtils.nextBirthdayAt(
+        now,
+        member.birthMonth,
+        member.birthDay,
+        ScheduleTimes.BIRTHDAY_POST_HOUR,
+        0);
+      if (post.getTimeInMillis() > horizon) {
+        continue;
+      }
+      String key = DateUtils.dayKey(post);
+      List<Member> people = byDay.get(key);
+      if (people == null) {
+        people = new ArrayList<>();
+        byDay.put(key, people);
+        posts.put(key, post);
+      }
+      people.add(member);
+    }
+    for (Map.Entry<String, List<Member>> entry : byDay.entrySet()) {
+      List<Member> people = entry.getValue();
+      Calendar post = posts.get(entry.getKey());
+      if (people == null || people.isEmpty() || post == null) {
+        continue;
+      }
+      Calendar draft = DateUtils.draftAt(post, leadDays, draftHour, 0);
+      String title = people.size() == 1
+        ? "Post " + people.get(0).name + "'s birthday"
+        : "Post birthdays · "
+          + DateUtils.monthDayLabel(post.get(Calendar.MONTH) + 1, post.get(Calendar.DAY_OF_MONTH));
+      out.add(withSkip(build(
+        TaskTypes.ALUMNI_BIRTHDAY_PACK,
+        title,
+        AlumniDesk.packBrief(people),
+        draft.getTimeInMillis(),
+        post.getTimeInMillis(),
+        TaskTypes.ALUMNI_BIRTHDAY_PACK + "|" + entry.getKey(),
+        0L,
+        0L), true));
+    }
+  }
+
   private static void addAlumniPhoto(
     List<Task> out,
     Calendar now,
@@ -498,20 +553,61 @@ public final class RoutineGenerator {
     if (DateUtils.calendarDaysBetween(DateUtils.startOfDay(now), DateUtils.startOfDay(birthday)) <= 0) {
       return;
     }
+    addAlumniPhotoAt(
+      out,
+      now,
+      member,
+      birthday,
+      draftHour,
+      leadDays,
+      ScheduleTimes.ALUMNI_PHOTO_LEAD_DAYS,
+      ScheduleTimes.ALUMNI_PHOTO_HOUR,
+      "",
+      "Ask " + member.name + " for a picture",
+      AlumniDesk.photoBrief(member));
+    addAlumniPhotoAt(
+      out,
+      now,
+      member,
+      birthday,
+      draftHour,
+      leadDays,
+      ScheduleTimes.ALUMNI_PHOTO_EVE_LEAD_DAYS,
+      ScheduleTimes.ALUMNI_PHOTO_EVE_HOUR,
+      "|1",
+      "Ask " + member.name + " for a picture · 4 PM",
+      AlumniDesk.photoEveBrief(member));
+  }
+
+  private static void addAlumniPhotoAt(
+    List<Task> out,
+    Calendar now,
+    Member member,
+    Calendar birthday,
+    int draftHour,
+    int leadDays,
+    int photoLeadDays,
+    int hour,
+    String keySuffix,
+    String title,
+    String brief) {
     Calendar photo = (Calendar) birthday.clone();
-    photo.add(Calendar.DAY_OF_MONTH, -ScheduleTimes.ALUMNI_PHOTO_LEAD_DAYS);
-    photo.set(Calendar.HOUR_OF_DAY, ScheduleTimes.ALUMNI_PHOTO_HOUR);
+    photo.add(Calendar.DAY_OF_MONTH, -photoLeadDays);
+    photo.set(Calendar.HOUR_OF_DAY, hour);
     photo.set(Calendar.MINUTE, 0);
     photo.set(Calendar.SECOND, 0);
     photo.set(Calendar.MILLISECOND, 0);
+    if (DateUtils.startOfDay(photo).before(DateUtils.startOfDay(now))) {
+      return;
+    }
     Calendar draft = DateUtils.draftAt(photo, leadDays, draftHour, 0);
     out.add(withSkip(build(
       TaskTypes.ALUMNI_PHOTO,
-      "Ask " + member.name + " for a picture",
-      AlumniDesk.photoBrief(member),
+      title,
+      brief,
       draft.getTimeInMillis(),
       photo.getTimeInMillis(),
-      TaskTypes.ALUMNI_PHOTO + "|" + member.id + "|" + DateUtils.dayKey(birthday),
+      TaskTypes.ALUMNI_PHOTO + "|" + member.id + "|" + DateUtils.dayKey(birthday) + keySuffix,
       member.id,
       0L), true));
   }

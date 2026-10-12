@@ -32,6 +32,9 @@ public final class ScheduleTimes {
   /** Ask for the flyer picture this many days before the birthday. */
   public static final int ALUMNI_PHOTO_LEAD_DAYS = 2;
   public static final int ALUMNI_PHOTO_HOUR = 10;
+  /** Second picture ask: the day before, 4 PM. */
+  public static final int ALUMNI_PHOTO_EVE_LEAD_DAYS = 1;
+  public static final int ALUMNI_PHOTO_EVE_HOUR = 16;
   /** Keep the 1st-of-month HNM card through the 5th. */
   public static final int ALUMNI_MONTH_CATCHUP_DAYS = 4;
   /** Start the personal DMs on the 1st with the new-month card; finish by the 5th. */

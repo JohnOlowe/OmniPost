@@ -19,6 +19,10 @@
   <string name="alumni_month_hint">Open WhatsApp does not mean sent. Mark I’ve sent on each message. Birthday people are first — Happy New Month and the picture/details ask. Pastors skip HNM. Wave is half the rest.</string>
   <string name="alumni_wave_to_send">To send</string>
   <string name="alumni_wave_sent">Sent</string>
+  <string name="alumni_wave_posted">Posted</string>
+  <string name="alumni_copy_info">Copy info</string>
+  <string name="alumni_copied_info">Name, birthday, and picture line copied.</string>
+  <string name="alumni_posted_empty">Nothing posted yet. Picture asks and birthday flyers land here after you mark them posted. Bring one back if you posted too soon.</string>
   <string name="alumni_ive_sent">I’ve sent</string>
   <string name="alumni_sent_undo">Undo sent</string>
   <string name="alumni_message_sent">Marked sent</string>

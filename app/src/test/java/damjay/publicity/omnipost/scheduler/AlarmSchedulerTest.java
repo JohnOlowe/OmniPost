@@ -54,6 +54,13 @@ public class AlarmSchedulerTest {
   }
 
   @Test
+  public void alumniBirthdayOmitsThePostRingSoThePackNagsOnce() {
+    Task task = task(100_000L, 200_000L);
+    task.type = TaskTypes.ALUMNI_BIRTHDAY;
+    assertEquals("arm|d100000|w170000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+  }
+
+  @Test
   public void skipCaptionOmitsDraftAndWarningArms() {
     Task task = task(100_000L, 200_000L);
     task.skipCaption = true;

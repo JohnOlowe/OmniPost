@@ -11,6 +11,7 @@ public final class TaskTypes {
   public static final String ALUMNI_MONTH = "ALUMNI_MONTH";
   public static final String ALUMNI_WAVE = "ALUMNI_WAVE";
   public static final String ALUMNI_PHOTO = "ALUMNI_PHOTO";
+  public static final String ALUMNI_BIRTHDAY_PACK = "ALUMNI_BIRTHDAY_PACK";
   public static final String NEW_MONTH_FASTING = "NEW_MONTH_FASTING";
   public static final String FASTING_DAY = "FASTING_DAY";
   public static final String HAPPY_NEW_MONTH = "HAPPY_NEW_MONTH";
@@ -54,6 +55,8 @@ public final class TaskTypes {
         return "Alumni DM wave";
       case ALUMNI_PHOTO:
         return "Alumni photo";
+      case ALUMNI_BIRTHDAY_PACK:
+        return "Alumni birthdays";
       case NEW_MONTH_FASTING:
         return "Fasting tomorrow";
       case FASTING_DAY:
@@ -102,6 +105,7 @@ public final class TaskTypes {
         return "Daily";
       case BIRTHDAY:
       case ALUMNI_BIRTHDAY:
+      case ALUMNI_BIRTHDAY_PACK:
       case ALUMNI_PHOTO:
         return "Yearly";
       case FLEXIBLE:
@@ -134,6 +138,7 @@ public final class TaskTypes {
       case FLEXIBLE:
         return SECTION_FLEXIBLE;
       case ALUMNI_BIRTHDAY:
+      case ALUMNI_BIRTHDAY_PACK:
       case ALUMNI_MONTH:
       case ALUMNI_WAVE:
       case ALUMNI_PHOTO:
@@ -145,9 +150,29 @@ public final class TaskTypes {
 
   public static boolean isAlumniDesk(String type) {
     return ALUMNI_BIRTHDAY.equals(type)
+        || ALUMNI_BIRTHDAY_PACK.equals(type)
         || ALUMNI_MONTH.equals(type)
         || ALUMNI_WAVE.equals(type)
         || ALUMNI_PHOTO.equals(type);
+  }
+
+  /** Individual alumni birthday: write-caption only. The pack card rings to post. */
+  public static boolean alumniCaptionOnly(String type) {
+    return ALUMNI_BIRTHDAY.equals(type);
+  }
+
+  public static String dayKey(Task task) {
+    if (task == null || task.occurrenceKey == null) {
+      return "";
+    }
+    String[] parts = task.occurrenceKey.split("\\|");
+    if (ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      return parts.length >= 2 ? parts[1] : "";
+    }
+    if ((ALUMNI_BIRTHDAY.equals(task.type) || ALUMNI_PHOTO.equals(task.type)) && parts.length >= 3) {
+      return parts[2];
+    }
+    return "";
   }
 
   public static boolean isCustom(String type) {

@@ -437,18 +437,107 @@ public final class ScheduleCoordinator {
 
   public static void markPosted(Context context, long taskId) {
     Context app = context.getApplicationContext();
-    NotificationHelper.hush(app, taskId);
     AppDatabase db = AppDatabase.get(app);
-    db.taskDao().markPosted(taskId, System.currentTimeMillis());
-    AlarmScheduler.cancelTask(app, taskId);
+    Task task = db.taskDao().getById(taskId);
+    stampPosted(app, db, taskId);
+    if (task != null && TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      String day = TaskTypes.dayKey(task);
+      List<Task> all = db.taskDao().getAllSync();
+      if (all != null) {
+        for (Task other : all) {
+          if (other == null || other.id == taskId || TaskStatus.POSTED.equals(other.status)) {
+            continue;
+          }
+          if (TaskTypes.ALUMNI_BIRTHDAY.equals(other.type) && day.equals(TaskTypes.dayKey(other))) {
+            stampPosted(app, db, other.id);
+          }
+        }
+      }
+    } else if (task != null && TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+      maybeFinishBirthdayPack(app, db, TaskTypes.dayKey(task), taskId);
+    }
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.paint(app);
+  }
+
+  private static void stampPosted(Context app, AppDatabase db, long taskId) {
+    NotificationHelper.hush(app, taskId);
+    db.taskDao().markPosted(taskId, System.currentTimeMillis());
+    AlarmScheduler.cancelTask(app, taskId);
+  }
+
+  private static void maybeFinishBirthdayPack(
+    Context app, AppDatabase db, String day, long exceptId) {
+    if (day == null || day.isEmpty()) {
+      return;
+    }
+    List<Task> all = db.taskDao().getAllSync();
+    if (all == null) {
+      return;
+    }
+    Task pack = null;
+    for (Task other : all) {
+      if (other == null || TaskStatus.POSTED.equals(other.status)) {
+        continue;
+      }
+      if (TaskTypes.ALUMNI_BIRTHDAY.equals(other.type)
+          && other.id != exceptId
+          && day.equals(TaskTypes.dayKey(other))) {
+        return;
+      }
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(other.type) && day.equals(TaskTypes.dayKey(other))) {
+        pack = other;
+      }
+    }
+    if (pack != null) {
+      stampPosted(app, db, pack.id);
+    }
   }
 
   public static void reopen(Context context, long taskId) {
     Context app = context.getApplicationContext();
     AppDatabase db = AppDatabase.get(app);
     Task task = db.taskDao().getById(taskId);
+    if (task == null) {
+      return;
+    }
+    reopenOne(app, db, task);
+    if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      String day = TaskTypes.dayKey(task);
+      List<Task> all = db.taskDao().getAllSync();
+      if (all != null) {
+        for (Task other : all) {
+          if (other == null || other.id == task.id) {
+            continue;
+          }
+          if (TaskTypes.ALUMNI_BIRTHDAY.equals(other.type) && day.equals(TaskTypes.dayKey(other))) {
+            reopenOne(app, db, other);
+          }
+        }
+      }
+    } else if (TaskTypes.ALUMNI_PHOTO.equals(task.type) && task.memberId > 0L) {
+      Member member = db.memberDao().getById(task.memberId);
+      if (member != null && AlumniDesk.photoSettled(member)) {
+        member.photoStatus = "";
+        db.memberDao().update(member);
+      }
+      List<Task> all = db.taskDao().getAllSync();
+      if (all != null) {
+        for (Task other : all) {
+          if (other == null || other.id == task.id) {
+            continue;
+          }
+          if (TaskTypes.ALUMNI_PHOTO.equals(other.type) && other.memberId == task.memberId) {
+            reopenOne(app, db, other);
+          }
+        }
+      }
+    }
+    AlarmScheduler.scheduleHeartbeat(app);
+    NagForegroundService.paint(app);
+  }
+
+  private static void reopenOne(Context app, AppDatabase db, Task task) {
     if (task == null) {
       return;
     }
@@ -460,8 +549,6 @@ public final class ScheduleCoordinator {
     db.taskDao().update(task);
     AlarmScheduler.scheduleTask(app, task);
     fireTransition(app, task, due);
-    AlarmScheduler.scheduleHeartbeat(app);
-    NagForegroundService.paint(app);
   }
 
   public static void shift(Context context, long taskId, long newPostAt) {

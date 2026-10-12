@@ -52,8 +52,12 @@ public class AlumniMonthFragment extends Fragment {
   private final List<Member> wave = new ArrayList<>();
   private final List<AlumniSend> sends = new ArrayList<>();
   private final List<Task> nags = new ArrayList<>();
+  private final List<Task> postedNags = new ArrayList<>();
   private TaskAdapter.Listener deskListener;
-  private boolean waveSent;
+  private static final int FILTER_SEND = 0;
+  private static final int FILTER_SENT = 1;
+  private static final int FILTER_POSTED = 2;
+  private int filter = FILTER_SEND;
   private int month;
   private int yearMonth;
   private Map<String, String> bag;
@@ -102,6 +106,11 @@ public class AlumniMonthFragment extends Fragment {
       @Override
       public void onNotOnWhatsApp(Member member) {
         parkNotOnWhatsApp(member);
+      }
+
+      @Override
+      public void onCopyInfo(Member member) {
+        copyFlyerInfo(member);
       }
     });
     deskListener = new TaskAdapter.Listener() {
@@ -177,6 +186,10 @@ public class AlumniMonthFragment extends Fragment {
 
       @Override
       public void onForward(Task task) {
+        if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+          copyPackInfo(task);
+          return;
+        }
         Intent intent = new Intent(requireContext(), AlumniDmActivity.class);
         intent.putExtra(ExtraKeys.TASK_ID, task.id);
         startActivity(intent);
@@ -209,7 +222,13 @@ public class AlumniMonthFragment extends Fragment {
       if (!isChecked) {
         return;
       }
-      waveSent = checkedId == R.id.chip_sent;
+      if (checkedId == R.id.chip_sent) {
+        filter = FILTER_SENT;
+      } else if (checkedId == R.id.chip_posted) {
+        filter = FILTER_POSTED;
+      } else {
+        filter = FILTER_SEND;
+      }
       paint();
     });
     binding.search.addTextChangedListener(new TextWatcher() {
@@ -260,6 +279,17 @@ public class AlumniMonthFragment extends Fragment {
         for (Task task : list) {
           if (isMonthNag(task)) {
             nags.add(task);
+          }
+        }
+      }
+      paint();
+    });
+    db.taskDao().observePosted().observe(getViewLifecycleOwner(), list -> {
+      postedNags.clear();
+      if (list != null) {
+        for (Task task : list) {
+          if (isPostedNag(task)) {
+            postedNags.add(task);
           }
         }
       }
@@ -334,14 +364,23 @@ public class AlumniMonthFragment extends Fragment {
       left == 0
         ? getString(R.string.alumni_people_done)
         : getString(R.string.alumni_people_left, left));
-    List<Member> birthdaySource = waveSent
-      ? AlumniMonth.sentBirthday(birthday, sends)
-      : AlumniMonth.pendingBirthday(birthday, sends);
+    boolean postedMode = filter == FILTER_POSTED;
+    boolean sentMode = filter == FILTER_SENT;
+    binding.btnGroup.setVisibility(postedMode ? View.GONE : View.VISIBLE);
+    List<Member> birthdaySource;
+    List<Member> waveSource;
+    if (postedMode) {
+      birthdaySource = new ArrayList<>();
+      waveSource = new ArrayList<>();
+    } else if (sentMode) {
+      birthdaySource = AlumniMonth.sentBirthday(birthday, sends);
+      waveSource = AlumniMonth.sentWave(wave, sends);
+    } else {
+      birthdaySource = AlumniMonth.pendingBirthday(birthday, sends);
+      waveSource = AlumniMonth.pendingWave(wave, sends);
+    }
     List<Member> birthdayView = filterNames(birthdaySource);
-    List<Member> waveSource = waveSent
-      ? AlumniMonth.sentWave(wave, sends)
-      : AlumniMonth.pendingWave(wave, sends);
-    if (!query.trim().isEmpty()) {
+    if (!query.trim().isEmpty() && !postedMode) {
       waveSource = restMatches(birthdayView);
     }
     List<Member> waveView = filterNames(waveSource);
@@ -364,15 +403,21 @@ public class AlumniMonthFragment extends Fragment {
       getString(R.string.alumni_section_wave),
       getString(R.string.alumni_section_wave_sub),
       desk,
-      getString(R.string.alumni_section_nags),
-      getString(R.string.alumni_section_nags_sub),
+      postedMode
+        ? getString(R.string.alumni_wave_posted)
+        : getString(R.string.alumni_section_nags),
+      postedMode
+        ? getString(R.string.alumni_posted_empty)
+        : getString(R.string.alumni_section_nags_sub),
       deskListener);
     boolean empty = birthdayView.isEmpty() && waveView.isEmpty() && desk.isEmpty();
     binding.empty.setVisibility(empty ? View.VISIBLE : View.GONE);
     if (empty) {
       if (!query.trim().isEmpty()) {
         binding.empty.setText(R.string.search_empty);
-      } else if (waveSent) {
+      } else if (postedMode) {
+        binding.empty.setText(R.string.alumni_posted_empty);
+      } else if (sentMode) {
         binding.empty.setText(R.string.alumni_sent_empty);
       } else {
         binding.empty.setText(R.string.alumni_people_done);
@@ -415,14 +460,29 @@ public class AlumniMonthFragment extends Fragment {
     if (task == null || TaskStatus.POSTED.equals(task.status)) {
       return false;
     }
+    if (TaskTypes.ALUMNI_PHOTO.equals(task.type)
+        || TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      return true;
+    }
+    return TaskTypes.ALUMNI_BIRTHDAY.equals(task.type) && TaskStatus.captionWorkPending(task);
+  }
+
+  private static boolean isPostedNag(Task task) {
+    if (task == null) {
+      return false;
+    }
     return TaskTypes.ALUMNI_PHOTO.equals(task.type)
-        || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type);
+        || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)
+        || TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type);
   }
 
   private List<Task> deskCards() {
     long now = System.currentTimeMillis();
     long lead = Prefs.warningLeadMs(requireContext());
-    List<Task> out = TaskSearch.matches(nags, query);
+    List<Task> source = filter == FILTER_POSTED
+      ? postedNags
+      : filter == FILTER_SEND ? nags : new ArrayList<>();
+    List<Task> out = TaskSearch.matches(source, query);
     Collections.sort(
       out,
       (a, b) -> Long.compare(
@@ -431,11 +491,62 @@ public class AlumniMonthFragment extends Fragment {
     return out;
   }
 
+  private void copyFlyerInfo(Member member) {
+    String text = AlumniDesk.flyerInfo(member, Calendar.getInstance());
+    if (text.isEmpty()) {
+      return;
+    }
+    WhatsAppRouter.copyToClipboard(requireContext(), text);
+    Toast.makeText(requireContext(), R.string.alumni_copied_info, Toast.LENGTH_SHORT).show();
+  }
+
+  private void copyPackInfo(Task task) {
+    String day = TaskTypes.dayKey(task);
+    List<Member> people = peopleOnDay(day);
+    String text = AlumniDesk.flyerInfoList(people, Calendar.getInstance());
+    if (text.isEmpty()) {
+      Toast.makeText(requireContext(), R.string.copy_birthday_empty, Toast.LENGTH_SHORT).show();
+      return;
+    }
+    WhatsAppRouter.copyToClipboard(requireContext(), text);
+    Toast.makeText(requireContext(), R.string.alumni_copied_info, Toast.LENGTH_SHORT).show();
+  }
+
+  private List<Member> peopleOnDay(String dayKey) {
+    List<Member> out = new ArrayList<>();
+    if (dayKey == null || dayKey.isEmpty()) {
+      return out;
+    }
+    String[] parts = dayKey.split("-");
+    if (parts.length < 3) {
+      return out;
+    }
+    int month1;
+    int day;
+    try {
+      month1 = Integer.parseInt(parts[1]);
+      day = Integer.parseInt(parts[2]);
+    } catch (NumberFormatException ignored) {
+      return out;
+    }
+    for (Member member : roster) {
+      if (member != null && Member.isAlumni(member) && member.birthMonth == month1 && member.birthDay == day) {
+        out.add(member);
+      }
+    }
+    return out;
+  }
+
   private void showDeskOptions(Task task) {
     if (task == null) {
       return;
     }
     ArrayList<String> labels = new ArrayList<>();
+    boolean canCopy = TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)
+      || task.memberId > 0L;
+    if (canCopy) {
+      labels.add(getString(R.string.alumni_copy_info));
+    }
     boolean posted = TaskStatus.POSTED.equals(task.status);
     boolean pending = !posted && TaskStatus.captionWorkPending(task);
     if (pending) {
@@ -459,6 +570,17 @@ public class AlumniMonthFragment extends Fragment {
       .setTitle(task.title)
       .setItems(items, (d, which) -> {
         int index = 0;
+        if (canCopy) {
+          if (which == index) {
+            if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+              copyPackInfo(task);
+            } else {
+              copyFlyerInfo(memberOf(task));
+            }
+            return;
+          }
+          index++;
+        }
         if (pending) {
           if (which == index) {
             deskListener.onCaptionReady(task);
@@ -492,6 +614,18 @@ public class AlumniMonthFragment extends Fragment {
         }
       })
       .show();
+  }
+
+  private Member memberOf(Task task) {
+    if (task == null || task.memberId <= 0L) {
+      return null;
+    }
+    for (Member member : roster) {
+      if (member != null && member.id == task.memberId) {
+        return member;
+      }
+    }
+    return null;
   }
 
   private void setAlumniPhoto(Task task, String status) {

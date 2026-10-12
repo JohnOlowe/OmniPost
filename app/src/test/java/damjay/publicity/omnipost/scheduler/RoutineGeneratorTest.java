@@ -142,6 +142,7 @@ public class RoutineGeneratorTest {
     assertEquals("Once", TaskTypes.cadence(TaskTypes.TEST));
     assertEquals("Flexible", TaskTypes.cadence(TaskTypes.FLEXIBLE));
     assertEquals("Yearly", TaskTypes.cadence(TaskTypes.ALUMNI_BIRTHDAY));
+    assertEquals("Yearly", TaskTypes.cadence(TaskTypes.ALUMNI_BIRTHDAY_PACK));
     assertEquals("Once", TaskTypes.cadence(TaskTypes.ONE_OFF));
     assertEquals("Daily", TaskTypes.cadence(TaskTypes.COUNTDOWN));
     assertEquals("Monthly", TaskTypes.cadence(TaskTypes.BIRTHDAY_NOTICE));
@@ -158,6 +159,7 @@ public class RoutineGeneratorTest {
     assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_MONTH));
     assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_WAVE));
     assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_PHOTO));
+    assertEquals(TaskTypes.SECTION_ALUMNI, TaskTypes.section(TaskTypes.ALUMNI_BIRTHDAY_PACK));
     assertEquals(TaskTypes.SECTION_FLEXIBLE, TaskTypes.section(TaskTypes.FLEXIBLE));
     assertEquals(TaskTypes.SECTION_ONCE, TaskTypes.section(TaskTypes.ONE_OFF));
   }
@@ -460,6 +462,8 @@ public class RoutineGeneratorTest {
       RoutineGenerator.generate(now.getTimeInMillis(), utc, Collections.singletonList(member));
     boolean found = false;
     boolean photo = false;
+    boolean photoEve = false;
+    boolean pack = false;
     for (Task task : tasks) {
       if ((TaskTypes.ALUMNI_BIRTHDAY + "|9|2026-08-31").equals(task.occurrenceKey)) {
         found = true;
@@ -484,9 +488,23 @@ public class RoutineGeneratorTest {
         assertEquals(TaskStatus.READY, task.status);
         assertEquals("Forward", TaskStatus.label(task));
       }
+      if ((TaskTypes.ALUMNI_PHOTO + "|9|2026-08-31|1").equals(task.occurrenceKey)) {
+        photoEve = true;
+        Calendar post = Calendar.getInstance(utc);
+        post.setTimeInMillis(task.postAtMillis);
+        assertEquals(30, post.get(Calendar.DAY_OF_MONTH));
+        assertEquals(16, post.get(Calendar.HOUR_OF_DAY));
+      }
+      if ((TaskTypes.ALUMNI_BIRTHDAY_PACK + "|2026-08-31").equals(task.occurrenceKey)) {
+        pack = true;
+        assertTrue(task.skipCaption);
+        assertTrue(task.title.contains("Ada") || task.title.contains("birthday"));
+      }
     }
     assertTrue(found);
     assertTrue(photo);
+    assertTrue(photoEve);
+    assertTrue(pack);
   }
 
   @Test
@@ -509,7 +527,9 @@ public class RoutineGeneratorTest {
     int waveCards = 0;
     int photos = 0;
     int birthdays = 0;
+    int packs = 0;
     boolean adaPhoto = false;
+    boolean adaEve = false;
     for (Task task : tasks) {
       if (TaskTypes.ALUMNI_MONTH.equals(task.type)) {
         monthCards++;
@@ -532,17 +552,26 @@ public class RoutineGeneratorTest {
           assertEquals(10, post.get(Calendar.HOUR_OF_DAY));
           assertTrue(task.title.contains("picture"));
         }
+        if ((TaskTypes.ALUMNI_PHOTO + "|9|2026-08-31|1").equals(task.occurrenceKey)) {
+          adaEve = true;
+        }
       }
       if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
         birthdays++;
         assertFalse(task.skipCaption);
       }
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+        packs++;
+        assertTrue(task.skipCaption);
+      }
     }
     assertTrue(monthCards >= 1 && monthCards <= 2);
     assertTrue(waveCards >= 1 && waveCards <= 2);
     assertTrue(adaPhoto);
-    assertTrue(photos <= 2);
+    assertTrue(adaEve);
+    assertTrue(photos <= 4);
     assertTrue(birthdays <= 2);
+    assertTrue(packs >= 1 && packs <= 2);
     assertTrue(tasks.size() < 80);
   }
 
@@ -607,9 +636,10 @@ public class RoutineGeneratorTest {
     }
     assertTrue(months >= 1 && months <= 2);
     assertTrue(waves >= 1 && waves <= 2);
-    assertTrue(photos < 40);
+    assertTrue(photos < 80);
     assertTrue(birthdays < 40);
-    assertEquals(photos, birthdays);
+    assertTrue(photos >= birthdays);
+    assertTrue(photos <= birthdays * 2);
   }
 
   @Test
@@ -652,6 +682,40 @@ public class RoutineGeneratorTest {
     for (Task task : tasks) {
       assertFalse(TaskTypes.ALUMNI_PHOTO.equals(task.type));
     }
+  }
+
+  @Test
+  public void twoAlumniOnTheSameDayShareOnePostNag() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.AUGUST, 26, 12, 0, 0);
+    now.set(Calendar.MILLISECOND, 0);
+    List<Member> people = new ArrayList<>();
+    people.add(alumni(9, "Ada", 8, 31));
+    people.add(alumni(10, "Bo", 8, 31));
+    List<Task> tasks = RoutineGenerator.generate(now.getTimeInMillis(), utc, people);
+    int packs = 0;
+    int birthdays = 0;
+    for (Task task : tasks) {
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+        packs++;
+        assertTrue(task.skipCaption);
+        assertTrue(task.description.contains("Ada"));
+        assertTrue(task.description.contains("Bo"));
+        Calendar post = Calendar.getInstance(utc);
+        post.setTimeInMillis(task.postAtMillis);
+        assertEquals(31, post.get(Calendar.DAY_OF_MONTH));
+        assertEquals(7, post.get(Calendar.HOUR_OF_DAY));
+      }
+      if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+        birthdays++;
+        assertFalse(task.skipCaption);
+      }
+    }
+    assertEquals(1, packs);
+    assertEquals(2, birthdays);
   }
 
   private static Member alumni(long id, String name, int month, int day) {

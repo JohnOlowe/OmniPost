@@ -39,6 +39,8 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     void onEditCaption(Member member, String kind);
 
     void onNotOnWhatsApp(Member member);
+
+    void onCopyInfo(Member member);
   }
 
   static final class Row {
@@ -220,6 +222,15 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
           + phone
           + also
           + (row.birthday ? " · birthday" : " · wave"));
+      if (binding.btnCopyInfo != null) {
+        if (row.birthday) {
+          binding.btnCopyInfo.setVisibility(View.VISIBLE);
+          binding.btnCopyInfo.setOnClickListener(v -> listener.onCopyInfo(member));
+        } else {
+          binding.btnCopyInfo.setVisibility(View.GONE);
+          binding.btnCopyInfo.setOnClickListener(null);
+        }
+      }
       boolean showHnm = AlumniCopy.wantsHnm(
         member,
         row.birthday ? AlumniCopy.KIND_BIRTHDAY : AlumniCopy.KIND_WAVE);

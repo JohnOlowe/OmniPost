@@ -206,7 +206,62 @@ public final class AlumniDesk {
       + " Write the flyer caption the evening before, same as Fellowship. Caption ready by 6:30 AM. Post at 7:00 AM.";
   }
 
+  public static String flyerInfo(Member member, java.util.Calendar now) {
+    if (member == null) {
+      return "";
+    }
+    String name = member.name == null ? "" : member.name.trim();
+    String when = DateUtils.flyerWhen(member.birthMonth, member.birthDay, now);
+    String picture = PHOTO_GOT.equals(member.photoStatus) ? "Attached Picture" : "No Picture";
+    return "Name: " + name + "\n\nBirthday: " + when + "\n\n" + picture;
+  }
+
+  public static String flyerInfoList(List<Member> people, java.util.Calendar now) {
+    if (people == null || people.isEmpty()) {
+      return "";
+    }
+    StringBuilder out = new StringBuilder();
+    for (Member member : people) {
+      String block = flyerInfo(member, now);
+      if (block.isEmpty()) {
+        continue;
+      }
+      if (out.length() > 0) {
+        out.append("\n\n");
+      }
+      out.append(block);
+    }
+    return out.toString();
+  }
+
+  public static String packBrief(List<Member> people) {
+    StringBuilder out = new StringBuilder();
+    out.append("One nag for every birthday flyer today. Snooze once and they all wait. ");
+    if (people != null) {
+      boolean first = true;
+      for (Member member : people) {
+        if (member == null || member.name == null || member.name.trim().isEmpty()) {
+          continue;
+        }
+        if (!first) {
+          out.append(", ");
+        }
+        first = false;
+        out.append(member.name.trim());
+      }
+    }
+    return out.toString();
+  }
+
   public static String photoBrief(Member member) {
+    return photoBrief(member, false);
+  }
+
+  public static String photoEveBrief(Member member) {
+    return photoBrief(member, true);
+  }
+
+  private static String photoBrief(Member member, boolean eve) {
     if (member == null) {
       return "";
     }
@@ -218,7 +273,11 @@ public final class AlumniDesk {
     } else {
       tag = "DM " + displayPhone(member.phone) + ".";
     }
-    return "Two days to the birthday. Ask for a picture. If they do not answer: NO PICTURE. "
+    String when = eve
+      ? "One day to the birthday. Ask for a picture by 4 PM. "
+      : "Two days to the birthday. Ask for a picture. ";
+    return when
+      + "If they do not answer: NO PICTURE. "
       + tag
       + " Forward what you have to the designer.";
   }

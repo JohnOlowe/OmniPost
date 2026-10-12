@@ -78,11 +78,12 @@ public final class AlarmScheduler {
     if (!saved && warningLead > 0L && warningAt > now) {
       setAlarmClock(ctx, task, PHASE_WARNING, warningAt);
     }
+    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
-    if (minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
+    if (postRing && minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
       setAlarmClock(ctx, task, PHASE_MINUTE, minuteAt);
     }
-    if (task.postAtMillis > now) {
+    if (postRing && task.postAtMillis > now) {
       setAlarmClock(ctx, task, PHASE_NAG, task.postAtMillis);
     }
     markArmed(task.id, stamp);
@@ -443,11 +444,12 @@ public final class AlarmScheduler {
     if (!saved && warningLeadMs > 0L && warningAt > now) {
       out.append("|w").append(warningAt);
     }
+    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
     long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
-    if (minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
+    if (postRing && minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
       out.append("|m").append(minuteAt);
     }
-    if (task.postAtMillis > now) {
+    if (postRing && task.postAtMillis > now) {
       out.append("|n").append(task.postAtMillis);
     }
     return out.toString();

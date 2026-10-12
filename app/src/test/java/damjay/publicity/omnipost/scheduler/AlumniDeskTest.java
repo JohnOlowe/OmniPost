@@ -6,7 +6,9 @@ import static org.junit.Assert.assertTrue;
 
 import damjay.publicity.omnipost.data.entity.Member;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.TimeZone;
 import org.junit.Test;
 
 public class AlumniDeskTest {
@@ -34,6 +36,30 @@ public class AlumniDeskTest {
     assertTrue(brief.contains("Tag them"));
     none.phone = "";
     assertTrue(AlumniDesk.birthdayBrief(none).contains("do not tag"));
+  }
+
+  @Test
+  public void flyerInfoUsesTodayTomorrowOrTheDateAndPictureLine() {
+    TimeZone utc = TimeZone.getTimeZone("UTC");
+    Calendar now = Calendar.getInstance(utc);
+    now.clear();
+    now.setTimeZone(utc);
+    now.set(2026, Calendar.OCTOBER, 12, 9, 0, 0);
+    Member member = alumni("Ada Okafor", 10, 12);
+    String today = AlumniDesk.flyerInfo(member, now);
+    assertTrue(today.contains("Name: Ada Okafor"));
+    assertTrue(today.contains("Birthday: Today, 12th of October"));
+    assertTrue(today.contains("No Picture"));
+    member.photoStatus = AlumniDesk.PHOTO_GOT;
+    assertTrue(AlumniDesk.flyerInfo(member, now).contains("Attached Picture"));
+    member.birthDay = 13;
+    String tomorrow = AlumniDesk.flyerInfo(member, now);
+    assertTrue(tomorrow.contains("Birthday: Tomorrow, 13th of October"));
+    member.birthDay = 20;
+    String far = AlumniDesk.flyerInfo(member, now);
+    assertTrue(far.contains("Birthday: 20th of October"));
+    assertFalse(far.contains("Today"));
+    assertFalse(far.contains("Tomorrow"));
   }
 
   @Test

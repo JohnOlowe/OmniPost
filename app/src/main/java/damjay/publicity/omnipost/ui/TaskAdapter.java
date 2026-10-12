@@ -165,7 +165,9 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.description.setText(task.description);
       }
-      if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+        binding.btnDraft.setText(R.string.alumni_copy_info);
+      } else if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
         binding.btnDraft.setText(R.string.alumni_ask_picture);
       } else if (TaskTypes.isAlumniDesk(task.type) && task.skipCaption) {
         binding.btnDraft.setText(R.string.alumni_open_desk);

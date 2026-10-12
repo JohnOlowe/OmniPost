@@ -38,6 +38,14 @@
           android:textSize="14sp"
           android:textStyle="bold"
           tools:text="12 people left this month"/>
+      </LinearLayout>
+
+      <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp"
+        android:scrollbars="none">
 
         <com.google.android.material.button.MaterialButtonToggleGroup
           android:id="@+id/wave_filter"
@@ -73,8 +81,22 @@
             android:text="@string/alumni_wave_sent"
             android:textColor="@color/cream"
             android:textSize="12sp"/>
+
+          <com.google.android.material.button.MaterialButton
+            android:id="@+id/chip_posted"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:minHeight="36dp"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:text="@string/alumni_wave_posted"
+            android:textColor="@color/cream"
+            android:textSize="12sp"/>
         </com.google.android.material.button.MaterialButtonToggleGroup>
-      </LinearLayout>
+      </HorizontalScrollView>
 
       <EditText
         android:id="@+id/search"
