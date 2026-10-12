@@ -87,7 +87,10 @@ public final class AlumniAddress {
         || "nth".equals(key)
         || "intro".equals(key)
         || "birthday".equals(key)
-        || "independence".equals(key);
+        || "independence".equals(key)
+        || "when".equals(key)
+        || "picture".equals(key)
+        || "post".equals(key);
   }
 
   public static List<AlumniAddress> fromJson(JSONArray arr) {

@@ -116,6 +116,22 @@ public class AlumniCopyTest {
   }
 
   @Test
+  public void copyInfoFillsPictureAndPostVariables() {
+    Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 12);
+    Calendar now = cal(2026, Calendar.OCTOBER, 12);
+    String waiting = AlumniCopy.info(ada, now);
+    assertTrue(waiting.contains("Name: Ada Okafor"));
+    assertTrue(waiting.contains("Birthday: Today, 12th of October"));
+    assertTrue(waiting.contains("No Picture"));
+    assertTrue(waiting.contains("Group"));
+    ada.photoStatus = AlumniDesk.PHOTO_GOT;
+    ada.personalOnly = true;
+    ada.captionInfo = "{name} · {picture} · {post}";
+    String custom = AlumniCopy.info(ada, now);
+    assertEquals("Ada Okafor · Attached Picture · Personal only", custom);
+  }
+
+  @Test
   public void perPersonCaptionBeatsGeneralTemplate() {
     Member ada = person("Ada Okafor", Member.GENDER_FEMALE, 10, 2);
     ada.captionHnm = "Ping {who} only.";

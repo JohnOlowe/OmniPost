@@ -16,6 +16,7 @@ import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniCopy;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.AlumniSheet;
+import damjay.publicity.omnipost.scheduler.AlumniTemplates;
 import damjay.publicity.omnipost.share.WhatsAppPreview;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -222,7 +223,22 @@ public class AlumniMonthAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
           + phone
           + also
           + (row.birthday ? " · birthday" : " · wave"));
-      if (binding.btnCopyInfo != null) {
+      if (binding.rowCopyInfo != null) {
+        if (row.birthday) {
+          binding.rowCopyInfo.setVisibility(View.VISIBLE);
+          binding.btnCopyInfo.setOnClickListener(v -> listener.onCopyInfo(member));
+          if (binding.btnEditInfo != null) {
+            binding.btnEditInfo.setOnClickListener(
+              v -> listener.onEditCaption(member, AlumniTemplates.INFO));
+          }
+        } else {
+          binding.rowCopyInfo.setVisibility(View.GONE);
+          binding.btnCopyInfo.setOnClickListener(null);
+          if (binding.btnEditInfo != null) {
+            binding.btnEditInfo.setOnClickListener(null);
+          }
+        }
+      } else if (binding.btnCopyInfo != null) {
         if (row.birthday) {
           binding.btnCopyInfo.setVisibility(View.VISIBLE);
           binding.btnCopyInfo.setOnClickListener(v -> listener.onCopyInfo(member));

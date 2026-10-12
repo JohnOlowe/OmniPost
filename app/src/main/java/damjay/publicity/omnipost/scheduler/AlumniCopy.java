@@ -272,6 +272,22 @@ public final class AlumniCopy {
       addresses);
   }
 
+  public static String info(Member member, Calendar now) {
+    return info(member, now, null, null);
+  }
+
+  public static String info(
+    Member member, Calendar now, Map<String, String> bag, List<AlumniAddress> addresses) {
+    if (member == null) {
+      return "";
+    }
+    String template = member.captionInfo != null && !member.captionInfo.trim().isEmpty()
+      ? member.captionInfo
+      : AlumniTemplates.pick(bag, AlumniTemplates.INFO);
+    int month = member.birthMonth > 0 ? member.birthMonth : 1;
+    return AlumniTemplates.fill(template, member, month, now, bag, addresses);
+  }
+
   private static boolean filled(String value) {
     return value != null && !value.trim().isEmpty();
   }

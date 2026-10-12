@@ -21,7 +21,13 @@
   <string name="alumni_wave_sent">Sent</string>
   <string name="alumni_wave_posted">Posted</string>
   <string name="alumni_copy_info">Copy info</string>
-  <string name="alumni_copied_info">Name, birthday, and picture line copied.</string>
+  <string name="alumni_copied_info">Copy info copied.</string>
+  <string name="alumni_caption_info_person">This person’s Copy info (blank = general)</string>
+  <string name="alumni_person_info">%1$s · Copy info</string>
+  <string name="alumni_personal_only">Personal only — not the group</string>
+  <string name="alumni_post_group">Post on the group</string>
+  <string name="alumni_personal_saved">Personal only. Do not post them on the group.</string>
+  <string name="alumni_group_saved">They can go on the group again.</string>
   <string name="alumni_posted_empty">Nothing posted yet. Picture asks and birthday flyers land here after you mark them posted. Bring one back if you posted too soon.</string>
   <string name="alumni_ive_sent">I’ve sent</string>
   <string name="alumni_sent_undo">Undo sent</string>
@@ -244,7 +250,7 @@
   <string name="alumni_edit_captions">Edit alumni captions</string>
   <string name="alumni_edit_captions_short">Captions</string>
   <string name="alumni_edit_captions_hint">Address styles are gendered and nestable: {dear} is Mr Ada or ma, Ada. {formal} is Mr Ada Okwuoma or ma, Ada Okwuoma. {who} stays title plus full name. Create more, then drop them into Happy New Month. Edit one person from This month.</string>
-  <string name="alumni_caption_tokens">{who} {dear} {formal} {titled} {title_only} {first} {last} {full} {title} {title_lc} {month} {nth} {officer} {role} {intro} {birthday} {independence}</string>
+  <string name="alumni_caption_tokens">{who} {dear} {formal} {titled} {title_only} {first} {last} {full} {title} {title_lc} {month} {nth} {officer} {role} {intro} {birthday} {independence} {when} {picture} {post}</string>
   <string name="alumni_address_section">How you address them</string>
   <string name="alumni_address_section_sub">Male and female values. Nested tokens welcome. Used as {dear} {formal} or any name you create.</string>
   <string name="alumni_messages_section">Messages</string>

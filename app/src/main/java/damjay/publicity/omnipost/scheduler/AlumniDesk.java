@@ -178,6 +178,22 @@ public final class AlumniDesk {
     return "";
   }
 
+  /** Copy-info line: Attached Picture after they sent one, otherwise No Picture. */
+  public static String pictureLine(Member member) {
+    if (member != null && PHOTO_GOT.equals(member.photoStatus)) {
+      return "Attached Picture";
+    }
+    return "No Picture";
+  }
+
+  /** Copy-info line: Personal only, or Group. */
+  public static String postLine(Member member) {
+    if (member != null && member.personalOnly) {
+      return "Personal only";
+    }
+    return "Group";
+  }
+
   public static String birthdayBrief(Member member) {
     if (member == null) {
       return "";
@@ -189,6 +205,9 @@ public final class AlumniDesk {
       photo = "NO PICTURE. Use the no-photo design. Send their details to the designer and ask media for the file.";
     } else {
       photo = "If they still have not sent a picture: NO PICTURE. Send details to the designer. Ask media for the design.";
+    }
+    if (member.personalOnly) {
+      photo = photo + " Personal only — do not post on the group.";
     }
     String tag;
     if (!hasPhone(member)) {
@@ -207,22 +226,32 @@ public final class AlumniDesk {
   }
 
   public static String flyerInfo(Member member, java.util.Calendar now) {
-    if (member == null) {
-      return "";
-    }
-    String name = member.name == null ? "" : member.name.trim();
-    String when = DateUtils.flyerWhen(member.birthMonth, member.birthDay, now);
-    String picture = PHOTO_GOT.equals(member.photoStatus) ? "Attached Picture" : "No Picture";
-    return "Name: " + name + "\n\nBirthday: " + when + "\n\n" + picture;
+    return flyerInfo(member, now, null, null);
+  }
+
+  public static String flyerInfo(
+    Member member,
+    java.util.Calendar now,
+    java.util.Map<String, String> bag,
+    List<AlumniAddress> addresses) {
+    return AlumniCopy.info(member, now, bag, addresses);
   }
 
   public static String flyerInfoList(List<Member> people, java.util.Calendar now) {
+    return flyerInfoList(people, now, null, null);
+  }
+
+  public static String flyerInfoList(
+    List<Member> people,
+    java.util.Calendar now,
+    java.util.Map<String, String> bag,
+    List<AlumniAddress> addresses) {
     if (people == null || people.isEmpty()) {
       return "";
     }
     StringBuilder out = new StringBuilder();
     for (Member member : people) {
-      String block = flyerInfo(member, now);
+      String block = flyerInfo(member, now, bag, addresses);
       if (block.isEmpty()) {
         continue;
       }
@@ -327,6 +356,9 @@ public final class AlumniDesk {
       appendDot(out, "NO PICTURE");
     } else if (Member.isAlumni(member)) {
       appendDot(out, "need picture");
+    }
+    if (member.personalOnly) {
+      appendDot(out, "personal only");
     }
     if (Member.isAlumni(member) && member.birthMonth == month1to12) {
       appendDot(out, "birthday month");

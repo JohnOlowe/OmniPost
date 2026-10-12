@@ -179,6 +179,31 @@
     android:layout_width="match_parent"
     android:layout_height="48dp"/>
 
+  <CheckBox
+    android:id="@+id/personal_only"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:text="@string/alumni_personal_only"
+    android:textColor="@color/cream"/>
+
+  <com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/layout_caption_info"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="12dp"
+    android:hint="@string/alumni_caption_info_person">
+
+    <com.google.android.material.textfield.TextInputEditText
+      android:id="@+id/input_caption_info"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:gravity="top"
+      android:inputType="textMultiLine|textCapSentences"
+      android:minLines="3"
+      android:textColor="@color/cream"/>
+  </com.google.android.material.textfield.TextInputLayout>
+
   <com.google.android.material.textfield.TextInputLayout
     android:id="@+id/layout_caption_hnm"
     android:layout_width="match_parent"

@@ -654,6 +654,8 @@ public class BirthdaysFragment extends Fragment {
     View honor = view.findViewById(R.id.layout_honorific);
     View hnm = view.findViewById(R.id.layout_caption_hnm);
     View details = view.findViewById(R.id.layout_caption_details);
+    View info = view.findViewById(R.id.layout_caption_info);
+    View personalOnly = view.findViewById(R.id.personal_only);
     if (honor != null) {
       honor.setVisibility(alumniVis);
     }
@@ -662,6 +664,12 @@ public class BirthdaysFragment extends Fragment {
     }
     if (details != null) {
       details.setVisibility(alumniVis);
+    }
+    if (info != null) {
+      info.setVisibility(alumniVis);
+    }
+    if (personalOnly != null) {
+      personalOnly.setVisibility(alumniVis);
     }
     new MaterialAlertDialogBuilder(requireContext())
       .setTitle(

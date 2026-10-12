@@ -86,16 +86,13 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
           return;
         }
         person = found;
-        boolean details = AlumniTemplates.DETAILS.equals(key);
-        heading.setText(getString(
-          details ? R.string.alumni_person_details : R.string.alumni_person_hnm,
-          found.name));
+        heading.setText(getString(personHeading(), found.name));
         findViewById(R.id.btn_reset).setContentDescription(getString(R.string.alumni_use_general));
         ((com.google.android.material.button.MaterialButton) findViewById(R.id.btn_reset))
           .setText(R.string.alumni_use_general);
-        String custom = details ? found.captionDetails : found.captionHnm;
+        String custom = personTemplate(found);
         if (custom == null || custom.trim().isEmpty()) {
-          input.setText(generalTemplate(found, details));
+          input.setText(generalTemplate(found));
         } else {
           input.setText(custom);
         }
@@ -104,10 +101,46 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
     });
   }
 
-  private String generalTemplate(Member member, boolean details) {
+  private int personHeading() {
+    if (AlumniTemplates.DETAILS.equals(key)) {
+      return R.string.alumni_person_details;
+    }
+    if (AlumniTemplates.INFO.equals(key)) {
+      return R.string.alumni_person_info;
+    }
+    return R.string.alumni_person_hnm;
+  }
+
+  private String personTemplate(Member member) {
+    if (member == null) {
+      return "";
+    }
+    if (AlumniTemplates.DETAILS.equals(key)) {
+      return member.captionDetails;
+    }
+    if (AlumniTemplates.INFO.equals(key)) {
+      return member.captionInfo;
+    }
+    return member.captionHnm;
+  }
+
+  private void applyPersonTemplate(Member member, String value) {
+    if (AlumniTemplates.DETAILS.equals(key)) {
+      member.captionDetails = value;
+    } else if (AlumniTemplates.INFO.equals(key)) {
+      member.captionInfo = value;
+    } else {
+      member.captionHnm = value;
+    }
+  }
+
+  private String generalTemplate(Member member) {
     Map<String, String> bag = Prefs.alumniCaptionBag(this);
-    if (details) {
+    if (AlumniTemplates.DETAILS.equals(key)) {
       return AlumniTemplates.pick(bag, AlumniTemplates.DETAILS);
+    }
+    if (AlumniTemplates.INFO.equals(key)) {
+      return AlumniTemplates.pick(bag, AlumniTemplates.INFO);
     }
     return AlumniTemplates.pick(bag, AlumniTemplates.hnmKey(member));
   }
@@ -128,6 +161,9 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
     addChip(row, "title");
     addChip(row, "title_lc");
     addChip(row, "month");
+    addChip(row, "when");
+    addChip(row, "picture");
+    addChip(row, "post");
     if (addresses != null) {
       for (AlumniAddress item : addresses) {
         if (item != null && item.name != null && !item.name.isEmpty()) {
@@ -171,11 +207,7 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
         if (member == null) {
           return;
         }
-        if (AlumniTemplates.DETAILS.equals(key)) {
-          member.captionDetails = value.trim();
-        } else {
-          member.captionHnm = value.trim();
-        }
+        applyPersonTemplate(member, value.trim());
         AppDatabase.get(this).memberDao().update(member);
         AppExecutors.main(() -> {
           Toast.makeText(this, R.string.alumni_caption_saved, Toast.LENGTH_SHORT).show();
@@ -196,17 +228,12 @@ public class AlumniCaptionEditActivity extends AppCompatActivity {
         if (member == null) {
           return;
         }
-        if (AlumniTemplates.DETAILS.equals(key)) {
-          member.captionDetails = "";
-        } else {
-          member.captionHnm = "";
-        }
+        applyPersonTemplate(member, "");
         AppDatabase.get(this).memberDao().update(member);
         Member copy = member;
         AppExecutors.main(() -> {
           person = copy;
-          boolean details = AlumniTemplates.DETAILS.equals(key);
-          input.setText(generalTemplate(copy, details));
+          input.setText(generalTemplate(copy));
           Toast.makeText(this, R.string.alumni_caption_reset, Toast.LENGTH_SHORT).show();
         });
       });

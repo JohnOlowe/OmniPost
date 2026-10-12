@@ -401,6 +401,8 @@ public final class DeskBackup {
       o.put("honorific", nz(member.honorific));
       o.put("captionHnm", nz(member.captionHnm));
       o.put("captionDetails", nz(member.captionDetails));
+      o.put("captionInfo", nz(member.captionInfo));
+      o.put("personalOnly", member.personalOnly);
       o.put("desk", nz(member.desk));
       o.put("skipCaption", member.skipCaption);
       o.put("contactSaved", member.contactSaved);
@@ -529,6 +531,8 @@ public final class DeskBackup {
       member.honorific = str(o, "honorific");
       member.captionHnm = str(o, "captionHnm");
       member.captionDetails = str(o, "captionDetails");
+      member.captionInfo = str(o, "captionInfo");
+      member.personalOnly = o.optBoolean("personalOnly", false);
       member.desk = str(o, "desk");
       member.skipCaption = o.optBoolean("skipCaption", false);
       member.contactSaved = o.optBoolean("contactSaved", false);

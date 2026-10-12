@@ -97,9 +97,13 @@ public class AlumniMonthFragment extends Fragment {
         }
         Intent intent = new Intent(requireContext(), AlumniCaptionEditActivity.class);
         intent.putExtra(ExtraKeys.MEMBER_ID, member.id);
-        intent.putExtra(
-          ExtraKeys.CAPTION_KEY,
-          AlumniSend.DETAILS.equals(kind) ? AlumniTemplates.DETAILS : AlumniTemplates.HNM);
+        String key = AlumniTemplates.INFO;
+        if (AlumniSend.DETAILS.equals(kind)) {
+          key = AlumniTemplates.DETAILS;
+        } else if (AlumniSend.HNM.equals(kind)) {
+          key = AlumniTemplates.HNM;
+        }
+        intent.putExtra(ExtraKeys.CAPTION_KEY, key);
         startActivity(intent);
       }
 
@@ -492,7 +496,8 @@ public class AlumniMonthFragment extends Fragment {
   }
 
   private void copyFlyerInfo(Member member) {
-    String text = AlumniDesk.flyerInfo(member, Calendar.getInstance());
+    String text = AlumniDesk.flyerInfo(
+      member, Calendar.getInstance(), bag, Prefs.alumniAddresses(requireContext()));
     if (text.isEmpty()) {
       return;
     }
@@ -503,7 +508,8 @@ public class AlumniMonthFragment extends Fragment {
   private void copyPackInfo(Task task) {
     String day = TaskTypes.dayKey(task);
     List<Member> people = peopleOnDay(day);
-    String text = AlumniDesk.flyerInfoList(people, Calendar.getInstance());
+    String text = AlumniDesk.flyerInfoList(
+      people, Calendar.getInstance(), bag, Prefs.alumniAddresses(requireContext()));
     if (text.isEmpty()) {
       Toast.makeText(requireContext(), R.string.copy_birthday_empty, Toast.LENGTH_SHORT).show();
       return;
@@ -561,6 +567,12 @@ public class AlumniMonthFragment extends Fragment {
     if (photo) {
       labels.add(getString(R.string.alumni_got_picture));
       labels.add(getString(R.string.alumni_no_picture));
+      Member person = memberOf(task);
+      if (person != null && person.personalOnly) {
+        labels.add(getString(R.string.alumni_post_group));
+      } else {
+        labels.add(getString(R.string.alumni_personal_only));
+      }
     }
     if (labels.isEmpty()) {
       return;
@@ -610,6 +622,13 @@ public class AlumniMonthFragment extends Fragment {
           index++;
           if (which == index) {
             setAlumniPhoto(task, AlumniDesk.PHOTO_NONE);
+            return;
+          }
+          index++;
+          if (which == index) {
+            Member person = memberOf(task);
+            boolean personal = person == null || !person.personalOnly;
+            setPersonalOnly(task, personal);
           }
         }
       })
@@ -626,6 +645,34 @@ public class AlumniMonthFragment extends Fragment {
       }
     }
     return null;
+  }
+
+  private void setPersonalOnly(Task task, boolean personalOnly) {
+    if (task == null || task.memberId <= 0L) {
+      return;
+    }
+    Context app = requireContext().getApplicationContext();
+    final long memberId = task.memberId;
+    AppExecutors.disk().execute(() -> {
+      ScheduleCoordinator.setPersonalOnly(app, memberId, personalOnly);
+      AppExecutors.main(() -> {
+        if (!isAdded()) {
+          return;
+        }
+        for (Member member : roster) {
+          if (member != null && member.id == memberId) {
+            member.personalOnly = personalOnly;
+            break;
+          }
+        }
+        Toast.makeText(
+          requireContext(),
+          personalOnly ? R.string.alumni_personal_saved : R.string.alumni_group_saved,
+          Toast.LENGTH_LONG)
+          .show();
+        paint();
+      });
+    });
   }
 
   private void setAlumniPhoto(Task task, String status) {
@@ -666,6 +713,7 @@ public class AlumniMonthFragment extends Fragment {
   @Override
   public void onResume() {
     super.onResume();
+    bag = Prefs.alumniCaptionBag(requireContext());
     paint();
   }
 

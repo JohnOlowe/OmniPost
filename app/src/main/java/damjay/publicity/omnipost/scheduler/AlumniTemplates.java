@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * Editable alumni captions. Tokens: {who} {first} {month} {nth} {officer} {role}
- * {intro} {independence} {birthday}
+ * {intro} {independence} {birthday} {when} {picture} {post}
  */
 public final class AlumniTemplates {
   public static final String OFFICER = "officer";
@@ -22,9 +22,10 @@ public final class AlumniTemplates {
   public static final String DETAILS = "details";
   public static final String PHOTO = "photo";
   public static final String GROUP = "group";
+  public static final String INFO = "info";
 
   public static final String[] KEYS = {
-    OFFICER, ROLE, MALE_TITLE, FEMALE_TITLE, INTRO, HNM, HNM_B, HNM_C, DETAILS, PHOTO, GROUP
+    OFFICER, ROLE, MALE_TITLE, FEMALE_TITLE, INTRO, HNM, HNM_B, HNM_C, DETAILS, PHOTO, GROUP, INFO
   };
 
   private AlumniTemplates() {}
@@ -63,6 +64,9 @@ public final class AlumniTemplates {
     if (GROUP.equals(key)) {
       return "Group Happy New Month";
     }
+    if (INFO.equals(key)) {
+      return "Copy info";
+    }
     return key == null ? "" : key;
   }
 
@@ -82,7 +86,10 @@ public final class AlumniTemplates {
     if (GROUP.equals(key)) {
       return "{independence} becomes the Independence Day line in October, or a full stop.";
     }
-    return "{who} {dear} {formal} {titled} {title_only} {first} {last} {full} {title} {title_lc} {month} {nth} {officer} {role} {intro} {birthday} {independence}";
+    if (INFO.equals(key)) {
+      return "What Copy info pastes for the designer. {when} is Today / Tomorrow / 12th of October. {picture} is No Picture or Attached Picture. {post} is Group or Personal only.";
+    }
+    return "{who} {dear} {formal} {titled} {title_only} {first} {last} {full} {title} {title_lc} {month} {nth} {officer} {role} {intro} {birthday} {independence} {when} {picture} {post}";
   }
 
   public static String fallback(String key) {
@@ -141,6 +148,9 @@ public final class AlumniTemplates {
         + "May the Lord keep you, your families, and all that concerns you this month. Expect to hear from me as we celebrate God's goodness in your lives.\n\n"
         + "God bless you richly. ❤️\n\n"
         + "_{officer}\n{role}_";
+    }
+    if (INFO.equals(key)) {
+      return "Name: {name}\n\nBirthday: {when}\n\n{picture}\n\n{post}";
     }
     return "";
   }
@@ -206,6 +216,11 @@ public final class AlumniTemplates {
     tokens.put("birthday", member != null && member.birthMonth == month1to12
       ? "And what a month to start with: it's your birthday month! 🎉✨"
       : "");
+    tokens.put("when", member == null
+      ? ""
+      : DateUtils.flyerWhen(member.birthMonth, member.birthDay, now));
+    tokens.put("picture", AlumniDesk.pictureLine(member));
+    tokens.put("post", AlumniDesk.postLine(member));
     tokens.put("intro", "");
     String intro = "";
     if (member != null && !member.introduced) {

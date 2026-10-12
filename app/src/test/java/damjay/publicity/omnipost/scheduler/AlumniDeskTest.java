@@ -50,8 +50,13 @@ public class AlumniDeskTest {
     assertTrue(today.contains("Name: Ada Okafor"));
     assertTrue(today.contains("Birthday: Today, 12th of October"));
     assertTrue(today.contains("No Picture"));
+    assertTrue(today.contains("Group"));
     member.photoStatus = AlumniDesk.PHOTO_GOT;
     assertTrue(AlumniDesk.flyerInfo(member, now).contains("Attached Picture"));
+    member.personalOnly = true;
+    String personal = AlumniDesk.flyerInfo(member, now);
+    assertTrue(personal.contains("Personal only"));
+    assertFalse(personal.contains("\nGroup"));
     member.birthDay = 13;
     String tomorrow = AlumniDesk.flyerInfo(member, now);
     assertTrue(tomorrow.contains("Birthday: Tomorrow, 13th of October"));

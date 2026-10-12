@@ -44,7 +44,9 @@ public class MemberEditActivity extends AppCompatActivity {
   static final String EXTRA_DAY = "extra_member_day";
   static final String EXTRA_HNM = "extra_member_hnm";
   static final String EXTRA_DETAILS = "extra_member_details";
+  static final String EXTRA_INFO = "extra_member_info";
   static final String EXTRA_PHOTO = "extra_member_photo";
+  static final String EXTRA_PERSONAL = "extra_member_personal";
   static final String EXTRA_PASTOR = "extra_member_pastor";
   static final String EXTRA_SKIP = "extra_member_skip";
   static final String EXTRA_SAVED = "extra_member_saved";
@@ -60,11 +62,13 @@ public class MemberEditActivity extends AppCompatActivity {
   private TextInputEditText gradSet;
   private TextInputEditText captionHnm;
   private TextInputEditText captionDetails;
+  private TextInputEditText captionInfo;
   private Spinner month;
   private Spinner day;
   private Spinner photo;
   private Spinner gender;
   private CheckBox skipCaption;
+  private CheckBox personalOnly;
   private CheckBox previousPastor;
   private CheckBox contactSaved;
   private CheckBox notOnWhatsApp;
@@ -94,7 +98,9 @@ public class MemberEditActivity extends AppCompatActivity {
       intent.putExtra(EXTRA_DAY, member.birthDay);
       intent.putExtra(EXTRA_HNM, nz(member.captionHnm));
       intent.putExtra(EXTRA_DETAILS, nz(member.captionDetails));
+      intent.putExtra(EXTRA_INFO, nz(member.captionInfo));
       intent.putExtra(EXTRA_PHOTO, nz(member.photoStatus));
+      intent.putExtra(EXTRA_PERSONAL, member.personalOnly);
       intent.putExtra(EXTRA_PASTOR, Member.isPastor(member));
       intent.putExtra(EXTRA_SKIP, member.skipCaption);
       intent.putExtra(EXTRA_SAVED, member.contactSaved);
@@ -131,11 +137,13 @@ public class MemberEditActivity extends AppCompatActivity {
     gradSet = findViewById(R.id.input_grad);
     captionHnm = findViewById(R.id.input_caption_hnm);
     captionDetails = findViewById(R.id.input_caption_details);
+    captionInfo = findViewById(R.id.input_caption_info);
     month = findViewById(R.id.spinner_month);
     day = findViewById(R.id.spinner_day);
     photo = findViewById(R.id.spinner_photo);
     gender = findViewById(R.id.spinner_gender);
     skipCaption = findViewById(R.id.skip_caption);
+    personalOnly = findViewById(R.id.personal_only);
     previousPastor = findViewById(R.id.previous_pastor);
     contactSaved = findViewById(R.id.contact_saved);
     notOnWhatsApp = findViewById(R.id.not_on_whatsapp);
@@ -168,6 +176,13 @@ public class MemberEditActivity extends AppCompatActivity {
     findViewById(R.id.layout_honorific).setVisibility(View.VISIBLE);
     findViewById(R.id.layout_caption_hnm).setVisibility(View.VISIBLE);
     findViewById(R.id.layout_caption_details).setVisibility(View.VISIBLE);
+    View infoLayout = findViewById(R.id.layout_caption_info);
+    if (infoLayout != null) {
+      infoLayout.setVisibility(View.VISIBLE);
+    }
+    if (personalOnly != null) {
+      personalOnly.setVisibility(View.VISIBLE);
+    }
     previousPastor.setVisibility(View.VISIBLE);
     if (nameChoice != null) {
       nameChoice.setOnCheckedChangeListener((group, checkedId) -> applyNameChoice());
@@ -202,6 +217,10 @@ public class MemberEditActivity extends AppCompatActivity {
     setText(gradSet, intent.getStringExtra(EXTRA_GRAD));
     captionHnm.setText(nz(intent.getStringExtra(EXTRA_HNM)));
     captionDetails.setText(nz(intent.getStringExtra(EXTRA_DETAILS)));
+    setText(captionInfo, intent.getStringExtra(EXTRA_INFO));
+    if (personalOnly != null) {
+      personalOnly.setChecked(intent.getBooleanExtra(EXTRA_PERSONAL, false));
+    }
     setMonthDay(intent.getIntExtra(EXTRA_MONTH, 0), intent.getIntExtra(EXTRA_DAY, 0));
     setGender(intent.getStringExtra(EXTRA_GENDER));
     setPhoto(intent.getStringExtra(EXTRA_PHOTO));
@@ -307,6 +326,10 @@ public class MemberEditActivity extends AppCompatActivity {
     final String gradValue = textOf(gradSet);
     final String hnm = captionHnm.getText() == null ? "" : captionHnm.getText().toString();
     final String details = captionDetails.getText() == null ? "" : captionDetails.getText().toString();
+    final String info = captionInfo == null || captionInfo.getText() == null
+      ? ""
+      : captionInfo.getText().toString();
+    final boolean personal = personalOnly != null && personalOnly.isChecked();
     final String photoStatus = AlumniDesk.photoStatusFromIndex(photo.getSelectedItemPosition());
     int g = gender.getSelectedItemPosition();
     final String genderValue = g == 1 ? Member.GENDER_MALE : g == 2 ? Member.GENDER_FEMALE : "";
@@ -356,6 +379,8 @@ public class MemberEditActivity extends AppCompatActivity {
       member.gradSet = gradValue;
       member.captionHnm = hnm.trim();
       member.captionDetails = details.trim();
+      member.captionInfo = info.trim();
+      member.personalOnly = personal;
       member.photoStatus = photoStatus;
       member.gender = genderValue;
       boolean insert = member.id == 0L;

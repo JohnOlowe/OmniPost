@@ -35,16 +35,41 @@
       android:textSize="12sp"
       tools:text="Ma · 0803… · birthday month"/>
 
-    <com.google.android.material.button.MaterialButton
-      android:id="@+id/btn_copy_info"
-      style="@style/Widget.Material3.Button.OutlinedButton"
+    <LinearLayout
+      android:id="@+id/row_copy_info"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginTop="8dp"
-      android:text="@string/alumni_copy_info"
-      android:textColor="@color/gold"
-      android:visibility="gone"
-      app:strokeColor="@color/navy_700"/>
+      android:gravity="center_vertical"
+      android:orientation="horizontal"
+      android:visibility="gone">
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_copy_info"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_weight="1"
+        android:text="@string/alumni_copy_info"
+        android:textColor="@color/gold"
+        app:strokeColor="@color/navy_700"/>
+
+      <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_edit_info"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minHeight="36dp"
+        android:minWidth="0dp"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:text="@string/alumni_edit_caption"
+        android:textColor="@color/gold"
+        android:textSize="12sp"/>
+    </LinearLayout>
 
     <LinearLayout
       android:id="@+id/block_hnm"

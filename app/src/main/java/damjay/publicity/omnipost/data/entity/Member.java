@@ -74,6 +74,16 @@ public class Member {
   @NonNull
   public String captionDetails = "";
 
+  /** Per-person Copy info for the designer. Empty = general template. */
+  @NonNull
+  public String captionInfo = "";
+
+  /**
+   * True when they asked not to be posted on the alumni group — celebrate
+   * them personally only. Independent of {@link #photoStatus}.
+   */
+  public boolean personalOnly;
+
   /** True after this number is already in the President's contacts. Skip Save All. */
   public boolean contactSaved;
 

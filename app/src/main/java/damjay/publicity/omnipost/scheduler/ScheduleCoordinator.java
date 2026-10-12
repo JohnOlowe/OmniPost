@@ -12,7 +12,9 @@ import damjay.publicity.omnipost.service.NagForegroundService;
 import damjay.publicity.omnipost.util.Prefs;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
@@ -94,10 +96,43 @@ public final class ScheduleCoordinator {
       }
     });
 
+    dropSettledPhotoNags(app, db, members);
     applyDueAndSchedule(app);
     AlarmScheduler.scheduleWatchdog(app);
     AlarmScheduler.scheduleHeartbeat(app);
     NagForegroundService.paint(app);
+  }
+
+  /**
+   * Picture-got / NO PICTURE must not keep ringing. Bootstrap does not delete
+   * leftover photo cards, so stamp them posted here.
+   */
+  private static void dropSettledPhotoNags(Context app, AppDatabase db, List<Member> members) {
+    Set<Long> settled = new HashSet<>();
+    if (members != null) {
+      for (Member member : members) {
+        if (member != null && member.id > 0L && AlumniDesk.photoSettled(member)) {
+          settled.add(member.id);
+        }
+      }
+    }
+    if (settled.isEmpty()) {
+      return;
+    }
+    List<Task> all = db.taskDao().getAllSync();
+    if (all == null) {
+      return;
+    }
+    for (Task task : all) {
+      if (task == null
+          || task.memberId <= 0L
+          || TaskStatus.POSTED.equals(task.status)
+          || !TaskTypes.ALUMNI_PHOTO.equals(task.type)
+          || !settled.contains(task.memberId)) {
+        continue;
+      }
+      stampPosted(app, db, task.id);
+    }
   }
 
   private static Map<String, Task> indexByKey(List<Task> tasks) {
@@ -1063,6 +1098,35 @@ public final class ScheduleCoordinator {
       }
     }
     bootstrap(app);
+  }
+
+  public static void setPersonalOnly(Context context, long memberId, boolean personalOnly) {
+    if (context == null || memberId <= 0L) {
+      return;
+    }
+    Context app = context.getApplicationContext();
+    AppDatabase db = AppDatabase.get(app);
+    Member member = db.memberDao().getById(memberId);
+    if (member == null) {
+      return;
+    }
+    member.personalOnly = personalOnly;
+    db.memberDao().update(member);
+    List<Task> tasks = db.taskDao().getActiveForMember(memberId);
+    if (tasks != null) {
+      for (Task task : tasks) {
+        if (task == null || TaskStatus.POSTED.equals(task.status)) {
+          continue;
+        }
+        if (TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)) {
+          task.description = task.skipCaption
+            ? AlumniDesk.birthdayBrief(member)
+            : AlumniDesk.birthdayFlyerBrief(member);
+          db.taskDao().update(task);
+        }
+      }
+    }
+    NagForegroundService.paint(app);
   }
 
   private static void applySkipText(AppDatabase db, Task task, boolean skip) {
