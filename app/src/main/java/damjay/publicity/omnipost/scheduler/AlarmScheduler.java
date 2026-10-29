@@ -50,6 +50,20 @@ public final class AlarmScheduler {
     }
     try {
       long now = System.currentTimeMillis();
+      long heldUntil = HoldRules.until(Prefs.holds(ctx), task);
+      if (heldUntil > now) {
+        String held = "held|" + heldUntil;
+        boolean sameHeld;
+        synchronized (LOCK) {
+          sameHeld = held.equals(ARMED.get(task.id));
+        }
+        if (sameHeld) {
+          return;
+        }
+        cancelTask(ctx, task.id);
+        markArmed(task.id, held);
+        return;
+      }
       long warningLead = Prefs.warningLeadMs(ctx);
       String stamp = armStamp(task, now, warningLead);
       remember(task.id, task.title, task.postAtMillis);

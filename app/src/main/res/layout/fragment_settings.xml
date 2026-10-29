@@ -69,6 +69,10 @@
       layout="@layout/item_setting_row"/>
 
     <include
+      android:id="@+id/row_hold"
+      layout="@layout/item_setting_row"/>
+
+    <include
       android:id="@+id/row_seed"
       layout="@layout/item_switch_row"/>
 

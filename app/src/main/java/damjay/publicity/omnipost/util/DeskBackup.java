@@ -56,6 +56,7 @@ public final class DeskBackup {
     public String igBold = InstagramStyle.FACE_SANS;
     public String igItalic = InstagramStyle.FACE_SERIF;
     public String igBoth = InstagramStyle.FACE_SANS;
+    public String holds = "";
     public final List<Series> series = new ArrayList<>();
     public final List<CaptionVar> vars = new ArrayList<>();
     public final List<Member> members = new ArrayList<>();
@@ -92,6 +93,7 @@ public final class DeskBackup {
     snap.igBold = Prefs.instagramBoldFace(app);
     snap.igItalic = Prefs.instagramItalicFace(app);
     snap.igBoth = Prefs.instagramBothFace(app);
+    snap.holds = Prefs.holdsJson(app);
     addAll(snap.series, db.seriesDao().getAllSync());
     addAll(snap.vars, db.captionVarDao().getAllSync());
     addAll(snap.members, db.memberDao().getAllSync());
@@ -143,6 +145,7 @@ public final class DeskBackup {
     Prefs.setInstagramBoldFace(app, snap.igBold);
     Prefs.setInstagramItalicFace(app, snap.igItalic);
     Prefs.setInstagramBothFace(app, snap.igBoth);
+    Prefs.setHoldsJson(app, snap.holds == null ? "" : snap.holds);
     Prefs.setSeriesDefaultsInstalled(app, true);
     Prefs.setAlumniRosterInstalled(app, hasAlumni(snap));
     ScheduleCoordinator.bootstrap(app);
@@ -210,6 +213,7 @@ public final class DeskBackup {
       prefs.put("igBold", src.igBold == null ? InstagramStyle.FACE_SANS : src.igBold);
       prefs.put("igItalic", src.igItalic == null ? InstagramStyle.FACE_SERIF : src.igItalic);
       prefs.put("igBoth", src.igBoth == null ? InstagramStyle.FACE_SANS : src.igBoth);
+      prefs.put("holds", src.holds == null ? "" : src.holds);
       root.put("prefs", prefs);
       root.put("series", encodeSeries(src.series));
       root.put("vars", encodeVars(src.vars));
@@ -261,6 +265,7 @@ public final class DeskBackup {
           prefs.optString("igItalic", InstagramStyle.FACE_SERIF), InstagramStyle.FACE_SERIF);
         snap.igBoth = InstagramStyle.Faces.normalize(
           prefs.optString("igBoth", InstagramStyle.FACE_SANS), InstagramStyle.FACE_SANS);
+        snap.holds = prefs.optString("holds", "");
       }
       decodeSeries(arr(root, "series"), snap.series);
       decodeVars(arr(root, "vars"), snap.vars);

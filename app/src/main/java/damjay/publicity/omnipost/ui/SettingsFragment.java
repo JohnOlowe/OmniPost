@@ -107,6 +107,9 @@ public class SettingsFragment extends Fragment {
     binding.rowMorning.getRoot().setOnClickListener(v -> pickMorning());
     paintChoice(binding.rowLate, R.string.setting_late, Weekdays.clock(Prefs.lateHour(ctx), 0));
     binding.rowLate.getRoot().setOnClickListener(v -> pickLate());
+    paintChoice(binding.rowHold, R.string.setting_hold, HoldChooser.summary(ctx));
+    binding.rowHold.getRoot().setOnClickListener(v ->
+      HoldChooser.show(requireContext(), this::bindDesk));
     paintSwitch(
       binding.rowSeed,
       R.string.setting_seed,

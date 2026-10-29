@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import damjay.publicity.omnipost.scheduler.AlumniAddress;
 import damjay.publicity.omnipost.scheduler.AlumniTemplates;
+import damjay.publicity.omnipost.scheduler.HoldRules;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.share.InstagramStyle;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public final class Prefs {
   private static final String IG_BOLD = "ig_bold_face";
   private static final String IG_ITALIC = "ig_italic_face";
   private static final String IG_BOTH = "ig_both_face";
+  private static final String HOLDS = "program_holds";
 
   private Prefs() {}
 
@@ -455,5 +457,21 @@ public final class Prefs {
 
   public static void setInstagramBothFace(Context ctx, String face) {
     sp(ctx).edit().putString(IG_BOTH, InstagramStyle.Faces.normalize(face, InstagramStyle.FACE_SANS)).apply();
+  }
+
+  public static String holdsJson(Context ctx) {
+    return sp(ctx).getString(HOLDS, "");
+  }
+
+  public static void setHoldsJson(Context ctx, String json) {
+    sp(ctx).edit().putString(HOLDS, json == null ? "" : json).apply();
+  }
+
+  public static Map<String, Long> holds(Context ctx) {
+    return HoldRules.parse(holdsJson(ctx));
+  }
+
+  public static void setHolds(Context ctx, Map<String, Long> holds) {
+    setHoldsJson(ctx, HoldRules.encode(holds));
   }
 }

@@ -42,6 +42,7 @@ public class DeskBackupTest {
     snap.igBold = InstagramStyle.FACE_SERIF;
     snap.igItalic = InstagramStyle.FACE_SANS;
     snap.igBoth = InstagramStyle.FACE_SERIF;
+    snap.holds = "{\"FRIDAY_PRAYER\":1736640000000}";
 
     Series series = new Series();
     series.title = "Beyond Limit";
@@ -123,6 +124,7 @@ public class DeskBackupTest {
     assertEquals(InstagramStyle.FACE_SERIF, got.igBold);
     assertEquals(InstagramStyle.FACE_SANS, got.igItalic);
     assertEquals(InstagramStyle.FACE_SERIF, got.igBoth);
+    assertTrue(got.holds.contains("FRIDAY_PRAYER"));
     assertEquals(1, got.series.size());
     assertEquals("Beyond Limit", got.series.get(0).title);
     assertEquals(series.caption, got.series.get(0).caption);

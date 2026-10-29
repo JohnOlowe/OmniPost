@@ -66,10 +66,18 @@ public final class ScheduleCoordinator {
     List<Series> series = enabledSeries(db.seriesDao().getAllSync());
     List<Task> generated = RoutineGenerator.generate(
       now, TimeZone.getDefault(), members, series, Prefs.draftHour(app), Prefs.draftLeadDays(app));
+    Map<String, Long> rawHolds = Prefs.holds(app);
+    Map<String, Long> holds = HoldRules.prune(rawHolds, now);
+    if (holds.size() != rawHolds.size()) {
+      Prefs.setHolds(app, holds);
+    }
     Map<String, Task> byKey = indexByKey(db.taskDao().getAllSync());
     db.runInTransaction(() -> {
       for (Task candidate : generated) {
         if (candidate == null || candidate.occurrenceKey == null) {
+          continue;
+        }
+        if (HoldRules.skipMint(holds, candidate)) {
           continue;
         }
         Task existing = byKey.get(candidate.occurrenceKey);
@@ -329,10 +337,15 @@ public final class ScheduleCoordinator {
     if (active == null) {
       return;
     }
+    Map<String, Long> holds = HoldRules.prune(Prefs.holds(app), now);
     List<Task> hot = new java.util.ArrayList<>();
     List<Task> rest = new java.util.ArrayList<>();
     for (Task task : active) {
       if (task == null) {
+        continue;
+      }
+      if (HoldRules.quiet(holds, task, now)) {
+        hushHeld(app, db, task, holds);
         continue;
       }
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
@@ -383,6 +396,20 @@ public final class ScheduleCoordinator {
     }
   }
 
+  private static void hushHeld(Context app, AppDatabase db, Task task, Map<String, Long> holds) {
+    AlarmScheduler.cancelTask(app, task.id);
+    NotificationHelper.hush(app, task.id);
+    if (HoldRules.skipMint(holds, task) && !TaskTypes.isCustom(task.type)) {
+      db.taskDao().deleteById(task.id);
+      return;
+    }
+    if (TaskStatus.needsYou(task.status) || TaskStatus.SNOOZED.equals(task.status)) {
+      db.taskDao().setSnooze(task.id, TaskStatus.SCHEDULED, 0L);
+      task.status = TaskStatus.SCHEDULED;
+      task.snoozeUntilMillis = 0L;
+    }
+  }
+
   private static void fireTransition(Context app, Task task, String due) {
     if (TaskStatus.DRAFTING.equals(due)) {
       NotificationHelper.showDraft(app, task);
@@ -399,14 +426,19 @@ public final class ScheduleCoordinator {
       AlarmScheduler.cancelTask(app, taskId);
       return;
     }
+    long now = System.currentTimeMillis();
+    Map<String, Long> holds = Prefs.holds(app);
+    if (HoldRules.quiet(holds, task, now)) {
+      hushHeld(app, AppDatabase.get(app), task, holds);
+      return;
+    }
     if (TaskStatus.SNOOZED.equals(task.status)
-      && task.snoozeUntilMillis > System.currentTimeMillis()) {
+      && task.snoozeUntilMillis > now) {
       if (phase == AlarmScheduler.PHASE_MINUTE) {
         NotificationHelper.showMinute(app, task);
       }
       return;
     }
-    long now = System.currentTimeMillis();
     switch (phase) {
       case AlarmScheduler.PHASE_DRAFT:
         if (!TaskStatus.captionWorkPending(task)) {

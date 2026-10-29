@@ -122,6 +122,17 @@ public final class DateUtils {
     return c;
   }
 
+  public static long startOfDay(long millis) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeInMillis(millis);
+    return startOfDay(c).getTimeInMillis();
+  }
+
+  /** Resume date on the Hold picker — always a calendar day, with year. */
+  public static String formatHoldDay(long millis) {
+    return new SimpleDateFormat("EEE d MMM yyyy", Locale.getDefault()).format(new Date(millis));
+  }
+
   /** Whole calendar days from {@code from} to {@code to} (negative if {@code to} is earlier). */
   public static int calendarDaysBetween(Calendar from, Calendar to) {
     if (from == null || to == null) {

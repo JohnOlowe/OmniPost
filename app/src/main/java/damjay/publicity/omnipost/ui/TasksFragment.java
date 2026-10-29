@@ -26,6 +26,7 @@ import damjay.publicity.omnipost.databinding.FragmentTasksBinding;
 import damjay.publicity.omnipost.scheduler.AlumniDesk;
 import damjay.publicity.omnipost.scheduler.CaptionTemplates;
 import damjay.publicity.omnipost.scheduler.DateUtils;
+import damjay.publicity.omnipost.scheduler.HoldRules;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.TaskSearch;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
@@ -250,6 +251,18 @@ public class TasksFragment extends Fragment {
     if (!posted) {
       labels.add(getString(task.skipCaption ? R.string.turn_captions_on : R.string.turn_captions_off));
     }
+    java.util.Map<String, Long> holds = Prefs.holds(requireContext());
+    long now = System.currentTimeMillis();
+    boolean programHeld = HoldRules.programUntil(holds, task) > now;
+    boolean postHeld = HoldRules.later(0L, holds.get(HoldRules.taskKey(task.id))) > now;
+    if (!posted && programHeld) {
+      labels.add(getString(R.string.hold_resume_program));
+    } else if (!posted && postHeld) {
+      labels.add(getString(R.string.hold_resume_post));
+    }
+    if (!posted) {
+      labels.add(getString(R.string.hold_until_action));
+    }
     boolean alumniPhoto = !posted
       && task.memberId > 0L
       && (TaskTypes.ALUMNI_PHOTO.equals(task.type) || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type));
@@ -284,6 +297,26 @@ public class TasksFragment extends Fragment {
         if (!posted) {
           if (which == index) {
             toggleCaptions(task);
+            return;
+          }
+          index++;
+        }
+        if (!posted && programHeld) {
+          if (which == index) {
+            HoldChooser.resumeKey(requireContext(), HoldRules.programKey(task), this::render);
+            return;
+          }
+          index++;
+        } else if (!posted && postHeld) {
+          if (which == index) {
+            HoldChooser.resumeKey(requireContext(), HoldRules.taskKey(task.id), this::render);
+            return;
+          }
+          index++;
+        }
+        if (!posted) {
+          if (which == index) {
+            HoldChooser.forTask(requireContext(), task, this::render);
             return;
           }
           index++;
@@ -474,7 +507,15 @@ public class TasksFragment extends Fragment {
         ? R.string.search_tasks_empty
         : (postedMode ? R.string.empty_posted : R.string.empty_tasks));
     binding.empty.setVisibility(source.isEmpty() ? View.VISIBLE : View.GONE);
-    binding.howItWorks.setText(R.string.how_it_works);
+    java.util.Map<String, Long> holds = Prefs.holds(requireContext());
+    if (HoldRules.any(holds, System.currentTimeMillis())) {
+      binding.howItWorks.setText(HoldChooser.summary(requireContext()));
+      binding.howItWorks.setOnClickListener(v ->
+        HoldChooser.show(requireContext(), this::render));
+    } else {
+      binding.howItWorks.setText(R.string.how_it_works);
+      binding.howItWorks.setOnClickListener(null);
+    }
     binding.btnAlumniCaptions.setVisibility(View.GONE);
     binding.fab.setVisibility(desk == DESK_POST ? View.VISIBLE : View.GONE);
   }

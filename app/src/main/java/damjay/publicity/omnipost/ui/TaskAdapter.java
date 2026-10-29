@@ -11,10 +11,12 @@ import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.databinding.ItemDayHeaderBinding;
 import damjay.publicity.omnipost.databinding.ItemTaskBinding;
 import damjay.publicity.omnipost.scheduler.DateUtils;
+import damjay.publicity.omnipost.scheduler.HoldRules;
 import damjay.publicity.omnipost.scheduler.TaskSections;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
 import damjay.publicity.omnipost.scheduler.TaskTypes;
+import damjay.publicity.omnipost.util.Prefs;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -180,16 +182,23 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       boolean pending = TaskStatus.captionWorkPending(task) && !TaskStatus.POSTED.equals(task.status);
       binding.btnReady.setVisibility(pending ? View.VISIBLE : View.GONE);
       binding.btnReady.setOnClickListener(v -> listener.onCaptionReady(task));
-      if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
+      long heldUntil = HoldRules.until(Prefs.holds(itemView.getContext()), task);
+      boolean held = heldUntil > System.currentTimeMillis();
+      if (held) {
+        binding.when.setText(
+          itemView.getContext().getString(R.string.held_until, DateUtils.formatHoldDay(heldUntil)));
+        binding.status.setText(R.string.held);
+      } else if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > 0L) {
         binding.when.setText(
           itemView.getContext().getString(
             R.string.snoozed_until, DateUtils.formatStamp(task.snoozeUntilMillis)));
+        binding.status.setText(TaskStatus.label(task));
       } else {
         binding.when.setText(DateUtils.relativeOrStamp(task.postAtMillis));
+        binding.status.setText(TaskStatus.label(task));
       }
-      binding.status.setText(TaskStatus.label(task));
       binding.cadence.setText(TaskTypes.cadence(task.type));
-      style(task);
+      style(task, held);
       boolean posted = TaskStatus.POSTED.equals(task.status);
       binding.btnPosted.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.btnReopen.setVisibility(posted ? View.VISIBLE : View.GONE);
@@ -218,12 +227,17 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       });
     }
 
-    private void style(Task task) {
+    private void style(Task task, boolean held) {
       int bg = R.drawable.bg_chip_gold;
       int color = R.color.gold;
       int accent = R.color.gold;
       int stroke = R.color.navy_700;
-      if (TaskStatus.NAGGING.equals(task.status)) {
+      if (held) {
+        bg = R.drawable.bg_chip_quiet;
+        color = R.color.quiet;
+        accent = R.color.quiet;
+        stroke = R.color.quiet;
+      } else if (TaskStatus.NAGGING.equals(task.status)) {
         bg = R.drawable.bg_chip_red;
         color = R.color.danger;
         accent = R.color.danger;

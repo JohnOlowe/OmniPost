@@ -20,6 +20,7 @@ import damjay.publicity.omnipost.notify.AlarmPulse;
 import damjay.publicity.omnipost.notify.AlertPlan;
 import damjay.publicity.omnipost.notify.NotificationHelper;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
+import damjay.publicity.omnipost.scheduler.HoldRules;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
@@ -124,9 +125,12 @@ public class NagForegroundService extends Service {
       } catch (Exception e) {
         Log.e(TAG, "desk tick failed", e);
       }
-      List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
+      List<Task> nagging = HoldRules.live(
+        AppDatabase.get(this).taskDao().getNaggingSync(),
+        Prefs.holds(this),
+        System.currentTimeMillis());
       Task next = nextToRing();
-      hasNagging = nagging != null && !nagging.isEmpty();
+      hasNagging = !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk || AlarmPulse.isLive() || pulseOnly;
       if (keepAlive) {
@@ -184,9 +188,12 @@ public class NagForegroundService extends Service {
       } catch (Exception e) {
         Log.e(TAG, "pulse tick failed", e);
       }
-      List<Task> nagging = AppDatabase.get(this).taskDao().getNaggingSync();
+      List<Task> nagging = HoldRules.live(
+        AppDatabase.get(this).taskDao().getNaggingSync(),
+        Prefs.holds(this),
+        System.currentTimeMillis());
       Task next = nextToRing();
-      hasNagging = nagging != null && !nagging.isEmpty();
+      hasNagging = !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
       keepAlive = hasNagging || desk || AlarmPulse.isLive();
       if (keepAlive) {
@@ -235,7 +242,9 @@ public class NagForegroundService extends Service {
 
   private Task nextToRing() {
     List<Task> active = AppDatabase.get(this).taskDao().getActiveSync();
-    return TaskStatus.nextToRing(active, System.currentTimeMillis(), Prefs.warningLeadMs(this));
+    long now = System.currentTimeMillis();
+    return TaskStatus.nextToRing(
+      HoldRules.live(active, Prefs.holds(this), now), now, Prefs.warningLeadMs(this));
   }
 
   private void promoteForeground(int count, Task next) {
