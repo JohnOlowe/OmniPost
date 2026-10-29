@@ -48,45 +48,28 @@ public final class AlarmScheduler {
       cancelTask(ctx, task.id);
       return;
     }
-    long now = System.currentTimeMillis();
-    long warningLead = Prefs.warningLeadMs(ctx);
-    String stamp = armStamp(task, now, warningLead);
-    remember(task.id, task.title, task.postAtMillis);
-    boolean same;
-    synchronized (LOCK) {
-      same = stamp.equals(ARMED.get(task.id));
-    }
-    if (same) {
-      return;
-    }
-    cancelTask(ctx, task.id);
-    remember(task.id, task.title, task.postAtMillis);
-    if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
-      long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
-      if (minuteAt > now) {
-        setAlarmClock(ctx, task, PHASE_MINUTE, minuteAt);
+    try {
+      long now = System.currentTimeMillis();
+      long warningLead = Prefs.warningLeadMs(ctx);
+      String stamp = armStamp(task, now, warningLead);
+      remember(task.id, task.title, task.postAtMillis);
+      boolean same;
+      synchronized (LOCK) {
+        same = stamp.equals(ARMED.get(task.id));
       }
-      setAlarmClock(ctx, task, PHASE_SNOOZE, task.snoozeUntilMillis);
+      if (same) {
+        return;
+      }
+      cancelTask(ctx, task.id);
+      remember(task.id, task.title, task.postAtMillis);
+      long[] next = nextArm(task, now, warningLead);
+      if (next != null) {
+        setAlarmClock(ctx, task, (int) next[0], next[1]);
+      }
       markArmed(task.id, stamp);
-      return;
+    } catch (RuntimeException e) {
+      Log.e(TAG, "scheduleTask failed", e);
     }
-    boolean saved = !TaskStatus.captionWorkPending(task);
-    if (!saved && task.draftAtMillis > now) {
-      setAlarmClock(ctx, task, PHASE_DRAFT, task.draftAtMillis);
-    }
-    long warningAt = task.postAtMillis - warningLead;
-    if (!saved && warningLead > 0L && warningAt > now) {
-      setAlarmClock(ctx, task, PHASE_WARNING, warningAt);
-    }
-    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
-    long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
-    if (postRing && minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
-      setAlarmClock(ctx, task, PHASE_MINUTE, minuteAt);
-    }
-    if (postRing && task.postAtMillis > now) {
-      setAlarmClock(ctx, task, PHASE_NAG, task.postAtMillis);
-    }
-    markArmed(task.id, stamp);
   }
 
   public static boolean loudPhase(int phase) {
@@ -206,6 +189,9 @@ public final class AlarmScheduler {
     } catch (SecurityException e) {
       Log.w(TAG, "setAlarmClock denied, falling back", e);
       setExact(ctx, pi, when);
+    } catch (RuntimeException e) {
+      Log.e(TAG, "setAlarmClock failed", e);
+      setExact(ctx, pi, when);
     }
   }
 
@@ -213,13 +199,30 @@ public final class AlarmScheduler {
     AlarmManager manager = am(ctx);
     try {
       if (Build.VERSION.SDK_INT >= 31 && !manager.canScheduleExactAlarms()) {
-        manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
+        idle(manager, when, pi);
         return;
       }
       manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
     } catch (SecurityException e) {
       Log.w(TAG, "exact alarm denied", e);
+      idle(manager, when, pi);
+    } catch (IllegalStateException e) {
+      Log.e(TAG, "AlarmManager cap on setExact", e);
+      recycleAll(ctx);
+      idle(manager, when, pi);
+    } catch (RuntimeException e) {
+      Log.e(TAG, "setExact failed", e);
+    }
+  }
+
+  private static void idle(AlarmManager manager, long when, PendingIntent pi) {
+    if (manager == null || pi == null) {
+      return;
+    }
+    try {
       manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when, pi);
+    } catch (RuntimeException e) {
+      Log.e(TAG, "inexact alarm failed", e);
     }
   }
 
@@ -426,7 +429,54 @@ public final class AlarmScheduler {
     }
   }
 
-  /** Future alarm times for this task. Heartbeat skips getBroadcast when this is unchanged. */
+  /**
+   * Soonest phase still in the future. One AlarmManager slot per task — four
+   * phases × a 200-name desk blows the 500-alarm OEM cap.
+   */
+  static long[] nextArm(Task task, long now, long warningLeadMs) {
+    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+      return null;
+    }
+    if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
+      long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
+      if (minuteAt > now) {
+        return new long[] { PHASE_MINUTE, minuteAt };
+      }
+      return new long[] { PHASE_SNOOZE, task.snoozeUntilMillis };
+    }
+    int phase = 0;
+    long when = Long.MAX_VALUE;
+    boolean saved = !TaskStatus.captionWorkPending(task);
+    if (!saved && task.draftAtMillis > now) {
+      phase = PHASE_DRAFT;
+      when = task.draftAtMillis;
+    }
+    long warningAt = task.postAtMillis - warningLeadMs;
+    if (!saved && warningLeadMs > 0L && warningAt > now && warningAt < when) {
+      phase = PHASE_WARNING;
+      when = warningAt;
+    }
+    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
+    long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
+    if (postRing
+        && minuteAt > now
+        && minuteAt < task.postAtMillis
+        && minuteAt != warningAt
+        && minuteAt < when) {
+      phase = PHASE_MINUTE;
+      when = minuteAt;
+    }
+    if (postRing && task.postAtMillis > now && task.postAtMillis < when) {
+      phase = PHASE_NAG;
+      when = task.postAtMillis;
+    }
+    if (phase == 0) {
+      return null;
+    }
+    return new long[] { phase, when };
+  }
+
+  /** Next arm only. Heartbeat skips getBroadcast when this is unchanged. */
   static String armStamp(Task task, long now, long warningLeadMs) {
     if (task == null || TaskStatus.POSTED.equals(task.status)) {
       return "posted";
@@ -435,24 +485,22 @@ public final class AlarmScheduler {
       long minuteAt = task.snoozeUntilMillis - ScheduleTimes.MINUTE_LEAD_MS;
       return "snooze|" + (minuteAt > now ? minuteAt : 0L) + "|" + task.snoozeUntilMillis;
     }
-    boolean saved = !TaskStatus.captionWorkPending(task);
-    StringBuilder out = new StringBuilder("arm");
-    if (!saved && task.draftAtMillis > now) {
-      out.append("|d").append(task.draftAtMillis);
+    long[] next = nextArm(task, now, warningLeadMs);
+    if (next == null) {
+      return "arm";
     }
-    long warningAt = task.postAtMillis - warningLeadMs;
-    if (!saved && warningLeadMs > 0L && warningAt > now) {
-      out.append("|w").append(warningAt);
+    int phase = (int) next[0];
+    char letter = 'n';
+    if (phase == PHASE_DRAFT) {
+      letter = 'd';
+    } else if (phase == PHASE_WARNING) {
+      letter = 'w';
+    } else if (phase == PHASE_MINUTE) {
+      letter = 'm';
+    } else if (phase == PHASE_SNOOZE) {
+      letter = 's';
     }
-    boolean postRing = !TaskTypes.alumniCaptionOnly(task.type);
-    long minuteAt = task.postAtMillis - ScheduleTimes.MINUTE_LEAD_MS;
-    if (postRing && minuteAt > now && minuteAt < task.postAtMillis && minuteAt != warningAt) {
-      out.append("|m").append(minuteAt);
-    }
-    if (postRing && task.postAtMillis > now) {
-      out.append("|n").append(task.postAtMillis);
-    }
-    return out.toString();
+    return "arm|" + letter + next[1];
   }
 
   static int requestCode(long taskId, int phase) {

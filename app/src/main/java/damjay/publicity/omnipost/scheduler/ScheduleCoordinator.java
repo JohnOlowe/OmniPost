@@ -329,9 +329,14 @@ public final class ScheduleCoordinator {
     if (active == null) {
       return;
     }
+    List<Task> hot = new java.util.ArrayList<>();
+    List<Task> rest = new java.util.ArrayList<>();
     for (Task task : active) {
+      if (task == null) {
+        continue;
+      }
       if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
-        AlarmScheduler.scheduleTask(app, task);
+        hot.add(task);
         continue;
       }
       String previous = task.status;
@@ -347,7 +352,34 @@ public final class ScheduleCoordinator {
         }
         fireTransition(app, task, due);
       }
-      AlarmScheduler.scheduleTask(app, task);
+      if (TaskStatus.needsYou(due) || TaskStatus.SNOOZED.equals(due)) {
+        hot.add(task);
+      } else {
+        rest.add(task);
+      }
+    }
+    java.util.Comparator<Task> soonest =
+      (a, b) -> Long.compare(
+        TaskStatus.nextRingMillis(a, now, warningLead),
+        TaskStatus.nextRingMillis(b, now, warningLead));
+    hot.sort(soonest);
+    rest.sort(soonest);
+    int left = ScheduleTimes.MAX_ARMED_TASKS;
+    for (Task task : hot) {
+      if (left > 0) {
+        AlarmScheduler.scheduleTask(app, task);
+        left--;
+      } else {
+        AlarmScheduler.cancelTask(app, task.id);
+      }
+    }
+    for (Task task : rest) {
+      if (left > 0) {
+        AlarmScheduler.scheduleTask(app, task);
+        left--;
+      } else {
+        AlarmScheduler.cancelTask(app, task.id);
+      }
     }
   }
 

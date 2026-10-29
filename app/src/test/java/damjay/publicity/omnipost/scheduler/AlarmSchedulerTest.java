@@ -35,7 +35,7 @@ public class AlarmSchedulerTest {
     String a = AlarmScheduler.armStamp(task, 50_000L, 30_000L);
     String b = AlarmScheduler.armStamp(task, 60_000L, 30_000L);
     assertEquals(a, b);
-    assertEquals("arm|d100000|w170000|m140000|n200000", a);
+    assertEquals("arm|d100000", a);
   }
 
   @Test
@@ -44,27 +44,38 @@ public class AlarmSchedulerTest {
     String beforeDraft = AlarmScheduler.armStamp(task, 50_000L, 30_000L);
     String afterDraft = AlarmScheduler.armStamp(task, 120_000L, 30_000L);
     assertNotEquals(beforeDraft, afterDraft);
-    assertEquals("arm|w170000|m140000|n200000", afterDraft);
+    assertEquals("arm|m140000", afterDraft);
   }
 
   @Test
   public void warningOffOmitsTheCaptionReadyArm() {
     Task task = task(100_000L, 200_000L);
-    assertEquals("arm|d100000|m140000|n200000", AlarmScheduler.armStamp(task, 50_000L, 0L));
+    assertEquals("arm|d100000", AlarmScheduler.armStamp(task, 50_000L, 0L));
   }
 
   @Test
   public void alumniBirthdayOmitsThePostRingSoThePackNagsOnce() {
     Task task = task(100_000L, 200_000L);
     task.type = TaskTypes.ALUMNI_BIRTHDAY;
-    assertEquals("arm|d100000|w170000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+    assertEquals("arm|d100000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
   }
 
   @Test
   public void skipCaptionOmitsDraftAndWarningArms() {
     Task task = task(100_000L, 200_000L);
     task.skipCaption = true;
-    assertEquals("arm|m140000|n200000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+    assertEquals("arm|m140000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+  }
+
+  @Test
+  public void nextArmIsOnlyTheSoonestPhase() {
+    Task task = task(100_000L, 200_000L);
+    long[] next = AlarmScheduler.nextArm(task, 50_000L, 30_000L);
+    assertEquals(AlarmScheduler.PHASE_DRAFT, (int) next[0]);
+    assertEquals(100_000L, next[1]);
+    long[] afterDraft = AlarmScheduler.nextArm(task, 120_000L, 30_000L);
+    assertEquals(AlarmScheduler.PHASE_MINUTE, (int) afterDraft[0]);
+    assertEquals(140_000L, afterDraft[1]);
   }
 
   @Test

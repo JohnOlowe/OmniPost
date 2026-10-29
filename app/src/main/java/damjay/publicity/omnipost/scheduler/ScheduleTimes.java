@@ -27,6 +27,11 @@ public final class ScheduleTimes {
   public static final int GENERATE_MONTH_COUNT = 2;
   /** Rolling window so the next dawn is ready without dumping every day until D-Day. */
   public static final int GENERATE_COUNTDOWN_DAYS = 3;
+  /**
+   * Hard cap on concurrent AlarmManager entries. Android (and Tecno/Infinix)
+   * kill the app at 500. One next-phase alarm per nearby task stays far under.
+   */
+  public static final int MAX_ARMED_TASKS = 80;
   /** Only mint birthday cards that are actually coming up, so a 200-name roster cannot flood AMS. */
   public static final int GENERATE_BIRTHDAY_DAYS = 21;
   /** Ask for the flyer picture this many days before the birthday. */
