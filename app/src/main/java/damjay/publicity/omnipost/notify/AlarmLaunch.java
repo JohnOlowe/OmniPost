@@ -6,6 +6,7 @@ import android.os.Build;
 import android.util.Log;
 import damjay.publicity.omnipost.data.entity.Task;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.ui.AlarmActivity;
 import damjay.publicity.omnipost.util.ExtraKeys;
 
@@ -51,7 +52,7 @@ public final class AlarmLaunch {
   }
 
   public static void fire(Context ctx, Task task, int phase) {
-    if (task == null) {
+    if (task == null || TaskTypes.alumniCaptionOnly(task.type)) {
       return;
     }
     fire(ctx, task.id, phase, task.title, task.postAtMillis);

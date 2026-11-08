@@ -348,7 +348,9 @@ public final class ScheduleCoordinator {
         hushHeld(app, db, task, holds);
         continue;
       }
-      if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
+      if (TaskStatus.SNOOZED.equals(task.status)
+          && task.snoozeUntilMillis > now
+          && !TaskTypes.alumniCaptionOnly(task.type)) {
         hot.add(task);
         continue;
       }
@@ -411,6 +413,9 @@ public final class ScheduleCoordinator {
   }
 
   private static void fireTransition(Context app, Task task, String due) {
+    if (task != null && TaskTypes.alumniCaptionOnly(task.type)) {
+      return;
+    }
     if (TaskStatus.DRAFTING.equals(due)) {
       NotificationHelper.showDraft(app, task);
     } else if (TaskStatus.WARNING.equals(due)) {
@@ -424,6 +429,15 @@ public final class ScheduleCoordinator {
     Task task = AppDatabase.get(app).taskDao().getById(taskId);
     if (task == null || TaskStatus.POSTED.equals(task.status)) {
       AlarmScheduler.cancelTask(app, taskId);
+      return;
+    }
+    if (TaskTypes.alumniCaptionOnly(task.type)) {
+      AlarmScheduler.cancelTask(app, taskId);
+      NotificationHelper.hush(app, taskId);
+      String due = TaskStatus.captionWorkPending(task) ? TaskStatus.SCHEDULED : TaskStatus.READY;
+      if (!due.equals(task.status) || task.snoozeUntilMillis != 0L) {
+        AppDatabase.get(app).taskDao().setSnooze(taskId, due, 0L);
+      }
       return;
     }
     long now = System.currentTimeMillis();

@@ -24,9 +24,11 @@ import damjay.publicity.omnipost.scheduler.HoldRules;
 import damjay.publicity.omnipost.scheduler.ScheduleCoordinator;
 import damjay.publicity.omnipost.scheduler.ScheduleTimes;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.util.AppExecutors;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
+import java.util.ArrayList;
 import java.util.List;
 
 public class NagForegroundService extends Service {
@@ -125,10 +127,10 @@ public class NagForegroundService extends Service {
       } catch (Exception e) {
         Log.e(TAG, "desk tick failed", e);
       }
-      List<Task> nagging = HoldRules.live(
+      List<Task> nagging = ringing(HoldRules.live(
         AppDatabase.get(this).taskDao().getNaggingSync(),
         Prefs.holds(this),
-        System.currentTimeMillis());
+        System.currentTimeMillis()));
       Task next = nextToRing();
       hasNagging = !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
@@ -188,10 +190,10 @@ public class NagForegroundService extends Service {
       } catch (Exception e) {
         Log.e(TAG, "pulse tick failed", e);
       }
-      List<Task> nagging = HoldRules.live(
+      List<Task> nagging = ringing(HoldRules.live(
         AppDatabase.get(this).taskDao().getNaggingSync(),
         Prefs.holds(this),
-        System.currentTimeMillis());
+        System.currentTimeMillis()));
       Task next = nextToRing();
       hasNagging = !nagging.isEmpty();
       boolean desk = Prefs.deskOngoing(this);
@@ -244,7 +246,23 @@ public class NagForegroundService extends Service {
     List<Task> active = AppDatabase.get(this).taskDao().getActiveSync();
     long now = System.currentTimeMillis();
     return TaskStatus.nextToRing(
-      HoldRules.live(active, Prefs.holds(this), now), now, Prefs.warningLeadMs(this));
+      ringing(HoldRules.live(active, Prefs.holds(this), now)),
+      now,
+      Prefs.warningLeadMs(this));
+  }
+
+  /** Packed birthday nags once. Individual flyers never join the burst. */
+  private static List<Task> ringing(List<Task> source) {
+    List<Task> out = new ArrayList<>();
+    if (source == null) {
+      return out;
+    }
+    for (Task task : source) {
+      if (task != null && !TaskTypes.alumniCaptionOnly(task.type)) {
+        out.add(task);
+      }
+    }
+    return out;
   }
 
   private void promoteForeground(int count, Task next) {

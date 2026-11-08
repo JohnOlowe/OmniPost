@@ -2,6 +2,7 @@ package damjay.publicity.omnipost.scheduler;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 import damjay.publicity.omnipost.data.entity.Task;
 import org.junit.Test;
@@ -54,10 +55,12 @@ public class AlarmSchedulerTest {
   }
 
   @Test
-  public void alumniBirthdayOmitsThePostRingSoThePackNagsOnce() {
+  public void alumniBirthdayArmsNothingSoOnlyThePackNags() {
     Task task = task(100_000L, 200_000L);
     task.type = TaskTypes.ALUMNI_BIRTHDAY;
-    assertEquals("arm|d100000", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
+    assertNull(AlarmScheduler.nextArm(task, 50_000L, 30_000L));
+    assertNull(AlarmScheduler.nextArm(task, 190_000L, 30_000L));
+    assertEquals("arm", AlarmScheduler.armStamp(task, 50_000L, 30_000L));
   }
 
   @Test

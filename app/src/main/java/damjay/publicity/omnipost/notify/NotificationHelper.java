@@ -121,7 +121,7 @@ public final class NotificationHelper {
   }
 
   public static void notifyNagOnly(Context ctx, Task task) {
-    if (task == null) {
+    if (task == null || TaskTypes.alumniCaptionOnly(task.type)) {
       return;
     }
     notifyCue(ctx, task.id, AlarmScheduler.PHASE_NAG, task.title, task.postAtMillis, true, task.type);

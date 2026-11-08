@@ -448,7 +448,9 @@ public final class AlarmScheduler {
    * phases × a 200-name desk blows the 500-alarm OEM cap.
    */
   static long[] nextArm(Task task, long now, long warningLeadMs) {
-    if (task == null || TaskStatus.POSTED.equals(task.status)) {
+    if (task == null
+        || TaskStatus.POSTED.equals(task.status)
+        || TaskTypes.alumniCaptionOnly(task.type)) {
       return null;
     }
     if (TaskStatus.SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {

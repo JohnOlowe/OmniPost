@@ -78,6 +78,9 @@ public final class TaskStatus {
     if (task == null) {
       return SCHEDULED;
     }
+    if (TaskTypes.alumniCaptionOnly(task.type)) {
+      return captionWorkPending(task) ? SCHEDULED : READY;
+    }
     return dueStatus(
       task.draftAtMillis,
       task.postAtMillis,
@@ -122,7 +125,7 @@ public final class TaskStatus {
    * Overdue tasks return their post time so they sort first.
    */
   public static long nextRingMillis(Task task, long now, long warningLeadMs) {
-    if (task == null || POSTED.equals(task.status)) {
+    if (task == null || POSTED.equals(task.status) || TaskTypes.alumniCaptionOnly(task.type)) {
       return Long.MAX_VALUE;
     }
     if (SNOOZED.equals(task.status) && task.snoozeUntilMillis > now) {
@@ -163,7 +166,7 @@ public final class TaskStatus {
       return null;
     }
     for (Task task : tasks) {
-      if (task == null || POSTED.equals(task.status)) {
+      if (task == null || POSTED.equals(task.status) || TaskTypes.alumniCaptionOnly(task.type)) {
         continue;
       }
       long at = nextRingMillis(task, now, warningLeadMs);

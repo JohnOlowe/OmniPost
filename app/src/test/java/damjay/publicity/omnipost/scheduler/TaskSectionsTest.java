@@ -282,6 +282,28 @@ public class TaskSectionsTest {
   }
 
   @Test
+  public void alumniBirthdayNeverNagsOrRings() {
+    long now = 1_000_000L;
+    Task flyer = task(2, TaskTypes.ALUMNI_BIRTHDAY, TaskStatus.SCHEDULED, now);
+    flyer.draftAtMillis = now - 86_400_000L;
+    assertEquals(
+      TaskStatus.SCHEDULED,
+      TaskStatus.dueStatus(flyer, now, ScheduleTimes.WARNING_LEAD_MS));
+    flyer.captionSavedAt = now - 1_000L;
+    assertEquals(
+      TaskStatus.READY,
+      TaskStatus.dueStatus(flyer, now, ScheduleTimes.WARNING_LEAD_MS));
+    assertEquals(
+      Long.MAX_VALUE,
+      TaskStatus.nextRingMillis(flyer, now - 10_000L, ScheduleTimes.WARNING_LEAD_MS));
+    Task pack = task(1, TaskTypes.ALUMNI_BIRTHDAY_PACK, TaskStatus.SCHEDULED, now + 60_000L);
+    pack.skipCaption = true;
+    Task next = TaskStatus.nextToRing(
+      Arrays.asList(flyer, pack), now - 10_000L, ScheduleTimes.WARNING_LEAD_MS);
+    assertEquals(pack.id, next.id);
+  }
+
+  @Test
   public void alumniBirthdaysOnDayKeepsOnlyThatDaysFlyers() {
     Task pack = task(1, TaskTypes.ALUMNI_BIRTHDAY_PACK, TaskStatus.NAGGING, 100);
     pack.occurrenceKey = TaskTypes.ALUMNI_BIRTHDAY_PACK + "|2026-08-31";

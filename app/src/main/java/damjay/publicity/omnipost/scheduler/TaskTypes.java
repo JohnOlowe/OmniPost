@@ -158,7 +158,10 @@ public final class TaskTypes {
         || ALUMNI_PHOTO.equals(type);
   }
 
-  /** Individual alumni birthday: write-caption only. The pack card rings to post. */
+  /**
+   * Individual alumni birthday: no ring, no desk burst. The packed card nags
+   * once; write each caption from that day's screen.
+   */
   public static boolean alumniCaptionOnly(String type) {
     return ALUMNI_BIRTHDAY.equals(type);
   }
