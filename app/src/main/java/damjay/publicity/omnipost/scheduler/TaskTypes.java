@@ -1,6 +1,8 @@
 package damjay.publicity.omnipost.scheduler;
 
 import damjay.publicity.omnipost.data.entity.Task;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class TaskTypes {
   public static final String SUNDAY_SERVICE = "SUNDAY_SERVICE";
@@ -173,6 +175,20 @@ public final class TaskTypes {
       return parts[2];
     }
     return "";
+  }
+
+  /** Individual birthday flyers that share the packed post nag for this calendar day. */
+  public static List<Task> alumniBirthdaysOnDay(List<Task> source, String day) {
+    List<Task> out = new ArrayList<>();
+    if (source == null || day == null || day.isEmpty()) {
+      return out;
+    }
+    for (Task task : source) {
+      if (task != null && ALUMNI_BIRTHDAY.equals(task.type) && day.equals(dayKey(task))) {
+        out.add(task);
+      }
+    }
+    return out;
   }
 
   public static boolean isCustom(String type) {

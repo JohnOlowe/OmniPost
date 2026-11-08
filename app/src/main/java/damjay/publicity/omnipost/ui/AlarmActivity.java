@@ -49,6 +49,10 @@ public class AlarmActivity extends AppCompatActivity {
     setContentView(binding.getRoot());
     binding.btnDraft.setOnClickListener(v -> {
       acknowledge();
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(taskType)) {
+        openBirthdayDay();
+        return;
+      }
       if (alumniDesk) {
         if (TaskTypes.ALUMNI_PHOTO.equals(taskType)) {
           Intent photo = new Intent(this, AlumniDmActivity.class);
@@ -87,6 +91,10 @@ public class AlarmActivity extends AppCompatActivity {
     });
     binding.btnPosted.setOnClickListener(v -> {
       acknowledge();
+      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(taskType)) {
+        openBirthdayDay();
+        return;
+      }
       AppExecutors.disk().execute(() -> {
         ScheduleCoordinator.markPosted(this, taskId);
         AppExecutors.main(() -> {
@@ -210,7 +218,15 @@ public class AlarmActivity extends AppCompatActivity {
         alumniDesk = Homes.isAlumniDmDesk(task);
         boolean pending = TaskStatus.captionWorkPending(task);
         binding.btnReady.setVisibility(pending && !alumniDesk ? View.VISIBLE : View.GONE);
-        if (TaskTypes.ALUMNI_PHOTO.equals(taskType)) {
+        binding.btnPosted.setVisibility(View.VISIBLE);
+        if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(taskType)) {
+          binding.btnDraft.setText(R.string.alumni_open_birthdays);
+          binding.btnPosted.setVisibility(View.GONE);
+          binding.subtitle.setText(
+            task.description == null || task.description.isEmpty()
+              ? getString(R.string.alumni_birthday_day_hint)
+              : task.description);
+        } else if (TaskTypes.ALUMNI_PHOTO.equals(taskType)) {
           binding.btnDraft.setText(R.string.alumni_ask_picture);
           binding.subtitle.setText(
             task.description == null || task.description.isEmpty()
@@ -252,6 +268,13 @@ public class AlarmActivity extends AppCompatActivity {
       return AlarmScheduler.PHASE_NAG;
     }
     return intent.getIntExtra(ExtraKeys.PHASE, AlarmScheduler.PHASE_NAG);
+  }
+
+  private void openBirthdayDay() {
+    Intent intent = Homes.alumniBirthdayDay(this, null);
+    intent.putExtra(ExtraKeys.TASK_ID, taskId);
+    startActivity(intent);
+    finish();
   }
 
   private void acknowledge() {

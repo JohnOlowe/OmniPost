@@ -281,6 +281,19 @@ public class TaskSectionsTest {
       TaskStatus.dueStatus(now - 1, now + lead / 2, now, 0L));
   }
 
+  @Test
+  public void alumniBirthdaysOnDayKeepsOnlyThatDaysFlyers() {
+    Task pack = task(1, TaskTypes.ALUMNI_BIRTHDAY_PACK, TaskStatus.NAGGING, 100);
+    pack.occurrenceKey = TaskTypes.ALUMNI_BIRTHDAY_PACK + "|2026-08-31";
+    Task ada = task(2, TaskTypes.ALUMNI_BIRTHDAY, TaskStatus.SCHEDULED, 100);
+    ada.occurrenceKey = TaskTypes.ALUMNI_BIRTHDAY + "|9|2026-08-31";
+    Task other = task(3, TaskTypes.ALUMNI_BIRTHDAY, TaskStatus.SCHEDULED, 200);
+    other.occurrenceKey = TaskTypes.ALUMNI_BIRTHDAY + "|8|2026-09-01";
+    List<Task> day = TaskTypes.alumniBirthdaysOnDay(Arrays.asList(pack, ada, other), "2026-08-31");
+    assertEquals(1, day.size());
+    assertEquals(ada.id, day.get(0).id);
+  }
+
   private static Task task(long id, String type, String status, long postAt) {
     Task task = new Task();
     task.id = id;

@@ -44,6 +44,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     void onOptions(Task task);
 
     void onCaptionReady(Task task);
+
+    void onOpenPack(Task task);
   }
 
   static final class Row {
@@ -167,7 +169,8 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       } else {
         binding.description.setText(task.description);
       }
-      if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      boolean pack = TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type);
+      if (pack) {
         binding.btnDraft.setText(R.string.alumni_copy_info);
       } else if (TaskTypes.ALUMNI_PHOTO.equals(task.type)) {
         binding.btnDraft.setText(R.string.alumni_ask_picture);
@@ -200,11 +203,18 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
       binding.cadence.setText(TaskTypes.cadence(task.type));
       style(task, held);
       boolean posted = TaskStatus.POSTED.equals(task.status);
+      if (pack && !posted) {
+        binding.btnPosted.setText(R.string.alumni_open_birthdays);
+      } else {
+        binding.btnPosted.setText(R.string.mark_posted);
+      }
       binding.btnPosted.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.btnReopen.setVisibility(posted ? View.VISIBLE : View.GONE);
       binding.btnSnooze.setVisibility(posted ? View.GONE : View.VISIBLE);
       binding.getRoot().setOnClickListener(v -> {
-        if (task.skipCaption) {
+        if (pack) {
+          listener.onOpenPack(task);
+        } else if (task.skipCaption) {
           listener.onForward(task);
         } else {
           listener.onOpen(task);
@@ -217,7 +227,13 @@ public class TaskAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
           listener.onOpen(task);
         }
       });
-      binding.btnPosted.setOnClickListener(v -> listener.onMarkPosted(task));
+      binding.btnPosted.setOnClickListener(v -> {
+        if (pack) {
+          listener.onOpenPack(task);
+        } else {
+          listener.onMarkPosted(task);
+        }
+      });
       binding.btnReopen.setOnClickListener(v -> listener.onReopen(task));
       binding.btnSnooze.setOnClickListener(v -> listener.onSnooze(task));
       binding.btnShift.setOnClickListener(v -> listener.onShift(task));

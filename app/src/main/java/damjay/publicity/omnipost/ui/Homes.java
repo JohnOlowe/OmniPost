@@ -25,11 +25,23 @@ public final class Homes {
   }
 
   public static Intent alumniForTask(Context ctx, Task task) {
+    if (task != null && TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
+      return alumniBirthdayDay(ctx, task);
+    }
     Intent intent = alumni(ctx);
     if (task != null) {
       intent.putExtra(ExtraKeys.TASK_ID, task.id);
       intent.putExtra(ExtraKeys.MEMBER_ID, task.memberId);
       intent.putExtra(ExtraKeys.TASK_TYPE, task.type == null ? "" : task.type);
+    }
+    return intent;
+  }
+
+  public static Intent alumniBirthdayDay(Context ctx, Task pack) {
+    Intent intent = new Intent(ctx, AlumniBirthdayDayActivity.class);
+    if (pack != null) {
+      intent.putExtra(ExtraKeys.TASK_ID, pack.id);
+      intent.putExtra(ExtraKeys.DAY_KEY, TaskTypes.dayKey(pack));
     }
     return intent;
   }

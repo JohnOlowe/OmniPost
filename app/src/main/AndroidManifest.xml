@@ -107,6 +107,12 @@
       android:parentActivityName=".ui.AlumniHomeActivity"/>
 
     <activity
+      android:name=".ui.AlumniBirthdayDayActivity"
+      android:exported="false"
+      android:label="@string/alumni_open_birthdays"
+      android:parentActivityName=".ui.AlumniHomeActivity"/>
+
+    <activity
       android:name=".ui.AlumniCaptionsActivity"
       android:exported="false"
       android:label="@string/alumni_edit_captions"

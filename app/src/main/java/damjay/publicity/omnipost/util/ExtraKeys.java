@@ -17,6 +17,7 @@ public final class ExtraKeys {
   public static final String SERIES_ID = "extra_series_id";
   public static final String ADDRESS_NAME = "extra_address_name";
   public static final String TASK_TYPE = "extra_task_type";
+  public static final String DAY_KEY = "extra_day_key";
   public static final String SHOW_GATE = "extra_show_gate";
   public static final String PASTOR_DEFAULT = "extra_pastor_default";
 

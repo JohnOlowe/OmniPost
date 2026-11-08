@@ -141,6 +141,11 @@ public class TasksFragment extends Fragment {
       public void onCaptionReady(Task task) {
         markCaptionReady(task);
       }
+
+      @Override
+      public void onOpenPack(Task task) {
+        startActivity(Homes.alumniBirthdayDay(requireContext(), task));
+      }
     });
     binding.list.setLayoutManager(new LinearLayoutManager(requireContext()));
     binding.list.setAdapter(adapter);

@@ -16,7 +16,9 @@ import damjay.publicity.omnipost.receiver.MarkPostedReceiver;
 import damjay.publicity.omnipost.scheduler.AlarmScheduler;
 import damjay.publicity.omnipost.scheduler.DateUtils;
 import damjay.publicity.omnipost.scheduler.TaskStatus;
+import damjay.publicity.omnipost.scheduler.TaskTypes;
 import damjay.publicity.omnipost.ui.AlarmActivity;
+import damjay.publicity.omnipost.ui.AlumniBirthdayDayActivity;
 import damjay.publicity.omnipost.ui.DraftActivity;
 import damjay.publicity.omnipost.util.ExtraKeys;
 import damjay.publicity.omnipost.util.Prefs;
@@ -122,11 +124,22 @@ public final class NotificationHelper {
     if (task == null) {
       return;
     }
-    notifyCue(ctx, task.id, AlarmScheduler.PHASE_NAG, task.title, task.postAtMillis, true);
+    notifyCue(ctx, task.id, AlarmScheduler.PHASE_NAG, task.title, task.postAtMillis, true, task.type);
   }
 
   static void notifyCue(
     Context ctx, long taskId, int phase, String taskTitle, long postAt, boolean loud) {
+    notifyCue(ctx, taskId, phase, taskTitle, postAt, loud, "");
+  }
+
+  static void notifyCue(
+    Context ctx,
+    long taskId,
+    int phase,
+    String taskTitle,
+    long postAt,
+    boolean loud,
+    String type) {
     ensureChannels(ctx);
     String headline = cueHeadline(ctx, phase);
     String body = cueBody(ctx, phase);
@@ -148,12 +161,17 @@ public final class NotificationHelper {
       .setOngoing(loud)
       .setAutoCancel(!loud)
       .setContentIntent(open)
-      .addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, taskId))
-      .addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, taskId))
       .setColor(loud ? 0xFFFF4D4D : 0xFFE8C36A)
       .setSilent(true)
       .setSound(null)
       .setVibrate(new long[] {0});
+    if (TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(type)) {
+      builder.addAction(
+        0, ctx.getString(R.string.alumni_open_birthdays), openBirthdayDay(ctx, taskId));
+    } else {
+      builder.addAction(0, ctx.getString(R.string.open_draft), openDraft(ctx, taskId));
+      builder.addAction(0, ctx.getString(R.string.mark_posted), markPosted(ctx, taskId));
+    }
     if (loud) {
       builder.setPriority(NotificationCompat.PRIORITY_MAX);
       if (Prefs.fullScreen(ctx)) {
@@ -244,6 +262,13 @@ public final class NotificationHelper {
         dropActivity(ctx, (int) (5000 + id), legacy);
       }
     }
+  }
+
+  private static PendingIntent openBirthdayDay(Context ctx, long taskId) {
+    Intent intent = new Intent(ctx, AlumniBirthdayDayActivity.class);
+    intent.putExtra(ExtraKeys.TASK_ID, taskId);
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+    return activity(ctx, (int) (3500 + taskId), intent);
   }
 
   private static PendingIntent openDraft(Context ctx, long taskId) {

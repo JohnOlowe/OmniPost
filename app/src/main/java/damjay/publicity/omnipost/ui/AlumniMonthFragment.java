@@ -200,6 +200,11 @@ public class AlumniMonthFragment extends Fragment {
       }
 
       @Override
+      public void onOpenPack(Task task) {
+        startActivity(Homes.alumniBirthdayDay(requireContext(), task));
+      }
+
+      @Override
       public void onOptions(Task task) {
         showDeskOptions(task);
       }
@@ -468,7 +473,7 @@ public class AlumniMonthFragment extends Fragment {
         || TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type)) {
       return true;
     }
-    return TaskTypes.ALUMNI_BIRTHDAY.equals(task.type) && TaskStatus.captionWorkPending(task);
+    return false;
   }
 
   private static boolean isPostedNag(Task task) {
@@ -476,7 +481,6 @@ public class AlumniMonthFragment extends Fragment {
       return false;
     }
     return TaskTypes.ALUMNI_PHOTO.equals(task.type)
-        || TaskTypes.ALUMNI_BIRTHDAY.equals(task.type)
         || TaskTypes.ALUMNI_BIRTHDAY_PACK.equals(task.type);
   }
 
